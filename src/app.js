@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.0";
-import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.0";
-import { applyUnlocks } from "./engine/collections.js?v=0.4.0";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.1";
+import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.1";
+import { applyUnlocks } from "./engine/collections.js?v=0.4.1";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.4.0";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.0";
-import { getClubContext } from "./engine/world.js?v=0.4.0";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.0";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.0";
-import { escapeHtml } from "./ui/components.js?v=0.4.0";
+} from "./engine/poker.js?v=0.4.1";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.1";
+import { getClubContext } from "./engine/world.js?v=0.4.1";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.1";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.1";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.1";
+import { escapeHtml } from "./ui/components.js?v=0.4.1";
 
 export class PokerRoomStoryApp {
   constructor(root) {

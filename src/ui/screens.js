@@ -1,7 +1,7 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.0";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.0";
-import { getXpProgress } from "../engine/career.js?v=0.4.0";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.0";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.1";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.1";
+import { getXpProgress } from "../engine/career.js?v=0.4.1";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.1";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -74,7 +74,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.0")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.1")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -185,10 +185,11 @@ function renderNpcSeats(hand, currentEvent, revealCards) {
   if (!seats.length) return `<div class="empty-seat-note">Нажми «Новая раздача».</div>`;
   return seats
     .map((seat, index) => {
-      const isActing = currentEvent?.actorId === seat.id || hand?.currentActorId === seat.id;
+      const isActing = !seat.folded && (currentEvent?.actorId === seat.id || hand?.currentActorId === seat.id);
       const isWinner = isSeatWinner(hand, seat.id);
       const status = actionLabel(seat.lastAction);
-      const amount = seat.lastAmount ? ` $${seat.lastAmount}` : "";
+      const amount = seat.folded ? "" : seat.lastAmount ? ` $${seat.lastAmount}` : "";
+      const cards = seat.folded ? `<div class="fold-marker">Fold</div>` : playingCards(seat.holeCards, { hidden: !revealCards, size: "small" });
       return `
         <div class="seat seat-${index + 1} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner" : ""}">
           <div class="seat-avatar">${escapeHtml(initials(seat.name))}</div>
@@ -197,7 +198,7 @@ function renderNpcSeats(hand, currentEvent, revealCards) {
             <span>$${seat.stack ?? seat.npc?.bankroll ?? 0}${seat.currentBet ? ` · Bet $${seat.currentBet}` : ""}</span>
           </div>
           <div class="seat-status">${escapeHtml(status)}${escapeHtml(amount)}</div>
-          <div class="seat-cards">${playingCards(seat.holeCards, { hidden: !revealCards, size: "small" })}</div>
+          <div class="seat-cards">${cards}</div>
         </div>
       `;
     })

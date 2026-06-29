@@ -1,12 +1,13 @@
 {
-  "appVersion": "0.4.0",
+  "appVersion": "0.4.1",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.4.0",
-  "buildId": "prs-0.4.0-20260629-stable",
+  "contentVersion": "core-v0.4.1",
+  "buildId": "prs-0.4.1-20260629-fold-guard",
   "buildDate": "2026-06-29",
   "notes": [
     "Update-safe service worker",
     "v0.3.2 table continuity verified",
-    "minimal learning review layer"
+    "minimal learning review layer",
+    "folded players are skipped by actor queue"
   ]
 }

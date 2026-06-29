@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.0";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.0";
+} from "./cards.js?v=0.4.1";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.1";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -364,6 +364,11 @@ function autoAdvance(initialState, table, forcedActorId = null) {
     const actor = getSeatById(state, state.currentActorId) ?? getSeatById(state, getFirstActorForCurrentRound(state));
     if (!actor) {
       state = setCurrentActor(state, getFirstActorForCurrentRound(state));
+      continue;
+    }
+
+    if (actor.folded || actor.allIn) {
+      state = movePastInactiveActor(state, actor);
       continue;
     }
 
@@ -861,6 +866,18 @@ function getNextSeatId(tableState, fromSeatIndex) {
   return getNextActiveSeatAfter(tableState, fromSeatIndex)?.id ?? null;
 }
 
+function movePastInactiveActor(tableState, actor) {
+  const nextId = getNextSeatId(tableState, actor.seatIndex) ?? getFirstActorForCurrentRound(tableState);
+  if (!nextId || nextId === actor.id) {
+    return syncTableState({
+      ...tableState,
+      currentActorId: null,
+      currentActorName: null,
+    });
+  }
+  return setCurrentActor(tableState, nextId);
+}
+
 function getNextActiveSeatAfter(tableState, fromSeatIndex) {
   const seats = getAllSeats(tableState);
   if (!seats.length) return null;
@@ -875,10 +892,11 @@ function getNextActiveSeatAfter(tableState, fromSeatIndex) {
 
 function setCurrentActor(tableState, seatId) {
   const seat = getSeatById(tableState, seatId);
+  const canAct = seat && !seat.folded && !seat.allIn;
   return syncTableState({
     ...tableState,
-    currentActorId: seat?.id ?? null,
-    currentActorName: seat?.name ?? null,
+    currentActorId: canAct ? seat.id : null,
+    currentActorName: canAct ? seat.name : null,
   });
 }
 

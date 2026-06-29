@@ -459,7 +459,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 /* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
-/* v0.4.0 keeps clean UI; update safety and mini review live in engine. */
+/* v0.4.1 keeps clean UI; update safety and mini review live in engine. */
 .brand { min-width: 0; }
 .brand-card { overflow: hidden; }
 .brand h1 {
@@ -599,3 +599,27 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 
 .review-block { border-color: rgba(216,161,95,0.18); }
 .review-block span { color: var(--gold); }
+
+/* v0.4.1 folded seat clarity */
+.seat.folded {
+  opacity: 0.38;
+  filter: grayscale(0.9);
+  border-color: rgba(255,255,255,0.06);
+}
+.seat.folded.acting {
+  box-shadow: none;
+  border-color: rgba(255,255,255,0.06);
+}
+.fold-marker {
+  min-width: 44px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.58);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+}

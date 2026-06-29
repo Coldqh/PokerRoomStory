@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.4.2",
+  "appVersion": "0.4.3",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.4.2",
-  "buildId": "prs-0.4.2-20260629-mobile-nav-pacing",
+  "contentVersion": "core-v0.4.3",
+  "buildId": "prs-0.4.3-20260629-timeline-fold-fix",
   "buildDate": "2026-06-29",
   "notes": [
-    "Mobile bottom navigation overflow fixed",
-    "Animation speed control added",
-    "Fold guard from v0.4.1 retained",
-    "Offline cache bumped to v0.4.2"
+    "Timeline snapshots added",
+    "Folded players no longer appear folded before their action animation",
+    "Unsafe active hands from older saves are reset safely",
+    "Offline cache bumped to v0.4.3"
   ]
 }

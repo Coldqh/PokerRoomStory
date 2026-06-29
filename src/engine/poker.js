@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.2";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.2";
+} from "./cards.js?v=0.4.3";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.3";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -65,6 +65,28 @@ export function createAnimationState(patch = {}) {
     revealedCommunityCount: 0,
     showWinner: false,
     ...patch,
+  };
+}
+
+function eventWithSnapshot(tableState, actionEvent) {
+  if (!actionEvent) return actionEvent;
+  const snapshot = createTimelineSnapshot(tableState, actionEvent);
+  return { ...actionEvent, snapshot };
+}
+
+function createTimelineSnapshot(tableState, actionEvent = null) {
+  const state = syncTableState(tableState);
+  const revealCount = typeof actionEvent?.revealCount === "number"
+    ? actionEvent.revealCount
+    : getRevealCountForPhase(state.phase, state);
+
+  return {
+    ...state,
+    awaitingPlayer: false,
+    animation: createAnimationState({
+      revealedCommunityCount: revealCount,
+      showWinner: actionEvent?.action === "winner",
+    }),
   };
 }
 
@@ -152,7 +174,7 @@ export function buildStartHandTimeline(tableState, table) {
   }
 
   events.push(event("dealer", "Dealer", "deal", "Карты розданы", { pot: tableState.pot, revealCount: 0 }));
-  return events;
+  return events.map((entry) => eventWithSnapshot(tableState, entry));
 }
 
 export function advanceUntilPlayerOrEnd({ tableState, table }) {
@@ -173,7 +195,7 @@ export function applyPlayerAction({ tableState, player, action, table }) {
 
   const commit = commitSeatAction(state, hero.id, normalizeAction(action, state, hero, table), table, { source: "player" });
   state = commit.tableState;
-  const timeline = [commit.event];
+  const timeline = [eventWithSnapshot(state, commit.event)];
 
   state = { ...state, lastPlayerAction: commit.event.action, awaitingPlayer: false };
 
@@ -188,7 +210,7 @@ export function applyPlayerAction({ tableState, player, action, table }) {
       lastResult: result,
       actionLog: [...state.actionLog, ...result.logs],
     });
-    timeline.push(buildWinnerEvent(finished, result));
+    timeline.push(eventWithSnapshot(finished, buildWinnerEvent(finished, result)));
     return { tableState: finished, player, result, timeline };
   }
 
@@ -334,7 +356,7 @@ function autoAdvance(initialState, table, forcedActorId = null) {
         lastResult: result,
         actionLog: [...state.actionLog, ...result.logs],
       });
-      timeline.push(buildWinnerEvent(state, result));
+      timeline.push(eventWithSnapshot(state, buildWinnerEvent(state, result)));
       return { tableState: state, result, timeline };
     }
 
@@ -356,7 +378,7 @@ function autoAdvance(initialState, table, forcedActorId = null) {
 
       const advanced = advanceStreet(state);
       state = advanced.tableState;
-      timeline.push(advanced.event);
+      timeline.push(eventWithSnapshot(state, advanced.event));
       state = setCurrentActor(state, getFirstPostflopActor(state));
       continue;
     }
@@ -388,13 +410,13 @@ function autoAdvance(initialState, table, forcedActorId = null) {
     const decision = decideNpcForState(state, actor, table);
     const commit = commitSeatAction(state, actor.id, decision, table, { source: "npc" });
     state = commit.tableState;
-    timeline.push(commit.event);
+    timeline.push(eventWithSnapshot(state, commit.event));
 
     state = setCurrentActor(state, getNextSeatId(state, actor.seatIndex));
   }
 
   const failEvent = event("dealer", "Dealer", "log", "Раздача остановлена", { pot: state.pot, revealCount: getRevealCountForPhase(state.phase) });
-  timeline.push(failEvent);
+  timeline.push(eventWithSnapshot(state, failEvent));
   return {
     tableState: syncTableState({
       ...state,
@@ -629,7 +651,7 @@ function buildShowdownTimeline(tableState, result) {
     event("dealer", "Dealer", "showdown", "Showdown", { pot: state.pot, revealCount: 5 }),
     ...revealEvents,
     buildWinnerEvent(state, result),
-  ];
+  ].map((entry) => eventWithSnapshot(state, entry));
 }
 
 function buildFoldResult(tableState, table) {
@@ -1058,6 +1080,7 @@ function event(actorId, actorName, action, message, patch = {}) {
     position: patch.position,
     actorStack: patch.actorStack,
     source: patch.source,
+    snapshot: patch.snapshot ?? null,
     createdAt: Date.now(),
   };
 }

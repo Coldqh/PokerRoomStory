@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.2";
-import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.2";
-import { applyUnlocks } from "./engine/collections.js?v=0.4.2";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.3";
+import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.3";
+import { applyUnlocks } from "./engine/collections.js?v=0.4.3";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.4.2";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.2";
-import { getClubContext } from "./engine/world.js?v=0.4.2";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.2";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.2";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.2";
-import { escapeHtml } from "./ui/components.js?v=0.4.2";
+} from "./engine/poker.js?v=0.4.3";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.3";
+import { getClubContext } from "./engine/world.js?v=0.4.3";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.3";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.3";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.3";
+import { escapeHtml } from "./ui/components.js?v=0.4.3";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -52,7 +52,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · clean mobile nav + pacing.`],
+      log: [`Patch v${APP_VERSION} · clean timeline fold fix.`],
       settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };
@@ -60,20 +60,42 @@ export class PokerRoomStoryApp {
     if (!saved) return base;
 
     const { saveMeta: _ignored, ...savedPayload } = saved;
+    const loadedTable = this.sanitizeLoadedTableState(savedPayload.tableState, saveMeta);
+
     return {
       ...base,
       ...savedPayload,
       content: this.content,
       settings: { ...createDefaultSettings(), ...(savedPayload.settings ?? {}) },
-      tableState: savedPayload.tableState ?? createInitialTableState(),
+      tableState: loadedTable.tableState,
       system: {
         ...base.system,
         saveMeta,
         saveInfo: getSaveInfo(),
         lastSavedAt: saveMeta?.updatedAt ?? null,
-        notice: saveMeta?.restoredFromBackup ? "Сейв восстановлен из backup." : saveMeta?.migrated ? "Сейв обновлён." : null,
+        notice: loadedTable.notice ?? (saveMeta?.restoredFromBackup ? "Сейв восстановлен из backup." : saveMeta?.migrated ? "Сейв обновлён." : null),
       },
     };
+  }
+
+  sanitizeLoadedTableState(tableState, saveMeta = null) {
+    if (!tableState) return { tableState: createInitialTableState(), notice: null };
+
+    const phase = tableState.phase ?? "idle";
+    const activeHand = !["idle", "finished", "folded"].includes(phase);
+    const saveVersion = saveMeta?.appVersion ?? "0.0.0";
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.4.3");
+    const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
+    const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
+
+    if (cameFromUnsafeTimeline || brokenActor) {
+      return {
+        tableState: createInitialTableState(),
+        notice: "Активная раздача сброшена после обновления. Прогресс сохранён.",
+      };
+    }
+
+    return { tableState, notice: null };
   }
 
   createSystemState(saveMeta = null) {
@@ -354,12 +376,14 @@ export class PokerRoomStoryApp {
     const recentEvents = [];
 
     const step = () => {
-      const currentEvent = events[index];
+      const rawEvent = events[index];
+      const currentEvent = stripTimelineSnapshot(rawEvent);
+      const frameState = rawEvent?.snapshot ?? finalTableState;
       if (typeof currentEvent.revealCount === "number") revealedCommunityCount = currentEvent.revealCount;
       recentEvents.push(currentEvent);
 
       const animatedState = {
-        ...finalTableState,
+        ...frameState,
         awaitingPlayer: false,
         animation: createAnimationState({
           isPlaying: true,
@@ -381,13 +405,14 @@ export class PokerRoomStoryApp {
       }
 
       this.timelineTimer = window.setTimeout(() => {
+        const lastEvent = stripTimelineSnapshot(events.at(-1));
         const completedState = {
           ...finalTableState,
           animation: createAnimationState({
             isPlaying: false,
             index: events.length,
             total: events.length,
-            currentEvent: events.at(-1),
+            currentEvent: lastEvent,
             recentEvents: recentEvents.slice(-5),
             revealedCommunityCount: finalTableState.communityCards?.length ?? revealedCommunityCount,
             showWinner: finalTableState.phase === "finished" || finalTableState.phase === "folded",
@@ -479,6 +504,32 @@ export class PokerRoomStoryApp {
       </section>
     `;
   }
+}
+
+function stripTimelineSnapshot(event) {
+  if (!event) return event;
+  const { snapshot: _snapshot, ...safeEvent } = event;
+  return safeEvent;
+}
+
+function getPlainSeatById(tableState, seatId) {
+  if (!tableState || !seatId) return null;
+  const seats = [tableState.heroSeat, ...(tableState.npcSeats ?? [])].filter(Boolean);
+  return seats.find((seat) => seat.id === seatId) ?? null;
+}
+
+function isVersionBefore(version, target) {
+  const parse = (value) => String(value ?? "0.0.0")
+    .split(/[.-]/)
+    .slice(0, 3)
+    .map((part) => Number.parseInt(part, 10) || 0);
+  const left = parse(version);
+  const right = parse(target);
+  for (let i = 0; i < 3; i += 1) {
+    if (left[i] < right[i]) return true;
+    if (left[i] > right[i]) return false;
+  }
+  return false;
 }
 
 function createDefaultSettings() {

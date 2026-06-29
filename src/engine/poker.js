@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.5";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.5";
+} from "./cards.js?v=0.4.6";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.6";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -247,11 +247,12 @@ export function applyPlayerAction({ tableState, player, action, table }) {
   let state = syncTableState(tableState);
   const hero = state.heroSeat;
   const available = getAvailableActions(state);
-  if (!available.includes(action)) {
+  const hardFold = action === "fold" && hero && !hero.folded && !hero.allIn && !["idle", "finished", "folded"].includes(state.phase);
+  if (!hardFold && !available.includes(action)) {
     return { tableState: state, player, result: null, timeline: [] };
   }
 
-  const commit = commitSeatAction(state, hero.id, normalizeAction(action, state, hero, table), table, { source: "player" });
+  const commit = commitSeatAction(state, hero.id, action === "fold" ? "fold" : normalizeAction(action, state, hero, table), table, { source: "player" });
   state = commit.tableState;
   const timeline = commit.event ? [eventWithSnapshot(state, commit.event)] : [];
 
@@ -287,10 +288,10 @@ export function getAvailableActions(tableState) {
   if (hero.folded || hero.allIn || ["finished", "folded", "idle"].includes(tableState.phase)) return [];
 
   const toCall = getToCall(tableState, hero);
-  const actions = [];
+  const actions = ["fold"];
 
   if (toCall > 0) {
-    actions.push("fold", "call");
+    actions.push("call");
     if (canRaise(tableState, hero)) actions.push("raise");
     return actions;
   }
@@ -538,7 +539,8 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
   }
 
   const toCall = getToCall(state, seat);
-  const normalized = normalizeAction(decision.action, state, seat, table);
+  const requestedAction = typeof decision === "string" ? decision : decision?.action;
+  const normalized = normalizeAction(requestedAction, state, seat, table);
   let nextSeat = { ...seat };
   let nextPot = state.pot;
   let nextCurrentBet = state.currentBet;

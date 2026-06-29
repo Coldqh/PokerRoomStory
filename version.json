@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.4.5",
+  "appVersion": "0.4.6",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.4.5",
-  "buildId": "prs-0.4.5-20260629-hero-fold-ui-fix",
+  "contentVersion": "core-v0.4.6",
+  "buildId": "prs-0.4.6-20260629-hard-hero-fold",
   "buildDate": "2026-06-29",
   "notes": [
-    "Hero fold now renders as Fold instead of keeping visible cards",
-    "Folded hero is visually disabled like NPC seats",
-    "Folded/finished phases no longer expose player actions",
-    "No save schema change"
+    "Hard hero fold action: Fold is always available on hero turn",
+    "Hero fold closes the hand immediately",
+    "Hero cards are removed after Fold",
+    "Terminal hand phases disable all game-action buttons"
   ]
 }

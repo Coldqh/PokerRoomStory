@@ -1,7 +1,7 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.5";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.5";
-import { getXpProgress } from "../engine/career.js?v=0.4.5";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.5";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.6";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.6";
+import { getXpProgress } from "../engine/career.js?v=0.4.6";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.6";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -74,7 +74,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.5")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.6")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -135,6 +135,9 @@ function renderTableScreen(state) {
   const heroActing = !heroFolded && (currentEvent?.actorId === "player" || hand?.currentActorId === "player");
   const heroPosition = heroFolded ? "Fold" : (hand?.heroSeat?.position ?? "");
   const heroBetText = !heroFolded && hand?.heroSeat?.currentBet ? ` · Bet $${hand.heroSeat.currentBet}` : "";
+  const heroLine = heroFolded
+    ? `Fold${hand?.playerInvested ? ` · -$${hand.playerInvested}` : ""}`
+    : `$${hand?.heroSeat?.stack ?? state.player.bankroll}${heroBetText}`;
   const heroCards = heroFolded
     ? `<div class="fold-marker hero-fold-marker">Fold</div>`
     : playingCards(hand?.playerHoleCards ?? [], { highlightedIds, size: "large" });
@@ -172,7 +175,7 @@ function renderTableScreen(state) {
             <div class="hero-cards">${heroCards}</div>
             <div class="hero-info">
               <strong>Ты <em>${escapeHtml(heroPosition)}</em></strong>
-              <span>$${hand?.heroSeat?.stack ?? state.player.bankroll}${heroBetText}</span>
+              <span>${escapeHtml(heroLine)}</span>
             </div>
           </div>
         </main>
@@ -256,11 +259,13 @@ function renderIdleToast(hand) {
 function renderActionDock(actions, hand, actionMeta = {}) {
   const animating = hand?.animation?.isPlaying;
   const terminal = ["finished", "folded", "idle"].includes(hand?.phase);
+  const canHeroAct = Boolean(hand?.awaitingPlayer && !animating && !terminal && hand?.heroSeat && !hand.heroSeat.folded && !hand.heroSeat.allIn);
+  const canFold = canHeroAct || actions.includes("fold");
   const labels = actionMeta.labels ?? {};
   return `
     <div class="action-dock panel-soft ${terminal ? "terminal" : ""}">
       <button data-action="start-hand" ${animating || hand?.awaitingPlayer ? "disabled" : ""}>Новая</button>
-      <button data-action="player-action" data-id="fold" ${actions.includes("fold") ? "" : "disabled"}>${escapeHtml(labels.fold ?? "Fold")}</button>
+      <button data-action="player-action" data-id="fold" ${canFold ? "" : "disabled"}>${escapeHtml(labels.fold ?? "Fold")}</button>
       <button data-action="player-action" data-id="check" ${actions.includes("check") ? "" : "disabled"}>${escapeHtml(labels.check ?? "Check")}</button>
       <button data-action="player-action" data-id="call" ${actions.includes("call") ? "" : "disabled"}>${escapeHtml(labels.call ?? "Call")}</button>
       <button class="primary" data-action="player-action" data-id="raise" ${actions.includes("raise") ? "" : "disabled"}>${escapeHtml(labels.raise ?? "Raise")}</button>

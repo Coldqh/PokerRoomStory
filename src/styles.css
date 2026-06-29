@@ -459,7 +459,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 /* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
-/* v0.4.5 keeps clean UI; update safety and mini review live in engine. */
+/* v0.4.6 keeps clean UI; update safety and mini review live in engine. */
 .brand { min-width: 0; }
 .brand-card { overflow: hidden; }
 .brand h1 {
@@ -600,7 +600,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 .review-block { border-color: rgba(216,161,95,0.18); }
 .review-block span { color: var(--gold); }
 
-/* v0.4.5 folded seat clarity */
+/* v0.4.6 folded seat clarity */
 .seat.folded {
   opacity: 0.38;
   filter: grayscale(0.9);
@@ -624,7 +624,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* v0.4.5 mobile nav polish + pacing */
+/* v0.4.6 mobile nav polish + pacing */
 .app-nav {
   min-width: 0;
   overflow: hidden;
@@ -691,7 +691,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 
-/* v0.4.5 hero fold UI fix */
+/* v0.4.6 hard hero fold fix */
 .hero-player.folded {
   opacity: 0.42;
   filter: grayscale(0.9);

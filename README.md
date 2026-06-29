@@ -1,52 +1,26 @@
-# Poker Room Story v0.4.5
+# Poker Room Story v0.4.6
 
-## Patch v0.4.5 — Hero Fold UI Fix
+## Patch v0.4.6 — Hard Hero Fold Fix
 
-Точечный багфикс после проверки реального репозитория `Coldqh/PokerRoomStory`.
+Исправляет главный баг Fold у игрока.
 
-### Исправлено
+### Изменения
 
-- fold игрока теперь отображается так же явно, как fold NPC;
-- после fold у героя больше не остаются видимые карты;
-- герой получает визуальное состояние `Fold` и приглушается;
-- action dock на terminal-состояниях не показывает доступные игровые действия;
-- `getAvailableActions()` теперь жёстко блокирует действия в `folded / finished / idle`;
-- версия обновлена до `0.4.5`;
-- service worker cache обновлён.
-
-### Не менялось
-
-- save schema;
-- банкролл;
-- коллекции;
-- NPC brain;
-- логика раздачи за пределами terminal guard.
+- Fold у игрока теперь доступен на любом его ходе, даже если можно Check.
+- Нажатие Fold жёстко переводит героя в `folded`.
+- Раздача закрывается сразу после Fold игрока.
+- Карты игрока убираются и заменяются на метку `Fold`.
+- В terminal-фазах `idle / folded / finished` игровые кнопки не активны.
+- Обновлены version/cache до `0.4.6`.
 
 ### Установка
 
-Распаковать с заменой в:
-
-```powershell
-C:\PokerRoomStory
-```
-
-Запуск локально:
-
-```powershell
-cd C:\PokerRoomStory
-python -m http.server 8080
-```
-
-Пуш:
-
-```powershell
-git add .
-git commit -m "Patch v0.4.5 hero fold UI fix"
-git push
-```
+Распакуй файлы в корень `C:\PokerRoomStory` с заменой.
 
 После GitHub Pages:
 
 ```text
 Проверить → Принудительно обновить → Ctrl + F5
 ```
+
+На телефоне полностью закрыть вкладку/PWA и открыть заново.

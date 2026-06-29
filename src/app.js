@@ -10,8 +10,10 @@ import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
 } from "./engine/poker.js";
-import { clearSave, loadSave, saveGame } from "./engine/save.js";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js";
 import { getClubContext } from "./engine/world.js";
+import { APP_VERSION } from "./config/appMeta.js";
+import { applyPendingUpdate, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js";
 import { renderScreen, SCREENS } from "./ui/screens.js";
 import { escapeHtml } from "./ui/components.js";
 
@@ -22,11 +24,20 @@ export class PokerRoomStoryApp {
     this.timelineTimer = null;
     this.state = this.createInitialState();
     this.root.addEventListener("click", (event) => this.handleClick(event));
+    this.root.addEventListener("change", (event) => this.handleChange(event));
+    window.addEventListener("online", () => this.setSystem({ online: true }));
+    window.addEventListener("offline", () => this.setSystem({ online: false }));
+    onUpdateReady(() => this.setSystem({ updateAvailable: true, updateMessage: "Доступно обновление." }));
+    registerAppServiceWorker().then((status) => {
+      const runtime = getRuntimeStatus();
+      this.setSystem({ serviceWorker: status.ok, controlled: runtime.controlled });
+    });
     this.render();
   }
 
   createInitialState() {
-    const saved = loadSave();
+    const saved = loadSave(this.content);
+    const saveMeta = saved?.saveMeta ?? null;
     const base = {
       content: this.content,
       player: createNewPlayer(),
@@ -37,16 +48,41 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: ["Patch v0.2 · real hand flow."],
+      log: [`Patch v${APP_VERSION} · stability system.`],
+      system: this.createSystemState(saveMeta),
     };
 
     if (!saved) return base;
 
+    const { saveMeta: _ignored, ...savedPayload } = saved;
     return {
       ...base,
-      ...saved,
+      ...savedPayload,
       content: this.content,
-      tableState: saved.tableState?.phase === "idle" ? saved.tableState : createInitialTableState(),
+      tableState: savedPayload.tableState ?? createInitialTableState(),
+      system: {
+        ...base.system,
+        saveMeta,
+        saveInfo: getSaveInfo(),
+        lastSavedAt: saveMeta?.updatedAt ?? null,
+        notice: saveMeta?.restoredFromBackup ? "Сейв восстановлен из backup." : saveMeta?.migrated ? "Сейв обновлён." : null,
+      },
+    };
+  }
+
+  createSystemState(saveMeta = null) {
+    const runtime = getRuntimeStatus();
+    return {
+      appVersion: APP_VERSION,
+      online: runtime.online,
+      serviceWorker: runtime.serviceWorker,
+      controlled: runtime.controlled,
+      updateAvailable: false,
+      updateMessage: null,
+      notice: null,
+      saveMeta,
+      saveInfo: getSaveInfo(),
+      lastSavedAt: saveMeta?.updatedAt ?? null,
     };
   }
 
@@ -57,7 +93,30 @@ export class PokerRoomStoryApp {
       content: this.content,
     };
 
-    if (!options.skipSave) saveGame(this.state);
+    if (!options.skipSave) {
+      const saveMeta = saveGame(this.state);
+      this.state = {
+        ...this.state,
+        system: {
+          ...this.state.system,
+          saveMeta,
+          saveInfo: getSaveInfo(),
+          lastSavedAt: saveMeta.updatedAt,
+        },
+      };
+    }
+
+    this.render();
+  }
+
+  setSystem(patch) {
+    this.state = {
+      ...this.state,
+      system: {
+        ...this.state.system,
+        ...patch,
+      },
+    };
     this.render();
   }
 
@@ -73,7 +132,7 @@ export class PokerRoomStoryApp {
       return;
     }
 
-    if (this.state.tableState?.animation?.isPlaying) return;
+    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "export-save", "import-save", "dismiss-notice", "reset-save"].includes(action)) return;
 
     if (action === "select-table") {
       this.setState({ activeTableId: id, currentScreen: "table", tableState: createInitialTableState() });
@@ -90,13 +149,75 @@ export class PokerRoomStoryApp {
       return;
     }
 
+    if (action === "apply-update") {
+      this.setSystem({ notice: "Обновляю приложение..." });
+      applyPendingUpdate().then((result) => {
+        if (!result.ok) this.setSystem({ notice: "Готового обновления нет. Используй принудительное обновление." });
+      });
+      return;
+    }
+
+    if (action === "force-update") {
+      this.setSystem({ notice: "Чищу кэш и запрашиваю свежую версию..." });
+      forceAppUpdate();
+      return;
+    }
+
+    if (action === "export-save") {
+      this.exportSave();
+      return;
+    }
+
+    if (action === "import-save") {
+      this.root.querySelector("#save-import-input")?.click();
+      return;
+    }
+
+    if (action === "dismiss-notice") {
+      this.setSystem({ notice: null, updateAvailable: false, updateMessage: null });
+      return;
+    }
+
     if (action === "reset-save") {
-      const confirmed = confirm("Сбросить прогресс?");
+      const confirmed = confirm("Сбросить прогресс? Backup тоже будет удалён.");
       if (!confirmed) return;
       clearSave();
       this.state = this.createInitialState();
       this.render();
     }
+  }
+
+  handleChange(event) {
+    const input = event.target;
+    if (!input.matches?.("#save-import-input")) return;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    file
+      .text()
+      .then((text) => {
+        importSaveText(text, this.content);
+        this.state = this.createInitialState();
+        this.setSystem({ notice: "Сейв импортирован." });
+      })
+      .catch(() => this.setSystem({ notice: "Не удалось импортировать сейв." }))
+      .finally(() => {
+        input.value = "";
+      });
+  }
+
+  exportSave() {
+    const text = exportCurrentSave();
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `poker-room-story-save-v${APP_VERSION}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    this.setSystem({ notice: "Сейв экспортирован." });
   }
 
   startHand() {
@@ -251,7 +372,9 @@ export class PokerRoomStoryApp {
   render() {
     this.root.innerHTML = `
       <main class="app-shell ${this.state.currentScreen === "table" ? "table-mode" : ""}">
+        <input id="save-import-input" type="file" accept="application/json,.json" hidden />
         ${this.renderTopbar()}
+        ${this.renderUpdateBanner()}
         ${renderScreen(this.state)}
       </main>
     `;
@@ -274,6 +397,7 @@ export class PokerRoomStoryApp {
           ${topStat("Rank", rankLabel(player.rank))}
           ${topStat("Hands", player.handsPlayed)}
           ${topStat("Win", `${winRate(player)}%`)}
+          ${topStat("Version", `v${this.state.system?.appVersion ?? APP_VERSION}`)}
         </div>
 
         <nav class="nav app-nav">
@@ -286,6 +410,29 @@ export class PokerRoomStoryApp {
           ).join("")}
         </nav>
       </header>
+    `;
+  }
+
+  renderUpdateBanner() {
+    const system = this.state.system ?? {};
+    if (!system.updateAvailable && !system.notice && system.online !== false) return "";
+
+    const title = system.updateAvailable ? "Есть обновление" : system.online === false ? "Офлайн-режим" : "Система";
+    const text = system.updateAvailable
+      ? system.updateMessage || "Можно установить свежую версию."
+      : system.online === false
+        ? "Игра работает из кэша. Сейв хранится на устройстве."
+        : system.notice;
+
+    return `
+      <section class="system-banner panel-soft">
+        <div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(text ?? "")}</span></div>
+        <div class="system-banner-actions">
+          ${system.updateAvailable ? `<button class="primary small-button" data-action="apply-update">Установить</button>` : ""}
+          <button class="small-button" data-action="force-update">Обновить</button>
+          <button class="small-button ghost" data-action="dismiss-notice">×</button>
+        </div>
+      </section>
     `;
   }
 }

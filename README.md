@@ -1,21 +1,29 @@
-# Poker Room Story v0.2
+# Poker Room Story v0.2.1
 
-Static mobile-first poker room prototype.
+Static mobile-first poker room career prototype.
 
-## Patch v0.2 — Real Hand Flow
+## Patch v0.2.1
 
-- real betting streets: preflop, flop, turn, river, showdown;
-- dealer/button, small blind, big blind and table positions;
-- current actor, to-call amount, current bet and player stack;
-- sequential NPC actions with animation feed;
-- dynamic action buttons: check, call, bet/raise, fold;
-- winner highlight and compact result panel;
-- split-pot safety for tied hands;
-- cleaner hand state model for future blackjack/career patches.
+Stability / save / offline patch.
+
+### Added
+
+- visible app version in the top HUD;
+- system panel in the club screen;
+- versioned save envelope: schema, app version, content version, timestamps;
+- automatic migration from old flat saves;
+- backup save before every overwrite;
+- save export / import as JSON;
+- force update button;
+- update notification when a new service worker is ready;
+- PWA manifest;
+- service worker cache for offline use;
+- active hand can survive page reload better because deck and table state are now saved.
 
 ## Run locally
 
 ```bash
+cd C:\PokerRoomStory
 python -m http.server 8080
 ```
 
@@ -27,4 +35,30 @@ http://localhost:8080
 
 ## GitHub Pages
 
-Put `index.html`, `src/`, `.nojekyll` and this README in the repo root.
+Put these files in the repository root:
+
+```text
+index.html
+manifest.webmanifest
+sw.js
+assets/
+src/
+README.md
+.nojekyll
+```
+
+Then enable:
+
+```text
+Settings → Pages → Deploy from branch → main → /root
+```
+
+## Update notes
+
+After pushing a new version, GitHub Pages may keep old cached files for a short time. Use the in-game button:
+
+```text
+Система → Принудительно обновить
+```
+
+If the browser has an installed PWA, close and reopen it after update.

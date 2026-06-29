@@ -60,7 +60,43 @@ function renderClubScreen(state) {
         ${state.log.length ? state.log.slice(-4).reverse().map((line) => `<div class="feed-line">${escapeHtml(line)}</div>`).join("") : emptyState("Пока пусто.")}
       </div>
     </section>
+
+    ${renderSystemPanel(state)}
   `;
+}
+
+function renderSystemPanel(state) {
+  const system = state.system ?? {};
+  const info = system.saveInfo ?? {};
+  const updated = system.lastSavedAt ? formatDateTime(system.lastSavedAt) : "—";
+  const online = system.online === false ? "Офлайн" : "Онлайн";
+  const cache = system.controlled ? "PWA active" : system.serviceWorker ? "PWA ready" : "Browser";
+
+  return `
+    <section class="content-section system-panel">
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.2.1")}</span></div>
+      <div class="system-grid">
+        <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
+        <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
+        <div class="system-line"><span>Режим</span><strong>${escapeHtml(online)}</strong></div>
+        <div class="system-line"><span>Кэш</span><strong>${escapeHtml(cache)}</strong></div>
+      </div>
+      <div class="system-actions">
+        <button class="small-button" data-action="export-save">Экспорт сейва</button>
+        <button class="small-button" data-action="import-save">Импорт</button>
+        <button class="small-button" data-action="force-update">Принудительно обновить</button>
+        <button class="small-button danger" data-action="reset-save">Сброс</button>
+      </div>
+    </section>
+  `;
+}
+
+function formatDateTime(value) {
+  try {
+    return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  } catch (error) {
+    return "—";
+  }
 }
 
 function renderTableListItem(state, table) {

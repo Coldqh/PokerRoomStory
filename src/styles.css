@@ -393,3 +393,67 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 .action-bubble.action-fold {
   opacity: 0.92;
 }
+
+/* v0.2.1 stability / offline system */
+.quick-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.system-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -6px 0 14px;
+  padding: 10px 12px;
+  border-color: rgba(216,161,95,0.28);
+  background: linear-gradient(180deg, rgba(216,161,95,0.07), rgba(255,255,255,0.018)), rgba(9,9,11,0.9);
+}
+.system-banner strong,
+.system-banner span { display: block; }
+.system-banner strong { color: var(--gold); }
+.system-banner span { color: var(--soft); margin-top: 2px; font-size: 0.82rem; }
+.system-banner-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.small-button.ghost { min-width: 38px; color: var(--muted); background: rgba(255,255,255,0.025); }
+.system-panel {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.022);
+}
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.system-line {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(0,0,0,0.16);
+}
+.system-line span,
+.system-line strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.system-line span { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.58rem; font-weight: 900; }
+.system-line strong { margin-top: 4px; font-size: 0.86rem; }
+.system-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (max-width: 1080px) {
+  .quick-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .system-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 740px) {
+  .quick-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .system-banner { align-items: stretch; flex-direction: column; }
+  .system-banner-actions { display: grid; grid-template-columns: 1fr auto auto; }
+  .system-actions { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 420px) {
+  .system-grid { grid-template-columns: 1fr; }
+  .system-actions { grid-template-columns: 1fr; }
+}

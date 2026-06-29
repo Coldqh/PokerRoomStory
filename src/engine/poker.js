@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.4";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.4";
+} from "./cards.js?v=0.4.5";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.5";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -284,7 +284,7 @@ export function applyPlayerAction({ tableState, player, action, table }) {
 export function getAvailableActions(tableState) {
   if (!tableState || !tableState.awaitingPlayer || tableState.animation?.isPlaying || !tableState.heroSeat) return [];
   const hero = tableState.heroSeat;
-  if (hero.folded || hero.allIn || tableState.phase === "finished" || tableState.phase === "idle") return [];
+  if (hero.folded || hero.allIn || ["finished", "folded", "idle"].includes(tableState.phase)) return [];
 
   const toCall = getToCall(tableState, hero);
   const actions = [];
@@ -303,6 +303,17 @@ export function getAvailableActions(tableState) {
 export function getActionMeta(tableState, table = null) {
   const hero = tableState?.heroSeat;
   if (!hero) return {};
+  if (hero.folded || ["finished", "folded", "idle"].includes(tableState?.phase)) {
+    return {
+      toCall: 0,
+      currentBet: tableState?.currentBet ?? 0,
+      playerBet: hero.currentBet ?? 0,
+      playerStack: hero.stack ?? 0,
+      raiseTarget: 0,
+      raiseCost: 0,
+      labels: { fold: "Fold", check: "Check", call: "Call", raise: "Raise" },
+    };
+  }
   const toCall = getToCall(tableState, hero);
   const target = getDefaultRaiseTarget(tableState, table ?? { bigBlind: tableState?.bigBlind || tableState?.minRaise || 20 }, hero);
   const raiseCost = Math.max(0, target - hero.currentBet);

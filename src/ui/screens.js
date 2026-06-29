@@ -1,7 +1,7 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.4";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.4";
-import { getXpProgress } from "../engine/career.js?v=0.4.4";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.4";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.5";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.5";
+import { getXpProgress } from "../engine/career.js?v=0.4.5";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.5";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -74,7 +74,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.4")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.5")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -131,6 +131,13 @@ function renderTableScreen(state) {
   const highlightedIds = handInfo.highlightedIds ?? new Set();
   const currentEvent = animation.currentEvent;
   const revealNpcCards = hand?.lastResult?.showdown || currentEvent?.action === "showdown" || currentEvent?.action === "show";
+  const heroFolded = Boolean(hand?.heroSeat?.folded || hand?.phase === "folded");
+  const heroActing = !heroFolded && (currentEvent?.actorId === "player" || hand?.currentActorId === "player");
+  const heroPosition = heroFolded ? "Fold" : (hand?.heroSeat?.position ?? "");
+  const heroBetText = !heroFolded && hand?.heroSeat?.currentBet ? ` · Bet $${hand.heroSeat.currentBet}` : "";
+  const heroCards = heroFolded
+    ? `<div class="fold-marker hero-fold-marker">Fold</div>`
+    : playingCards(hand?.playerHoleCards ?? [], { highlightedIds, size: "large" });
 
   return `
     <section class="table-page">
@@ -161,11 +168,11 @@ function renderTableScreen(state) {
 
           ${currentEvent ? renderActionToast(currentEvent, animation) : renderIdleToast(hand)}
 
-          <div class="hero-player ${currentEvent?.actorId === "player" || hand?.currentActorId === "player" ? "acting" : ""} ${isPlayerWinner(hand) ? "winner" : ""}">
-            <div class="hero-cards">${playingCards(hand?.playerHoleCards ?? [], { highlightedIds, size: "large" })}</div>
+          <div class="hero-player ${heroFolded ? "folded" : ""} ${heroActing ? "acting" : ""} ${isPlayerWinner(hand) ? "winner" : ""}">
+            <div class="hero-cards">${heroCards}</div>
             <div class="hero-info">
-              <strong>Ты <em>${escapeHtml(hand?.heroSeat?.position ?? "")}</em></strong>
-              <span>$${hand?.heroSeat?.stack ?? state.player.bankroll}${hand?.heroSeat?.currentBet ? ` · Bet $${hand.heroSeat.currentBet}` : ""}</span>
+              <strong>Ты <em>${escapeHtml(heroPosition)}</em></strong>
+              <span>$${hand?.heroSeat?.stack ?? state.player.bankroll}${heroBetText}</span>
             </div>
           </div>
         </main>
@@ -231,6 +238,9 @@ function renderActionToast(event, animation) {
 }
 
 function renderIdleToast(hand) {
+  if (hand?.phase === "folded" || hand?.heroSeat?.folded) {
+    return `<div class="action-bubble folded"><strong>Пас</strong><small>Раздача закрыта.</small></div>`;
+  }
   if (!hand?.playerHoleCards?.length) {
     return `<div class="action-bubble idle"><strong>Стол свободен</strong><small>Новая раздача.</small></div>`;
   }
@@ -245,10 +255,11 @@ function renderIdleToast(hand) {
 
 function renderActionDock(actions, hand, actionMeta = {}) {
   const animating = hand?.animation?.isPlaying;
+  const terminal = ["finished", "folded", "idle"].includes(hand?.phase);
   const labels = actionMeta.labels ?? {};
   return `
-    <div class="action-dock panel-soft">
-      <button data-action="start-hand" ${hand?.awaitingPlayer || animating ? "disabled" : ""}>Новая</button>
+    <div class="action-dock panel-soft ${terminal ? "terminal" : ""}">
+      <button data-action="start-hand" ${animating || hand?.awaitingPlayer ? "disabled" : ""}>Новая</button>
       <button data-action="player-action" data-id="fold" ${actions.includes("fold") ? "" : "disabled"}>${escapeHtml(labels.fold ?? "Fold")}</button>
       <button data-action="player-action" data-id="check" ${actions.includes("check") ? "" : "disabled"}>${escapeHtml(labels.check ?? "Check")}</button>
       <button data-action="player-action" data-id="call" ${actions.includes("call") ? "" : "disabled"}>${escapeHtml(labels.call ?? "Call")}</button>
@@ -260,12 +271,14 @@ function renderActionDock(actions, hand, actionMeta = {}) {
 function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, settings = {}) {
   const result = hand?.lastResult;
   const rows = hand?.animation?.recentEvents ?? [];
-  const current = hand?.awaitingPlayer ? "Ты" : hand?.currentActorName ?? "—";
+  const terminal = hand?.phase === "finished" || hand?.phase === "folded";
+  const current = hand?.phase === "folded" ? "Fold" : hand?.awaitingPlayer ? "Ты" : terminal ? "—" : hand?.currentActorName ?? "—";
+  const tablePrompt = terminal ? "Раздача закрыта" : actionMeta.toCall ? `Call $${actionMeta.toCall}` : hand?.currentBet ? `Bet $${hand.currentBet}` : "Check available";
   return `
     <div class="info-block table-state-block">
       <span>Ход</span>
       <strong>${escapeHtml(current)}</strong>
-      <p>${actionMeta.toCall ? `Call $${actionMeta.toCall}` : hand?.currentBet ? `Bet $${hand.currentBet}` : "Check available"}</p>
+      <p>${escapeHtml(tablePrompt)}</p>
     </div>
     <div class="info-block pace-block">
       <span>Темп</span>

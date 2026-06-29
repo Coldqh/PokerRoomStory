@@ -2,7 +2,7 @@ export const coreV01 = {
   meta: {
     id: "PACK_CORE_V0_1",
     name: "Core v0.1 — First Local Room",
-    version: "0.4.7",
+    version: "0.4.8",
   },
 
   countries: [

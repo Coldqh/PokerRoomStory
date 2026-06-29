@@ -1,7 +1,8 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.7";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.7";
-import { getXpProgress } from "../engine/career.js?v=0.4.7";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.7";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.8";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.8";
+import { getXpProgress } from "../engine/career.js?v=0.4.8";
+import { describeCards } from "../engine/cards.js?v=0.4.8";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.8";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -74,7 +75,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.7")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.8")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -301,6 +302,8 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
         <strong>${escapeHtml(result.winnerName ?? "—")}</strong>
         <p>${result.bankrollDelta >= 0 ? "+" : "-"}$${Math.abs(result.bankrollDelta)} · банк $${result.pot}</p>
       </div>
+      ${renderHandSummary(hand)}
+      ${renderHandTranscript(hand)}
       ${result.review ? `
         <div class="info-block review-block">
           <span>${escapeHtml(result.review.title ?? "Разбор")}</span>
@@ -313,6 +316,104 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
       ${rows.length ? rows.slice(-5).reverse().map((event) => `<div><b>${escapeHtml(actionTitle(event.action))}</b><span>${escapeHtml(event.actorName)}</span></div>`).join("") : ""}
     </div>
   `;
+}
+
+
+function renderHandSummary(hand) {
+  const result = hand?.lastResult;
+  if (!result) return "";
+
+  const heroFolded = Boolean(hand?.heroSeat?.folded || hand?.lastPlayerAction === "fold" || hand?.phase === "folded");
+  const delta = Number(result.bankrollDelta ?? 0);
+  const board = hand?.communityCards?.length ? describeCards(hand.communityCards) : "—";
+  const resultLine = heroFolded
+    ? `You: Fold · -$${Math.abs(hand?.playerInvested ?? delta)}`
+    : `You: ${delta >= 0 ? "+" : "-"}$${Math.abs(delta)}`;
+  const winLine = result.showdown && result.winningHand
+    ? `${result.winnerName ?? "Winner"}: ${result.winningHand.categoryName}`
+    : result.winner === "player"
+      ? "Банк забран без вскрытия"
+      : "Банк без вскрытия";
+  const foldLine = heroFolded && result.showdown ? "Ты сбросил. Остальные доиграли банк." : null;
+
+  return `
+    <div class="info-block hand-summary-block">
+      <span>Итог</span>
+      <strong>${escapeHtml(winLine)}</strong>
+      <p>${escapeHtml(resultLine)}</p>
+      <p>Board: ${escapeHtml(board)}</p>
+      ${foldLine ? `<p>${escapeHtml(foldLine)}</p>` : ""}
+    </div>
+  `;
+}
+
+function renderHandTranscript(hand) {
+  const events = Array.isArray(hand?.handEvents) ? hand.handEvents : [];
+  if (!events.length) return "";
+
+  const groups = groupHandEvents(events);
+  const rows = ["preflop", "flop", "turn", "river"]
+    .map((street) => renderTranscriptRow(street, groups[street] ?? []))
+    .filter(Boolean);
+
+  if (!rows.length) return "";
+
+  return `
+    <div class="info-block transcript-block">
+      <span>Ход руки</span>
+      <div class="transcript-list">${rows.join("")}</div>
+    </div>
+  `;
+}
+
+function groupHandEvents(events) {
+  return events.reduce((acc, event) => {
+    const street = ["preflop", "flop", "turn", "river"].includes(event.street) ? event.street : "preflop";
+    acc[street] = acc[street] ?? [];
+    acc[street].push(event);
+    return acc;
+  }, {});
+}
+
+function renderTranscriptRow(street, events) {
+  const playable = events.filter((event) => !["flop", "turn", "river"].includes(event.action));
+  if (!playable.length) return "";
+
+  const text = playable.slice(0, 5).map(formatTranscriptEvent).join(", ");
+  const tail = playable.length > 5 ? "…" : "";
+  return `<div><b>${escapeHtml(streetLabel(street))}</b><span>${escapeHtml(text + tail)}</span></div>`;
+}
+
+function formatTranscriptEvent(event) {
+  const name = event.actorId === "player" ? "You" : shortName(event.actorName ?? "?");
+  const amount = event.amount ? ` $${event.amount}` : "";
+  const action = transcriptActionLabel(event.action);
+  return `${name} ${action}${amount}`;
+}
+
+function transcriptActionLabel(action) {
+  const labels = {
+    sb: "SB",
+    bb: "BB",
+    blind: "Blind",
+    fold: "fold",
+    call: "call",
+    check: "check",
+    bet: "bet",
+    raise: "raise",
+    winner: "wins",
+  };
+  return labels[action] ?? action;
+}
+
+function streetLabel(street) {
+  const labels = {
+    preflop: "Preflop",
+    flop: "Flop",
+    turn: "Turn",
+    river: "River",
+  };
+  return labels[street] ?? street;
 }
 
 function renderCareerScreen(state) {

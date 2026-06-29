@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.4.7",
+  "appVersion": "0.4.8",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.4.7",
-  "buildId": "prs-0.4.7-20260629-hand-continuation-fix",
+  "contentVersion": "core-v0.4.8",
+  "buildId": "prs-0.4.8-20260629-table-feel-summary-balance",
   "buildDate": "2026-06-29",
   "notes": [
-    "Hero fold removes the player but lets 2+ active NPCs finish the hand",
-    "NPC-only hand continuation can reach flop, turn, river, showdown or fold win",
-    "Preflop walkover guard keeps at least one NPC in if everyone would fold before hero acts",
-    "No save schema change"
+    "Compact hand summary after every finished hand",
+    "Street-grouped hand transcript",
+    "Low-stakes preflop balance pass",
+    "Hand event history stored safely on tableState"
   ]
 }

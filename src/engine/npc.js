@@ -1,4 +1,4 @@
-import { evaluateBestHand, estimatePreflopStrength } from "./cards.js?v=0.4.7";
+import { evaluateBestHand, estimatePreflopStrength } from "./cards.js?v=0.4.8";
 
 const ARCHETYPE_PROFILES = {
   ARCH_TIGHT_NIT: {
@@ -141,8 +141,9 @@ function decidePreflop({ confidence, stats, profile, context, potOdds }) {
   const raiseCapPenalty = context.streetRaises >= 2 ? 0.22 : 0;
   const stackRiskPenalty = context.stack > 0 ? Math.min(0.18, context.pressure / Math.max(context.stack, 1) * 0.55) : 0;
 
+  const lowPressureCallDiscount = pressureBb <= 1 ? 0.045 : pressureBb <= 2 ? 0.02 : 0;
   const openLine = clamp(0.5 - stats.vpip * 0.22 + profile.openBoost - positionBonus, 0.22, 0.72);
-  const callLine = clamp(0.48 - stats.vpip * 0.16 - stats.risk * 0.08 + profile.callBoost + pressureBb * 0.035 + stackRiskPenalty, 0.22, 0.82);
+  const callLine = clamp(0.48 - stats.vpip * 0.16 - stats.risk * 0.08 + profile.callBoost + pressureBb * 0.035 + stackRiskPenalty - lowPressureCallDiscount, 0.2, 0.82);
   const raiseLine = clamp(0.7 - stats.pfr * 0.18 - stats.aggression * 0.12 + raiseCapPenalty - profile.raiseBoost - positionBonus * 0.35, 0.46, 0.9);
 
   if (context.pressure > 0) {

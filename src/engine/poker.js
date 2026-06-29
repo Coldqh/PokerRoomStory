@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.7";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.7";
+} from "./cards.js?v=0.4.8";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.8";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -50,6 +50,7 @@ export function createInitialTableState() {
     lastPlayerAction: null,
     lastResult: null,
     actionLog: [],
+    handEvents: [],
     awaitingPlayer: false,
     animation: createAnimationState(),
   };
@@ -131,6 +132,7 @@ export function startNewHand({ content, table, club, player, previousTableState 
     lastPlayerAction: null,
     lastResult: null,
     actionLog: [`Новая раздача · ${totalSeats} игроков.`],
+    handEvents: [],
     awaitingPlayer: false,
     buyInWarning: player.bankroll < table.bigBlind * 20,
     animation: createAnimationState(),
@@ -212,6 +214,7 @@ function makeStartSnapshotBase(tableState) {
     currentActorId: null,
     currentActorName: null,
     awaitingPlayer: false,
+    handEvents: [],
     heroSeat: tableState.heroSeat ? resetSeat(tableState.heroSeat) : null,
     npcSeats: (tableState.npcSeats ?? []).map(resetSeat),
   });
@@ -271,6 +274,7 @@ export function applyPlayerAction({ tableState, player, action, table }) {
         currentActorName: null,
         lastResult: result,
         actionLog: [...state.actionLog, ...result.logs],
+        handEvents: appendHandEvent(state, buildResultHandEvent(state, result)),
       });
       timeline.push(eventWithSnapshot(finished, buildWinnerEvent(finished, result)));
       return { tableState: finished, player, result, timeline };
@@ -438,6 +442,7 @@ function autoAdvance(initialState, table, forcedActorId = null) {
         currentActorName: null,
         lastResult: result,
         actionLog: [...state.actionLog, ...result.logs],
+        handEvents: appendHandEvent(state, buildResultHandEvent(state, result)),
       });
       timeline.push(eventWithSnapshot(state, buildWinnerEvent(state, result)));
       return { tableState: state, result, timeline };
@@ -454,6 +459,7 @@ function autoAdvance(initialState, table, forcedActorId = null) {
           currentActorName: null,
           lastResult: result,
           actionLog: [...state.actionLog, ...result.logs],
+          handEvents: appendHandEvent(state, buildResultHandEvent(state, result)),
         });
         timeline.push(...buildShowdownTimeline(state, result));
         return { tableState: state, result, timeline };
@@ -619,6 +625,7 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
     minRaise: nextMinRaise,
     streetRaises: nextStreetRaises,
     actionLog: [...state.actionLog, `${nextSeat.name}: ${message}.`],
+    handEvents: appendHandEvent(state, buildActionHandEvent(state, nextSeat, action, amount, nextPot)),
   });
 
   return {
@@ -687,6 +694,7 @@ function advanceStreet(tableState) {
       minRaise: 0,
       streetRaises: 0,
       actionLog: [...state.actionLog, `${STREET_LABELS[nextPhase]}.`],
+      handEvents: appendHandEvent(state, buildStreetHandEvent(nextPhase, state.pot)),
     }),
     event: stageEvent,
   };
@@ -834,6 +842,59 @@ function buildResultLogs({ playerWinner, split, winners, best, bankrollDelta }) 
   return [`${winners[0].seat.name} выиграл · ${best.hand.categoryName}.`, `Итог: ${formatDelta(bankrollDelta)}.`];
 }
 
+
+function buildActionHandEvent(tableState, seat, action, amount = 0, pot = 0) {
+  return {
+    street: normalizeStreetForEvent(tableState.phase),
+    actorId: seat.id,
+    actorName: seat.name,
+    action,
+    amount: amount ?? 0,
+    pot: pot ?? tableState.pot ?? 0,
+  };
+}
+
+function buildStreetHandEvent(phase, pot = 0) {
+  return {
+    street: normalizeStreetForEvent(phase),
+    actorId: "dealer",
+    actorName: "Dealer",
+    action: phase,
+    amount: 0,
+    pot,
+  };
+}
+
+function buildResultHandEvent(tableState, result) {
+  return {
+    street: normalizeStreetForEvent(tableState.phase),
+    actorId: result.winnerId ?? result.winner ?? "winner",
+    actorName: result.winnerName ?? "Победитель",
+    action: "winner",
+    amount: result.pot ?? tableState.pot ?? 0,
+    pot: result.pot ?? tableState.pot ?? 0,
+  };
+}
+
+function appendHandEvent(tableState, handEvent) {
+  if (!handEvent) return tableState.handEvents ?? [];
+  const events = Array.isArray(tableState.handEvents) ? tableState.handEvents : [];
+  return [
+    ...events,
+    {
+      id: `${events.length + 1}_${handEvent.street}_${handEvent.actorId}_${handEvent.action}`,
+      index: events.length,
+      ...handEvent,
+    },
+  ];
+}
+
+function normalizeStreetForEvent(phase) {
+  if (["preflop", "flop", "turn", "river"].includes(phase)) return phase;
+  if (phase === "showdown") return "river";
+  return phase || "preflop";
+}
+
 function beginBettingRound(tableState, firstActorId) {
   const seats = getAllSeats(tableState).map((seat) => ({
     ...seat,
@@ -847,12 +908,14 @@ function postBlinds(tableState, table) {
   const sb = findBlindSeat(state, "small");
   const bb = findBlindSeat(state, "big");
   let pot = state.pot;
+  let blindEvents = [];
 
   if (sb) {
     const posted = Math.min(table.smallBlind, sb.stack);
     const nextSb = applyContribution(sb, posted);
     state = setSeat(state, { ...nextSb, lastAction: "sb", lastAmount: posted });
     pot += posted;
+    blindEvents.push(buildActionHandEvent(state, { ...nextSb, name: sb.name }, "sb", posted, pot));
   }
 
   if (bb) {
@@ -860,6 +923,7 @@ function postBlinds(tableState, table) {
     const nextBb = applyContribution(bb, posted);
     state = setSeat(state, { ...nextBb, lastAction: "bb", lastAmount: posted });
     pot += posted;
+    blindEvents.push(buildActionHandEvent(state, { ...nextBb, name: bb.name }, "bb", posted, pot));
   }
 
   return syncTableState({
@@ -869,8 +933,10 @@ function postBlinds(tableState, table) {
     minRaise: table.bigBlind,
     streetRaises: 0,
     actionLog: [...state.actionLog, `Блайнды $${table.smallBlind}/$${table.bigBlind}.`],
+    handEvents: [...(state.handEvents ?? []), ...blindEvents],
   });
 }
+
 
 function assignPositions(tableState) {
   const total = getAllSeats(tableState).length;
@@ -1068,6 +1134,7 @@ function syncTableState(tableState) {
     playerHoleCards: heroSeat?.holeCards ?? tableState.playerHoleCards ?? [],
     activeNpcSeats: npcSeats.filter((seat) => !seat.folded).map((seat) => seat.id),
     playerInvested: heroSeat?.invested ?? tableState.playerInvested ?? 0,
+    handEvents: Array.isArray(tableState.handEvents) ? tableState.handEvents : [],
   };
 }
 

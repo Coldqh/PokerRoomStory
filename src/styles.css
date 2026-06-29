@@ -459,7 +459,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 /* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
-/* v0.4.7 keeps clean UI; update safety and mini review live in engine. */
+/* v0.4.8 keeps clean UI; update safety and mini review live in engine. */
 .brand { min-width: 0; }
 .brand-card { overflow: hidden; }
 .brand h1 {
@@ -600,7 +600,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 .review-block { border-color: rgba(216,161,95,0.18); }
 .review-block span { color: var(--gold); }
 
-/* v0.4.7 folded seat clarity */
+/* v0.4.8 folded seat clarity */
 .seat.folded {
   opacity: 0.38;
   filter: grayscale(0.9);
@@ -624,7 +624,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* v0.4.7 mobile nav polish + pacing */
+/* v0.4.8 mobile nav polish + pacing */
 .app-nav {
   min-width: 0;
   overflow: hidden;
@@ -691,7 +691,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 
-/* v0.4.7 hand continuation fix */
+/* v0.4.8 hand continuation fix */
 .hero-player.folded {
   opacity: 0.42;
   filter: grayscale(0.9);
@@ -721,4 +721,43 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 .action-bubble.folded {
   border-color: rgba(255,255,255,0.12);
   background: rgba(7,7,9,0.7);
+}
+
+/* v0.4.8 hand summary and transcript */
+.hand-summary-block {
+  border-color: rgba(216,161,95,0.28);
+  background: rgba(216,161,95,0.045);
+}
+.hand-summary-block p + p { margin-top: 0.18rem; }
+.transcript-block { padding-bottom: 10px; }
+.transcript-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.transcript-list div {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255,255,255,0.055);
+  border-radius: 11px;
+  background: rgba(0,0,0,0.12);
+}
+.transcript-list b {
+  color: #ffbabd;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.transcript-list span {
+  min-width: 0;
+  color: var(--soft);
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+@media (max-width: 740px) {
+  .transcript-list div { grid-template-columns: 62px minmax(0, 1fr); }
 }

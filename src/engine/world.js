@@ -1,0 +1,26 @@
+export function getClubContext(content, clubId) {
+  const club = content.byId.clubs[clubId];
+  if (!club) throw new Error(`Club not found: ${clubId}`);
+
+  const city = content.byId.cities[club.cityId];
+  const country = content.byId.countries[city.countryId];
+  const tables = club.tables.map((id) => content.byId.tables[id]).filter(Boolean);
+  const npcs = club.npcPool.map((id) => content.byId.npcs[id]).filter(Boolean);
+
+  return { club, city, country, tables, npcs };
+}
+
+export function canEnterTable(player, table) {
+  const req = table.unlockRequirement;
+  if (!req) return { ok: true, reason: null };
+
+  if (req.bankroll && player.bankroll < req.bankroll) {
+    return { ok: false, reason: `Нужно минимум $${req.bankroll} банкролла.` };
+  }
+
+  if (req.reputation && player.reputation < req.reputation) {
+    return { ok: false, reason: `Нужно ${req.reputation} репутации.` };
+  }
+
+  return { ok: true, reason: null };
+}

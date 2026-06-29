@@ -1,16 +1,17 @@
-# Poker Room Story v0.1.5
+# Poker Room Story v0.2
 
 Static mobile-first poker room prototype.
 
-## Patch v0.1.5
+## Patch v0.2 — Real Hand Flow
 
-- cleaner minimal interface;
-- less text noise;
-- calmer club screens;
-- focused table screen;
-- compact action feed;
-- better mobile spacing;
-- short hand hints and event messages.
+- real betting streets: preflop, flop, turn, river, showdown;
+- dealer/button, small blind, big blind and table positions;
+- current actor, to-call amount, current bet and player stack;
+- sequential NPC actions with animation feed;
+- dynamic action buttons: check, call, bet/raise, fold;
+- winner highlight and compact result panel;
+- split-pot safety for tied hands;
+- cleaner hand state model for future blackjack/career patches.
 
 ## Run locally
 

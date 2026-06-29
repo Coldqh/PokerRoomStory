@@ -1,5 +1,5 @@
 import { canEnterTable, getClubContext } from "../engine/world.js";
-import { getPhaseLabel, getAvailableActions, getHandHint, getCurrentHandInfo } from "../engine/poker.js";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js";
 import { getXpProgress } from "../engine/career.js";
 import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js";
 
@@ -89,10 +89,11 @@ function renderTableScreen(state) {
   const visibleCommunityCards = (hand?.communityCards ?? []).slice(0, revealCount);
   const displayHand = { ...hand, communityCards: visibleCommunityCards };
   const actions = getAvailableActions(hand);
+  const actionMeta = getActionMeta(hand, table);
   const handInfo = getCurrentHandInfo(displayHand);
   const highlightedIds = handInfo.highlightedIds ?? new Set();
   const currentEvent = animation.currentEvent;
-  const revealNpcCards = hand?.phase === "finished" || currentEvent?.action === "showdown" || currentEvent?.action === "winner";
+  const revealNpcCards = hand?.lastResult?.showdown || currentEvent?.action === "showdown" || currentEvent?.action === "show";
 
   return `
     <section class="table-page">
@@ -112,8 +113,9 @@ function renderTableScreen(state) {
           <div class="table-ring"></div>
 
           <div class="pot-chip ${currentEvent?.action === "winner" ? "won" : ""}">
-            <span>Банк</span>
+            <span>${escapeHtml(getPhaseLabel(hand?.phase ?? "idle"))}</span>
             <strong>$${hand?.pot ?? 0}</strong>
+            <small>${hand?.currentBet ? `Bet $${hand.currentBet}` : "No bet"}</small>
           </div>
 
           <div class="board-zone">
@@ -122,21 +124,21 @@ function renderTableScreen(state) {
 
           ${currentEvent ? renderActionToast(currentEvent, animation) : renderIdleToast(hand)}
 
-          <div class="hero-player ${currentEvent?.actorId === "player" ? "acting" : ""} ${isPlayerWinner(hand) ? "winner" : ""}">
+          <div class="hero-player ${currentEvent?.actorId === "player" || hand?.currentActorId === "player" ? "acting" : ""} ${isPlayerWinner(hand) ? "winner" : ""}">
             <div class="hero-cards">${playingCards(hand?.playerHoleCards ?? [], { highlightedIds, size: "large" })}</div>
             <div class="hero-info">
-              <strong>Ты</strong>
-              <span>$${state.player.bankroll}</span>
+              <strong>Ты <em>${escapeHtml(hand?.heroSeat?.position ?? "")}</em></strong>
+              <span>$${hand?.heroSeat?.stack ?? state.player.bankroll}${hand?.heroSeat?.currentBet ? ` · Bet $${hand.heroSeat.currentBet}` : ""}</span>
             </div>
           </div>
         </main>
 
         <aside class="table-info panel-soft">
-          ${renderCompactHandInfo(handInfo, hand, currentEvent)}
+          ${renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta)}
         </aside>
       </div>
 
-      ${renderActionDock(actions, hand)}
+      ${renderActionDock(actions, hand, actionMeta)}
     </section>
   `;
 }
@@ -146,16 +148,18 @@ function renderNpcSeats(hand, currentEvent, revealCards) {
   if (!seats.length) return `<div class="empty-seat-note">Нажми «Новая раздача».</div>`;
   return seats
     .map((seat, index) => {
-      const isActing = currentEvent?.actorId === seat.npc.id;
-      const isWinner = hand?.lastResult?.winnerId === seat.npc.id || hand?.lastResult?.winner === seat.npc.id;
+      const isActing = currentEvent?.actorId === seat.id || hand?.currentActorId === seat.id;
+      const isWinner = isSeatWinner(hand, seat.id);
+      const status = actionLabel(seat.lastAction);
+      const amount = seat.lastAmount ? ` $${seat.lastAmount}` : "";
       return `
         <div class="seat seat-${index + 1} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner" : ""}">
-          <div class="seat-avatar">${escapeHtml(initials(seat.npc.name))}</div>
+          <div class="seat-avatar">${escapeHtml(initials(seat.name))}</div>
           <div class="seat-main">
-            <strong>${escapeHtml(shortName(seat.npc.name))}</strong>
-            <span>$${seat.stack ?? seat.npc.bankroll}</span>
+            <strong>${escapeHtml(shortName(seat.name))} <em>${escapeHtml(seat.position ?? "")}</em></strong>
+            <span>$${seat.stack ?? seat.npc?.bankroll ?? 0}${seat.currentBet ? ` · Bet $${seat.currentBet}` : ""}</span>
           </div>
-          <div class="seat-status">${escapeHtml(actionLabel(seat.lastAction))}${seat.lastAmount ? ` $${seat.lastAmount}` : ""}</div>
+          <div class="seat-status">${escapeHtml(status)}${escapeHtml(amount)}</div>
           <div class="seat-cards">${playingCards(seat.holeCards, { hidden: !revealCards, size: "small" })}</div>
         </div>
       `;
@@ -189,31 +193,41 @@ function renderActionToast(event, animation) {
 
 function renderIdleToast(hand) {
   if (!hand?.playerHoleCards?.length) {
-    return `<div class="action-bubble idle"><strong>Стол свободен</strong><small>Начни раздачу.</small></div>`;
+    return `<div class="action-bubble idle"><strong>Стол свободен</strong><small>Новая раздача.</small></div>`;
   }
   if (hand.awaitingPlayer) {
-    return `<div class="action-bubble waiting"><strong>Твой ход</strong><small>${escapeHtml(getHandHint(hand))}</small></div>`;
+    return `<div class="action-bubble waiting"><span>${escapeHtml(hand.heroSeat?.position ?? "")}</span><strong>Твой ход</strong><small>${escapeHtml(getHandHint(hand))}</small></div>`;
+  }
+  if (hand.currentActorName) {
+    return `<div class="action-bubble idle"><strong>${escapeHtml(hand.currentActorName)}</strong><small>думает</small></div>`;
   }
   return "";
 }
 
-function renderActionDock(actions, hand) {
+function renderActionDock(actions, hand, actionMeta = {}) {
   const animating = hand?.animation?.isPlaying;
+  const labels = actionMeta.labels ?? {};
   return `
     <div class="action-dock panel-soft">
       <button data-action="start-hand" ${hand?.awaitingPlayer || animating ? "disabled" : ""}>Новая</button>
-      <button data-action="player-action" data-id="fold" ${actions.includes("fold") ? "" : "disabled"}>Fold</button>
-      <button data-action="player-action" data-id="check" ${actions.includes("check") ? "" : "disabled"}>Check</button>
-      <button data-action="player-action" data-id="call" ${actions.includes("call") ? "" : "disabled"}>Call</button>
-      <button class="primary" data-action="player-action" data-id="raise" ${actions.includes("raise") ? "" : "disabled"}>Raise</button>
+      <button data-action="player-action" data-id="fold" ${actions.includes("fold") ? "" : "disabled"}>${escapeHtml(labels.fold ?? "Fold")}</button>
+      <button data-action="player-action" data-id="check" ${actions.includes("check") ? "" : "disabled"}>${escapeHtml(labels.check ?? "Check")}</button>
+      <button data-action="player-action" data-id="call" ${actions.includes("call") ? "" : "disabled"}>${escapeHtml(labels.call ?? "Call")}</button>
+      <button class="primary" data-action="player-action" data-id="raise" ${actions.includes("raise") ? "" : "disabled"}>${escapeHtml(labels.raise ?? "Raise")}</button>
     </div>
   `;
 }
 
-function renderCompactHandInfo(handInfo, hand, currentEvent) {
+function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}) {
   const result = hand?.lastResult;
   const rows = hand?.animation?.recentEvents ?? [];
+  const current = hand?.awaitingPlayer ? "Ты" : hand?.currentActorName ?? "—";
   return `
+    <div class="info-block table-state-block">
+      <span>Ход</span>
+      <strong>${escapeHtml(current)}</strong>
+      <p>${actionMeta.toCall ? `Call $${actionMeta.toCall}` : hand?.currentBet ? `Bet $${hand.currentBet}` : "Check available"}</p>
+    </div>
     <div class="info-block">
       <span>Рука</span>
       <strong>${escapeHtml(result?.winningHand?.categoryName ?? handInfo.title)}</strong>
@@ -223,15 +237,11 @@ function renderCompactHandInfo(handInfo, hand, currentEvent) {
       <div class="info-block winner-block">
         <span>Победитель</span>
         <strong>${escapeHtml(result.winnerName ?? "—")}</strong>
-        <p>$${result.pot}</p>
+        <p>${result.bankrollDelta >= 0 ? "+" : "-"}$${Math.abs(result.bankrollDelta)} · банк $${result.pot}</p>
       </div>
     ` : ""}
-    <div class="info-block">
-      <span>Подсказка</span>
-      <p>${escapeHtml(currentEvent ? cleanEventText(currentEvent) : getHandHint(hand))}</p>
-    </div>
     <div class="mini-feed">
-      ${rows.length ? rows.slice(-4).reverse().map((event) => `<div><b>${escapeHtml(actionTitle(event.action))}</b><span>${escapeHtml(event.actorName)}</span></div>`).join("") : ""}
+      ${rows.length ? rows.slice(-5).reverse().map((event) => `<div><b>${escapeHtml(actionTitle(event.action))}</b><span>${escapeHtml(event.actorName)}</span></div>`).join("") : ""}
     </div>
   `;
 }
@@ -339,7 +349,12 @@ function renderCollectionItem(item, unlocked) {
 }
 
 function isPlayerWinner(hand) {
-  return hand?.lastResult?.winnerId === "player" || hand?.lastResult?.winner === "player";
+  return isSeatWinner(hand, "player");
+}
+
+function isSeatWinner(hand, seatId) {
+  const winnerId = String(hand?.lastResult?.winnerId ?? hand?.lastResult?.winner ?? "");
+  return winnerId.split(",").includes(seatId);
 }
 
 function initials(name) {
@@ -361,11 +376,16 @@ function shortName(name) {
 function actionLabel(action) {
   const labels = {
     blind: "Blind",
+    sb: "SB",
+    bb: "BB",
+    ready: "Ready",
     fold: "Fold",
     folded: "Fold",
     call: "Call",
     check: "Check",
+    bet: "Bet",
     raise: "Raise",
+    "all-in": "All-in",
   };
   return labels[action] ?? "Ready";
 }
@@ -378,6 +398,7 @@ function actionTitle(action) {
     fold: "Fold",
     call: "Call",
     check: "Check",
+    bet: "Bet",
     raise: "Raise",
     flop: "Flop",
     turn: "Turn",

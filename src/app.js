@@ -7,6 +7,7 @@ import {
   createInitialTableState,
   getUnlockConditionsFromHand,
   startNewHand,
+  advanceUntilPlayerOrEnd,
   applyPlayerAction,
 } from "./engine/poker.js";
 import { clearSave, loadSave, saveGame } from "./engine/save.js";
@@ -36,7 +37,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: ["Patch v0.1.5 · clean room UI."],
+      log: ["Patch v0.2 · real hand flow."],
     };
 
     if (!saved) return base;
@@ -107,16 +108,25 @@ export class PokerRoomStoryApp {
       return;
     }
 
-    const tableState = startNewHand({
+    const initialTableState = startNewHand({
       content: this.content,
       table,
       club: context.club,
       player: this.state.player,
     });
 
-    const timeline = buildStartHandTimeline(tableState, table);
+    const auto = advanceUntilPlayerOrEnd({ tableState: initialTableState, table });
+    const timeline = [...buildStartHandTimeline(initialTableState, table), ...auto.timeline];
     this.setState({ currentScreen: "table" }, { skipSave: true });
-    this.playTimeline(tableState, timeline);
+
+    if (auto.result) {
+      this.playTimeline(auto.tableState, timeline, (animatedTableState) => {
+        this.completeHand(auto.tableState, auto.result, animatedTableState);
+      });
+      return;
+    }
+
+    this.playTimeline(auto.tableState, timeline);
   }
 
   playAction(action) {
@@ -134,33 +144,38 @@ export class PokerRoomStoryApp {
     }
 
     this.playTimeline(tableState, timeline, (animatedTableState) => {
-      const unlockConditions = getUnlockConditionsFromHand(tableState, result);
-      const unlockResult = applyUnlocks({
-        content: this.content,
-        career: this.state.career,
-        unlockConditions,
-      });
+      this.completeHand(tableState, result, animatedTableState);
+    });
+  }
 
-      const playerAfterHand = applyHandResult(this.state.player, {
-        ...result,
-        xp: result.xp + unlockResult.xpReward,
-      });
 
-      const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, unlockResult.career, this.content);
-      const log = [
-        ...this.state.log,
-        ...tableState.actionLog.slice(-4),
-        ...result.logs,
-        ...unlockResult.messages,
-        `Банкролл: ${formatDelta(result.bankrollDelta)} · XP +${result.xp + unlockResult.xpReward}`,
-      ].slice(-100);
+  completeHand(tableState, result, animatedTableState) {
+    const unlockConditions = getUnlockConditionsFromHand(tableState, result);
+    const unlockResult = applyUnlocks({
+      content: this.content,
+      career: this.state.career,
+      unlockConditions,
+    });
 
-      this.setState({
-        player: playerAfterHand,
-        career: careerAfterUnlocks,
-        tableState: animatedTableState,
-        log,
-      });
+    const playerAfterHand = applyHandResult(this.state.player, {
+      ...result,
+      xp: result.xp + unlockResult.xpReward,
+    });
+
+    const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, unlockResult.career, this.content);
+    const log = [
+      ...this.state.log,
+      ...tableState.actionLog.slice(-5),
+      ...result.logs,
+      ...unlockResult.messages,
+      `Банкролл: ${formatDelta(result.bankrollDelta)} · XP +${result.xp + unlockResult.xpReward}`,
+    ].slice(-100);
+
+    this.setState({
+      player: playerAfterHand,
+      career: careerAfterUnlocks,
+      tableState: animatedTableState,
+      log,
     });
   }
 
@@ -313,7 +328,7 @@ function formatDelta(value) {
 function eventDuration(event) {
   if (!event) return 650;
   if (["flop", "turn", "river", "showdown"].includes(event.action)) return 1050;
-  if (event.action === "winner") return 1500;
+  if (event.action === "winner") return 1700;
   if (event.action === "shuffle" || event.action === "deal") return 900;
-  return 760;
+  return 700;
 }

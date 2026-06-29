@@ -406,12 +406,17 @@ function autoAdvance(initialState, table, forcedActorId = null) {
 function decideNpcForState(state, seat, table) {
   const toCall = getToCall(state, seat);
   const raw = decideNpcAction({
-    npc: seat.npc,
+    npc: { ...seat.npc, position: seat.position },
     holeCards: seat.holeCards,
     communityCards: state.communityCards,
     phase: state.phase,
     pressure: toCall,
     pot: state.pot,
+    currentBet: state.currentBet,
+    bigBlind: table.bigBlind,
+    position: seat.position,
+    stack: seat.stack,
+    streetRaises: state.streetRaises,
   });
 
   if (toCall > 0) {

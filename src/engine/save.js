@@ -1,4 +1,5 @@
 import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js";
+import { hydrateNpc } from "./npc.js";
 
 const CURRENT_SAVE_KEY = "prs.save.current";
 const BACKUP_SAVE_KEY = "prs.save.backup";
@@ -282,9 +283,10 @@ function hydrateTableState(tableState, content) {
   const hydrateSeat = (seat) => {
     if (!seat) return null;
     const npcId = seat.npcId ?? seat.npc?.id ?? null;
+    const rawNpc = npcId ? content?.byId?.npcs?.[npcId] ?? seat.npc ?? null : null;
     return {
       ...seat,
-      npc: npcId ? content?.byId?.npcs?.[npcId] ?? seat.npc ?? null : null,
+      npc: rawNpc ? hydrateNpc(content, rawNpc) : null,
     };
   };
 

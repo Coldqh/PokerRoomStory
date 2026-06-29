@@ -1,24 +1,22 @@
-# Poker Room Story v0.2.1
+# Poker Room Story v0.3.0
 
 Static mobile-first poker room career prototype.
 
-## Patch v0.2.1
+## Patch v0.3.0
 
-Stability / save / offline patch.
+NPC Poker Brain patch.
 
 ### Added
 
-- visible app version in the top HUD;
-- system panel in the club screen;
-- versioned save envelope: schema, app version, content version, timestamps;
-- automatic migration from old flat saves;
-- backup save before every overwrite;
-- save export / import as JSON;
-- force update button;
-- update notification when a new service worker is ready;
-- PWA manifest;
-- service worker cache for offline use;
-- active hand can survive page reload better because deck and table state are now saved.
+- more realistic NPC decisions by archetype;
+- preflop behavior now uses hand strength, position, VPIP/PFR and pressure;
+- postflop behavior now reacts to made hand strength, pot pressure, simple draws and board danger;
+- safer restored active hands: NPC seats are hydrated with archetype stats after page reload;
+- no new giant systems, no fantasy archetypes, no heavy content expansion.
+
+### Current direction
+
+Clean premium poker-room UI, compact text, real hand flow, realistic low-limit NPC behavior.
 
 ## Run locally
 
@@ -55,7 +53,7 @@ Settings → Pages → Deploy from branch → main → /root
 
 ## Update notes
 
-After pushing a new version, GitHub Pages may keep old cached files for a short time. Use the in-game button:
+After pushing a new version, open the game and use:
 
 ```text
 Система → Принудительно обновить

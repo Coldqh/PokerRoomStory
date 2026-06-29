@@ -84,8 +84,8 @@ export function startNewHand({ content, table, club, player }) {
     lastPlayerAction: null,
     lastResult: null,
     actionLog: [
-      `Новая раздача. Блайнд $${table.bigBlind}. За столом ${npcs.length + 1} игроков.`,
-      `Ты внес $${playerAnte}. Банк: $${pot}.`,
+      `Новая раздача · ${npcs.length + 1} игроков.`,
+      `Блайнд $${playerAnte}. Банк $${pot}.`,
     ],
     awaitingPlayer: true,
     buyInWarning: player.bankroll < table.bigBlind * 20,
@@ -97,9 +97,9 @@ export function startNewHand({ content, table, club, player }) {
 
 export function buildStartHandTimeline(tableState, table) {
   return [
-    event("dealer", "Дилер", "shuffle", `Новая раздача · $${table.smallBlind}/$${table.bigBlind}`, { pot: 0, revealCount: 0 }),
-    event("dealer", "Дилер", "blind", `Блайнды внесены. Банк $${tableState.pot}.`, { pot: tableState.pot, revealCount: 0 }),
-    event("player", "Ты", "deal", `Твои карты розданы. Решение на префлопе.`, { pot: tableState.pot, revealCount: 0 }),
+    event("dealer", "Dealer", "shuffle", `Новая раздача · $${table.smallBlind}/$${table.bigBlind}`, { pot: 0, revealCount: 0 }),
+    event("dealer", "Dealer", "blind", `Блайнды · банк $${tableState.pot}`, { pot: tableState.pot, revealCount: 0 }),
+    event("player", "Ты", "deal", `Карты розданы`, { pot: tableState.pot, revealCount: 0 }),
   ];
 }
 
@@ -114,15 +114,15 @@ export function applyPlayerAction({ tableState, player, action, table }) {
       awaitingPlayer: false,
       lastPlayerAction: action,
       lastResult: result,
-      actionLog: [...tableState.actionLog, "Ты сбросил руку. Банк ушёл столу."],
+      actionLog: [...tableState.actionLog, "Fold."],
     };
     return {
       tableState: nextState,
       player,
       result,
       timeline: [
-        event("player", "Ты", "fold", "Ты сбрасываешь. Деньги остаются в банке.", { pot: tableState.pot }),
-        event("dealer", "Дилер", "winner", `Раздача завершена. Потеря: $${tableState.playerInvested}.`, {
+        event("player", "Ты", "fold", "Fold", { pot: tableState.pot }),
+        event("dealer", "Dealer", "winner", `Потеря $${tableState.playerInvested}`, {
           pot: tableState.pot,
           winnerId: "table",
           revealCount: tableState.communityCards.length,
@@ -140,16 +140,16 @@ export function applyPlayerAction({ tableState, player, action, table }) {
   if (action === "raise") {
     pot += pressure;
     playerInvested += pressure;
-    actionLog.push(`Ты рейзишь на $${pressure}.`);
-    timeline.push(event("player", "Ты", "raise", `Ты рейзишь · +$${pressure}`, { amount: pressure, pot }));
+    actionLog.push(`Raise $${pressure}.`);
+    timeline.push(event("player", "Ты", "raise", `Raise $${pressure}`, { amount: pressure, pot }));
   } else if (action === "call") {
     pot += table.bigBlind;
     playerInvested += table.bigBlind;
-    actionLog.push(`Ты коллируешь $${table.bigBlind}.`);
-    timeline.push(event("player", "Ты", "call", `Ты коллируешь · $${table.bigBlind}`, { amount: table.bigBlind, pot }));
+    actionLog.push(`Call $${table.bigBlind}.`);
+    timeline.push(event("player", "Ты", "call", `Call $${table.bigBlind}`, { amount: table.bigBlind, pot }));
   } else {
-    actionLog.push("Ты чекаешь.");
-    timeline.push(event("player", "Ты", "check", "Ты чекаешь.", { pot }));
+    actionLog.push("Check.");
+    timeline.push(event("player", "Ты", "check", "Check.", { pot }));
   }
 
   const npcRound = resolveNpcRound({
@@ -206,21 +206,21 @@ export function getPhaseLabel(phase) {
 }
 
 export function getHandHint(tableState) {
-  if (!tableState || tableState.phase === "idle") return "Сядь за стол и начни раздачу.";
-  if (!tableState.playerHoleCards?.length) return "Карты ещё не розданы.";
+  if (!tableState || tableState.phase === "idle") return "Начни раздачу.";
+  if (!tableState.playerHoleCards?.length) return "Карты не розданы.";
 
   if (tableState.phase === "preflop") {
     const strength = estimatePreflopStrength(tableState.playerHoleCards);
-    if (strength > 0.74) return "Сильная стартовая рука. Можно играть активнее.";
-    if (strength > 0.48) return "Рука рабочая. Смотри на давление, банк и соперников.";
-    return "Рука слабая. Пас часто лучше дорогого любопытства.";
+    if (strength > 0.74) return "Сильный старт.";
+    if (strength > 0.48) return "Играбельно. Смотри банк.";
+    return "Слабый старт.";
   }
 
   const info = getCurrentHandInfo(tableState);
-  if (!info.ready) return "Ждём флоп. Пока решение только по стартовой руке.";
-  if (info.best.category >= 4) return `${info.best.summary} Это сильная готовая рука.`;
-  if (info.best.category >= 1) return `${info.best.summary} Не переоценивай против крупного давления.`;
-  return `${info.best.summary} Нужна осторожность.`;
+  if (!info.ready) return "Ждём флоп.";
+  if (info.best.category >= 4) return `${info.best.summary}`;
+  if (info.best.category >= 1) return `${info.best.summary}`;
+  return `${info.best.summary}`;
 }
 
 export function getCurrentHandInfo(tableState) {
@@ -281,29 +281,29 @@ function resolveNpcRound({ tableState, phase, pressure }) {
     });
 
     if (decision.action === "fold") {
-      logs.push(`${seat.npc.name} сбрасывает.`);
-      events.push(event(seat.npc.id, seat.npc.name, "fold", `${seat.npc.name} сбрасывает.`, { pot }));
+      logs.push(`${seat.npc.name}: fold.`);
+      events.push(event(seat.npc.id, seat.npc.name, "fold", "Fold", { pot }));
       return { ...seat, folded: true, lastAction: "fold", lastAmount: 0 };
     }
 
     if (decision.action === "raise") {
       const amount = pressure > 0 ? pressure * 2 : 6;
       pot += amount;
-      logs.push(`${seat.npc.name} рейзит. +$${amount} в банк.`);
-      events.push(event(seat.npc.id, seat.npc.name, "raise", `${seat.npc.name} рейзит · +$${amount}`, { amount, pot }));
+      logs.push(`${seat.npc.name}: raise $${amount}.`);
+      events.push(event(seat.npc.id, seat.npc.name, "raise", `Raise $${amount}`, { amount, pot }));
       return { ...seat, invested: seat.invested + amount, stack: Math.max(0, seat.stack - amount), lastAction: "raise", lastAmount: amount };
     }
 
     if (decision.action === "call") {
       const amount = pressure || 2;
       pot += amount;
-      logs.push(`${seat.npc.name} коллирует $${amount}.`);
-      events.push(event(seat.npc.id, seat.npc.name, "call", `${seat.npc.name} коллирует · $${amount}`, { amount, pot }));
+      logs.push(`${seat.npc.name}: call $${amount}.`);
+      events.push(event(seat.npc.id, seat.npc.name, "call", `Call $${amount}`, { amount, pot }));
       return { ...seat, invested: seat.invested + amount, stack: Math.max(0, seat.stack - amount), lastAction: "call", lastAmount: amount };
     }
 
-    logs.push(`${seat.npc.name} чекает.`);
-    events.push(event(seat.npc.id, seat.npc.name, "check", `${seat.npc.name} чекает.`, { pot }));
+    logs.push(`${seat.npc.name}: check.`);
+    events.push(event(seat.npc.id, seat.npc.name, "check", "Check", { pot }));
     return { ...seat, lastAction: "check", lastAmount: 0 };
   });
 
@@ -320,22 +320,22 @@ function advancePhase(tableState) {
 
   if (nextPhase === "flop") {
     communityCards.push(...draw(deck, 3));
-    actionLog.push("Флоп открыт.");
-    stageEvent = event("dealer", "Дилер", "flop", `Флоп: ${describeCards(communityCards.slice(0, 3))}`, { revealCount: 3, pot: tableState.pot });
+    actionLog.push("Flop.");
+    stageEvent = event("dealer", "Dealer", "flop", `Флоп: ${describeCards(communityCards.slice(0, 3))}`, { revealCount: 3, pot: tableState.pot });
   }
 
   if (nextPhase === "turn") {
     const card = draw(deck, 1)[0];
     communityCards.push(card);
-    actionLog.push("Тёрн открыт.");
-    stageEvent = event("dealer", "Дилер", "turn", `Тёрн: ${describeCards([card])}`, { revealCount: 4, pot: tableState.pot });
+    actionLog.push("Turn.");
+    stageEvent = event("dealer", "Dealer", "turn", `Тёрн: ${describeCards([card])}`, { revealCount: 4, pot: tableState.pot });
   }
 
   if (nextPhase === "river") {
     const card = draw(deck, 1)[0];
     communityCards.push(card);
-    actionLog.push("Ривер открыт.");
-    stageEvent = event("dealer", "Дилер", "river", `Ривер: ${describeCards([card])}`, { revealCount: 5, pot: tableState.pot });
+    actionLog.push("River.");
+    stageEvent = event("dealer", "Dealer", "river", `Ривер: ${describeCards([card])}`, { revealCount: 5, pot: tableState.pot });
   }
 
   return {
@@ -377,7 +377,7 @@ function resolveShowdown(tableState, table) {
       xp: 20 + table.difficulty * 5,
       playerHand,
       showdownHands,
-      logs: [`Шоудаун: ${playerHand.categoryName}. Ты забираешь банк $${tableState.pot}.`],
+      logs: [`Ты выигрываешь $${tableState.pot} · ${playerHand.categoryName}.`],
     };
   }
 
@@ -394,8 +394,8 @@ function resolveShowdown(tableState, table) {
     winningHand: winner.hand,
     showdownHands,
     logs: [
-      `Шоудаун: у тебя ${playerHand.categoryName}.`,
-      `${winner.seat.npc.name} забирает банк с рукой: ${winner.hand.categoryName}.`,
+      `Твоя рука: ${playerHand.categoryName}.`,
+      `${winner.seat.npc.name} выигрывает · ${winner.hand.categoryName}.`,
     ],
   };
 }
@@ -407,7 +407,7 @@ function buildShowdownTimeline(tableState, result) {
     .map((seat) => event(seat.npc.id, seat.npc.name, "show", `${seat.npc.name} вскрывает карты.`, { pot: tableState.pot, revealCount: 5 }));
 
   return [
-    event("dealer", "Дилер", "showdown", "Шоудаун. Карты открыты.", { pot: tableState.pot, revealCount: 5 }),
+    event("dealer", "Dealer", "showdown", "Showdown", { pot: tableState.pot, revealCount: 5 }),
     ...revealEvents,
     event(result.winnerId ?? result.winner, result.winnerName ?? "Победитель", "winner", `${result.winnerName ?? "Победитель"} забирает $${tableState.pot} · ${result.winningHand?.categoryName ?? "банк"}`, {
       pot: tableState.pot,
@@ -428,7 +428,7 @@ function buildFoldResult(tableState, table) {
     reputationGain: 0,
     xp: 4 + table.difficulty,
     playerHand: null,
-    logs: ["Пас тоже решение. Главное — не платить из злости."],
+    logs: ["Fold."],
   };
 }
 

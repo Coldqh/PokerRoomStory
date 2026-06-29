@@ -36,7 +36,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: ["Patch v0.1.4 загружен. Добавлены анимации действий, улиц и победителя."],
+      log: ["Patch v0.1.5 · clean room UI."],
     };
 
     if (!saved) return base;
@@ -90,7 +90,7 @@ export class PokerRoomStoryApp {
     }
 
     if (action === "reset-save") {
-      const confirmed = confirm("Сбросить прогресс Poker Room Story v0.1?");
+      const confirmed = confirm("Сбросить прогресс?");
       if (!confirmed) return;
       clearSave();
       this.state = this.createInitialState();
@@ -249,7 +249,7 @@ export class PokerRoomStoryApp {
         <div class="brand-card">
           <div class="crest">♠</div>
           <div class="brand">
-            <p>Premium Poker Career</p>
+            <p>Poker career</p>
             <h1>Poker Room Story</h1>
           </div>
         </div>

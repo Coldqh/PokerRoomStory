@@ -1,7 +1,7 @@
 import { canEnterTable, getClubContext } from "../engine/world.js";
 import { getPhaseLabel, getAvailableActions, getHandHint, getCurrentHandInfo } from "../engine/poker.js";
 import { getXpProgress } from "../engine/career.js";
-import { badge, badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -28,55 +28,36 @@ function renderClubScreen(state) {
   const activeTable = state.content.byId.tables[state.activeTableId];
 
   return `
-    <section class="dashboard-grid">
-      <article class="club-hero luxury-panel">
-        <div class="screen-title-row">
-          <div>
-            <span class="eyebrow">${escapeHtml(country.name)} · ${escapeHtml(city.name)}</span>
-            <h2>${escapeHtml(club.name)}</h2>
-          </div>
-          <div class="club-mark">♠</div>
-        </div>
+    <section class="home-grid">
+      <article class="hero-card panel-soft">
+        <div class="kicker">${escapeHtml(country.name)} · ${escapeHtml(city.name)}</div>
+        <h2>${escapeHtml(club.name)}</h2>
         <p>${escapeHtml(club.description)}</p>
-        <div class="hero-actions">
-          <button class="primary red-primary" data-action="screen" data-id="table">Перейти к столу</button>
-          <button data-action="start-hand">Быстрая раздача</button>
+        <div class="hero-buttons">
+          <button class="primary" data-action="screen" data-id="table">Открыть стол</button>
+          <button data-action="start-hand">Новая раздача</button>
         </div>
       </article>
 
-      <aside class="luxury-panel account-card">
-        <span class="eyebrow">Room Status</span>
-        <div class="metric-grid two-cols">
-          ${metric("Лимиты", `$${club.minBuyIn}–$${club.maxBuyIn}`)}
-          ${metric("NPC", npcs.length)}
-          ${metric("Стол", activeTable?.name ?? "—")}
-          ${metric("Игры", club.availableGames.length)}
-        </div>
-        ${badges([club.type, club.tier, "content pack"], "gold")}
+      <aside class="panel-soft room-summary">
+        <div class="summary-row"><span>Активный стол</span><strong>${escapeHtml(activeTable?.name ?? "—")}</strong></div>
+        <div class="summary-row"><span>Лимиты</span><strong>$${club.minBuyIn}–$${club.maxBuyIn}</strong></div>
+        <div class="summary-row"><span>Игроки</span><strong>${npcs.length}</strong></div>
+        <div class="summary-row"><span>Тип</span><strong>${escapeHtml(club.type)}</strong></div>
       </aside>
     </section>
 
-    <section class="section-block">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">Recommended tables</span>
-          <h3>Столы клуба</h3>
-        </div>
-      </div>
-      <div class="table-list premium-list">
+    <section class="content-section">
+      <div class="section-title"><h3>Столы</h3><span>${tables.length}</span></div>
+      <div class="table-list clean-list">
         ${tables.map((table) => renderTableListItem(state, table)).join("")}
       </div>
     </section>
 
-    <section class="section-block">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow">Club feed</span>
-          <h3>Журнал</h3>
-        </div>
-      </div>
-      <div class="log-feed">
-        ${state.log.length ? state.log.slice(-6).reverse().map((line) => `<div class="feed-item">${escapeHtml(line)}</div>`).join("") : emptyState("Журнал пуст.")}
+    <section class="content-section compact-feed">
+      <div class="section-title"><h3>Журнал</h3><span>последнее</span></div>
+      <div class="feed-list">
+        ${state.log.length ? state.log.slice(-4).reverse().map((line) => `<div class="feed-line">${escapeHtml(line)}</div>`).join("") : emptyState("Пока пусто.")}
       </div>
     </section>
   `;
@@ -86,15 +67,14 @@ function renderTableListItem(state, table) {
   const access = canEnterTable(state.player, table);
   const active = state.activeTableId === table.id;
   return `
-    <article class="table-row ${active ? "selected" : ""}">
-      <div class="table-icon">♣</div>
-      <div>
-        <div class="row-title">${escapeHtml(table.name)}</div>
-        <p>${escapeHtml(table.gameType)} · $${table.smallBlind}/$${table.bigBlind} · ${escapeHtml(table.limitType)}</p>
-        ${badges([table.tableMood, `${table.seats} max`, `D${table.difficulty}`], active ? "red" : "")}
+    <article class="table-item ${active ? "selected" : ""}">
+      <div class="table-symbol">♠</div>
+      <div class="table-copy">
+        <strong>${escapeHtml(table.name)}</strong>
+        <span>$${table.smallBlind}/$${table.bigBlind} · ${escapeHtml(table.limitType)} · D${table.difficulty}</span>
       </div>
-      <button class="${active ? "primary red-primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${access.ok ? "" : "disabled"}>
-        ${active ? "Открыт" : access.ok ? "Выбрать" : access.reason}
+      <button class="small-button ${active ? "primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${access.ok ? "" : "disabled"}>
+        ${active ? "Выбран" : access.ok ? "Сесть" : access.reason}
       </button>
     </article>
   `;
@@ -115,70 +95,67 @@ function renderTableScreen(state) {
   const revealNpcCards = hand?.phase === "finished" || currentEvent?.action === "showdown" || currentEvent?.action === "winner";
 
   return `
-    <section class="poker-world-screen">
-      <div class="poker-table-card luxury-panel">
-        <div class="table-meta">
-          <button class="ghost-button" data-action="screen" data-id="club">×</button>
-          <div>
-            <span class="eyebrow">${escapeHtml(context.club.name)}</span>
-            <h2>${escapeHtml(table.name)}</h2>
-            <p>$${table.smallBlind}/$${table.bigBlind} NLH · Hand #${hand?.handNumber ? String(hand.handNumber).slice(-6) : "—"}</p>
-          </div>
-          <div class="phase-chip">${escapeHtml(getPhaseLabel(hand?.phase ?? "idle"))}</div>
+    <section class="table-page">
+      <div class="table-header panel-soft">
+        <button class="icon-button" data-action="screen" data-id="club">←</button>
+        <div>
+          <strong>${escapeHtml(table.name)}</strong>
+          <span>${escapeHtml(context.club.name)} · $${table.smallBlind}/$${table.bigBlind}</span>
         </div>
+        <div class="phase-pill">${escapeHtml(getPhaseLabel(hand?.phase ?? "idle"))}</div>
+      </div>
 
-        <div class="cinematic-table ${animation.isPlaying ? "animating" : ""} ${animation.showWinner ? "winner-mode" : ""}">
+      <div class="game-area">
+        <main class="felt-stage ${animation.isPlaying ? "is-playing" : ""} ${animation.showWinner ? "has-winner" : ""}">
           ${renderNpcSeats(hand, currentEvent, revealNpcCards)}
 
-          <div class="red-orbit"></div>
-          <div class="pot-center ${currentEvent?.action === "winner" ? "pot-won" : ""}">
-            <small>POT</small>
+          <div class="table-ring"></div>
+
+          <div class="pot-chip ${currentEvent?.action === "winner" ? "won" : ""}">
+            <span>Банк</span>
             <strong>$${hand?.pot ?? 0}</strong>
           </div>
 
-          <div class="board-stack">
-            <span class="zone-label">Board</span>
+          <div class="board-zone">
             ${boardCards(hand?.communityCards ?? [], revealCount, highlightedIds)}
           </div>
 
           ${currentEvent ? renderActionToast(currentEvent, animation) : renderIdleToast(hand)}
 
-          <div class="hero-seat ${currentEvent?.actorId === "player" ? "acting" : ""} ${hand?.lastResult?.winnerId === "player" || hand?.lastResult?.winner === "player" ? "winner-seat" : ""}">
+          <div class="hero-player ${currentEvent?.actorId === "player" ? "acting" : ""} ${isPlayerWinner(hand) ? "winner" : ""}">
             <div class="hero-cards">${playingCards(hand?.playerHoleCards ?? [], { highlightedIds, size: "large" })}</div>
-            <div class="hero-nameplate">
-              <strong>You</strong>
-              <span>$${state.player.bankroll} · invested $${hand?.playerInvested ?? 0}</span>
+            <div class="hero-info">
+              <strong>Ты</strong>
+              <span>$${state.player.bankroll}</span>
             </div>
           </div>
-        </div>
+        </main>
 
-        ${renderActionDock(actions, hand)}
+        <aside class="table-info panel-soft">
+          ${renderCompactHandInfo(handInfo, hand, currentEvent)}
+        </aside>
       </div>
 
-      <aside class="hand-sidebar luxury-panel">
-        ${renderHandInspector(handInfo, hand, currentEvent)}
-        ${renderTimeline(hand)}
-      </aside>
+      ${renderActionDock(actions, hand)}
     </section>
   `;
 }
 
 function renderNpcSeats(hand, currentEvent, revealCards) {
   const seats = hand?.npcSeats ?? [];
-  if (!seats.length) return `<div class="empty-table-note">Начни раздачу, чтобы собрать стол.</div>`;
+  if (!seats.length) return `<div class="empty-seat-note">Нажми «Новая раздача».</div>`;
   return seats
     .map((seat, index) => {
-      const seatClass = `seat-pos-${index + 1}`;
       const isActing = currentEvent?.actorId === seat.npc.id;
       const isWinner = hand?.lastResult?.winnerId === seat.npc.id || hand?.lastResult?.winner === seat.npc.id;
       return `
-        <div class="player-seat ${seatClass} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner-seat" : ""}">
-          <div class="avatar-ring"><span>${escapeHtml(initials(seat.npc.name))}</span></div>
-          <div class="seat-info">
-            <strong>${escapeHtml(seat.npc.name)}</strong>
+        <div class="seat seat-${index + 1} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner" : ""}">
+          <div class="seat-avatar">${escapeHtml(initials(seat.npc.name))}</div>
+          <div class="seat-main">
+            <strong>${escapeHtml(shortName(seat.npc.name))}</strong>
             <span>$${seat.stack ?? seat.npc.bankroll}</span>
           </div>
-          <div class="seat-action">${escapeHtml(actionLabel(seat.lastAction))}${seat.lastAmount ? ` $${seat.lastAmount}` : ""}</div>
+          <div class="seat-status">${escapeHtml(actionLabel(seat.lastAction))}${seat.lastAmount ? ` $${seat.lastAmount}` : ""}</div>
           <div class="seat-cards">${playingCards(seat.holeCards, { hidden: !revealCards, size: "small" })}</div>
         </div>
       `;
@@ -196,26 +173,26 @@ function boardCards(cards, revealCount, highlightedIds) {
       slots.push(`<div class="card-slot"></div>`);
     }
   }
-  return `<div class="board-cards cinematic-cards">${slots.join("")}</div>`;
+  return `<div class="board-cards">${slots.join("")}</div>`;
 }
 
 function renderActionToast(event, animation) {
   return `
-    <div class="action-toast action-${escapeHtml(event.action)}" key="${escapeHtml(event.id)}">
-      <small>${escapeHtml(event.actorName)}</small>
+    <div class="action-bubble action-${escapeHtml(event.action)}">
+      <span>${escapeHtml(event.actorName)}</span>
       <strong>${escapeHtml(actionTitle(event.action))}</strong>
-      <p>${escapeHtml(event.message)}</p>
-      <div class="event-progress"><span style="width:${Math.round(((animation.index + 1) / Math.max(animation.total, 1)) * 100)}%"></span></div>
+      <small>${escapeHtml(cleanEventText(event))}</small>
+      <i style="width:${Math.round(((animation.index + 1) / Math.max(animation.total, 1)) * 100)}%"></i>
     </div>
   `;
 }
 
 function renderIdleToast(hand) {
   if (!hand?.playerHoleCards?.length) {
-    return `<div class="table-start-card"><strong>Ready to play?</strong><p>Нажми «Новая раздача». Стол оживёт ход за ходом.</p></div>`;
+    return `<div class="action-bubble idle"><strong>Стол свободен</strong><small>Начни раздачу.</small></div>`;
   }
   if (hand.awaitingPlayer) {
-    return `<div class="table-start-card waiting"><strong>Твой ход</strong><p>Выбери действие. После этого NPC будут ходить по очереди.</p></div>`;
+    return `<div class="action-bubble waiting"><strong>Твой ход</strong><small>${escapeHtml(getHandHint(hand))}</small></div>`;
   }
   return "";
 }
@@ -223,85 +200,66 @@ function renderIdleToast(hand) {
 function renderActionDock(actions, hand) {
   const animating = hand?.animation?.isPlaying;
   return `
-    <div class="table-controls">
-      <button class="primary red-primary new-hand-button" data-action="start-hand" ${hand?.awaitingPlayer || animating ? "disabled" : ""}>Новая раздача</button>
+    <div class="action-dock panel-soft">
+      <button data-action="start-hand" ${hand?.awaitingPlayer || animating ? "disabled" : ""}>Новая</button>
       <button data-action="player-action" data-id="fold" ${actions.includes("fold") ? "" : "disabled"}>Fold</button>
       <button data-action="player-action" data-id="check" ${actions.includes("check") ? "" : "disabled"}>Check</button>
       <button data-action="player-action" data-id="call" ${actions.includes("call") ? "" : "disabled"}>Call</button>
-      <button class="raise-button" data-action="player-action" data-id="raise" ${actions.includes("raise") ? "" : "disabled"}>Raise</button>
+      <button class="primary" data-action="player-action" data-id="raise" ${actions.includes("raise") ? "" : "disabled"}>Raise</button>
     </div>
   `;
 }
 
-function renderHandInspector(handInfo, hand, currentEvent) {
+function renderCompactHandInfo(handInfo, hand, currentEvent) {
   const result = hand?.lastResult;
+  const rows = hand?.animation?.recentEvents ?? [];
   return `
-    <article class="inspector-card">
-      <span class="eyebrow">Best Hand</span>
-      <h3>${escapeHtml(result?.winningHand?.categoryName ?? handInfo.title)}</h3>
+    <div class="info-block">
+      <span>Рука</span>
+      <strong>${escapeHtml(result?.winningHand?.categoryName ?? handInfo.title)}</strong>
       <p>${escapeHtml(result?.winningHand?.summary ?? handInfo.detail)}</p>
-      ${result ? `<div class="winner-card"><small>Winner</small><strong>${escapeHtml(result.winnerName ?? (result.winner === "player" ? "Ты" : "Стол"))}</strong><span>Pot $${result.pot}</span></div>` : ""}
-      <div class="divider"></div>
-      <strong>Подсказка</strong>
-      <p>${escapeHtml(currentEvent?.message ?? getHandHint(hand))}</p>
-    </article>
-  `;
-}
-
-function renderTimeline(hand) {
-  const events = hand?.animation?.recentEvents ?? [];
-  const logFallback = hand?.actionLog?.slice(-4).map((message, index) => ({ id: `log-${index}`, message, actorName: "Log", action: "log" })) ?? [];
-  const rows = events.length ? events : logFallback;
-  return `
-    <article class="inspector-card timeline-card">
-      <span class="eyebrow">Action Feed</span>
-      <h3>Ход раздачи</h3>
-      <div class="mini-timeline">
-        ${rows.length ? rows.slice(-5).reverse().map((event) => `
-          <div class="timeline-row">
-            <span>${escapeHtml(actionTitle(event.action))}</span>
-            <p>${escapeHtml(event.message)}</p>
-          </div>
-        `).join("") : emptyState("Пока нет действий.")}
+    </div>
+    ${result ? `
+      <div class="info-block winner-block">
+        <span>Победитель</span>
+        <strong>${escapeHtml(result.winnerName ?? "—")}</strong>
+        <p>$${result.pot}</p>
       </div>
-    </article>
+    ` : ""}
+    <div class="info-block">
+      <span>Подсказка</span>
+      <p>${escapeHtml(currentEvent ? cleanEventText(currentEvent) : getHandHint(hand))}</p>
+    </div>
+    <div class="mini-feed">
+      ${rows.length ? rows.slice(-4).reverse().map((event) => `<div><b>${escapeHtml(actionTitle(event.action))}</b><span>${escapeHtml(event.actorName)}</span></div>`).join("") : ""}
+    </div>
   `;
 }
 
 function renderCareerScreen(state) {
   const player = state.player;
   return `
-    <section class="dashboard-grid">
-      <article class="club-hero luxury-panel">
-        <span class="eyebrow">Career profile</span>
-        <h2>Карьера</h2>
-        <p>Ранг: <strong>${escapeHtml(player.rank)}</strong>. Рост идёт через банкролл, знания, репутацию и открытые коллекции.</p>
-        ${progressBar(getXpProgress(player))}
-      </article>
-      <aside class="luxury-panel account-card">
-        <h3>Статы</h3>
-        <div class="metric-grid two-cols">
-          ${metric("Bankroll", `$${player.bankroll}`)}
-          ${metric("Rep", player.reputation)}
-          ${metric("Poker", `Lv.${player.pokerLevel}`)}
-          ${metric("Knowledge", `Lv.${player.knowledgeLevel}`)}
-        </div>
-      </aside>
+    <section class="page-card panel-soft">
+      <div class="kicker">Профиль</div>
+      <h2>Карьера</h2>
+      <div class="rank-line"><strong>${escapeHtml(player.rank)}</strong>${progressBar(getXpProgress(player))}</div>
     </section>
 
-    <section class="section-block">
-      <div class="stat-cards">
-        ${metric("Рук сыграно", player.handsPlayed)}
-        ${metric("Побед", player.handsWon)}
-        ${metric("Крупнейший банк", `$${player.biggestPotWon}`)}
-        ${metric("Крупнейший проигрыш", `$${player.biggestPotLost}`)}
-      </div>
+    <section class="stats-grid">
+      ${metric("Bankroll", `$${player.bankroll}`)}
+      ${metric("Rep", player.reputation)}
+      ${metric("Poker", `Lv.${player.pokerLevel}`)}
+      ${metric("Knowledge", `Lv.${player.knowledgeLevel}`)}
+      ${metric("Рук", player.handsPlayed)}
+      ${metric("Побед", player.handsWon)}
+      ${metric("Best pot", `$${player.biggestPotWon}`)}
+      ${metric("Worst loss", `$${player.biggestPotLost}`)}
     </section>
 
-    <section class="luxury-panel danger-zone">
-      <h3>Сохранение</h3>
-      <p>Прогресс сохраняется в браузере через localStorage.</p>
-      <button class="danger" data-action="reset-save">Сбросить прогресс</button>
+    <section class="page-card panel-soft save-card">
+      <strong>Сохранение</strong>
+      <span>localStorage</span>
+      <button class="danger small-button" data-action="reset-save">Сбросить</button>
     </section>
   `;
 }
@@ -311,14 +269,11 @@ function renderNpcScreen(state) {
   const npcs = context.npcs.map((npc) => ({ ...npc, archetype: state.content.byId.archetypes[npc.archetypeId] }));
 
   return `
-    <section class="luxury-panel page-intro">
-      <span class="eyebrow">NPC database</span>
-      <h2>Игроки клуба</h2>
-      <p>Большая масса игроков — данные. Важными становятся только те, кого поднимает карьера, события или история.</p>
-      ${badges(["T0 фон", "T1 реги", "T2 важные", "T3 ключевые"], "red")}
+    <section class="page-card panel-soft">
+      <div class="kicker">Room players</div>
+      <h2>Игроки</h2>
     </section>
-
-    <section class="npc-grid">
+    <section class="npc-list">
       ${npcs.map(renderNpcItem).join("")}
     </section>
   `;
@@ -326,17 +281,13 @@ function renderNpcScreen(state) {
 
 function renderNpcItem(npc) {
   return `
-    <article class="luxury-panel npc-card">
-      <div class="npc-topline">
-        <h4>${escapeHtml(npc.name)}</h4>
-        <span>${escapeHtml(npc.tier)}</span>
+    <article class="npc-item panel-soft">
+      <div class="seat-avatar">${escapeHtml(initials(npc.name))}</div>
+      <div>
+        <strong>${escapeHtml(npc.name)}</strong>
+        <span>${escapeHtml(npc.archetype?.name ?? npc.archetypeId)} · ${escapeHtml(npc.tier)}</span>
       </div>
-      <p>${escapeHtml(npc.archetype?.name ?? npc.archetypeId)}</p>
-      <div class="metric-grid two-cols">
-        ${metric("Skill", npc.skillLevel)}
-        ${metric("Bankroll", `$${npc.bankroll}`)}
-      </div>
-      <p class="muted small-text">${escapeHtml(npc.knownFor)}</p>
+      <em>$${npc.bankroll}</em>
     </article>
   `;
 }
@@ -344,13 +295,11 @@ function renderNpcItem(npc) {
 function renderGlossaryScreen(state) {
   const unlocked = new Set(state.career.unlockedGlossary);
   return `
-    <section class="luxury-panel page-intro">
-      <span class="eyebrow">Poker language</span>
-      <h2>Словарь клуба</h2>
-      <p>Настоящие термины + локальные названия. Учёба идёт через игру, а не через сухую стену текста.</p>
+    <section class="page-card panel-soft">
+      <div class="kicker">Terms</div>
+      <h2>Словарь</h2>
     </section>
-
-    <section class="collection-grid">
+    <section class="cards-grid">
       ${state.content.glossaryTerms.map((term) => renderGlossaryTerm(term, unlocked.has(term.id))).join("")}
     </section>
   `;
@@ -358,10 +307,10 @@ function renderGlossaryScreen(state) {
 
 function renderGlossaryTerm(term, unlocked) {
   return `
-    <article class="luxury-panel collection-card ${unlocked ? "unlocked" : "locked"}">
-      <h4>${unlocked ? escapeHtml(term.name) : "???"}</h4>
-      <p>${unlocked ? escapeHtml(term.short) : "Откроется через игру."}</p>
-      ${unlocked ? badges([term.category, term.rarity, term.realTerm], "red") : badges([term.category, "locked"])}
+    <article class="simple-card panel-soft ${unlocked ? "" : "locked"}">
+      <strong>${unlocked ? escapeHtml(term.name) : "Закрыто"}</strong>
+      <p>${unlocked ? escapeHtml(term.short) : "Откроется в игре."}</p>
+      ${unlocked ? badges([term.category, term.realTerm], "red") : badges([term.category])}
     </article>
   `;
 }
@@ -369,13 +318,11 @@ function renderGlossaryTerm(term, unlocked) {
 function renderCollectionsScreen(state) {
   const unlocked = new Set(state.career.unlockedCollections);
   return `
-    <section class="luxury-panel page-intro">
-      <span class="eyebrow">Vault</span>
+    <section class="page-card panel-soft">
+      <div class="kicker">Vault</div>
       <h2>Коллекции</h2>
-      <p>Руки, архетипы, термины и редкие ситуации. Потом сюда лягут страны, клубы, турниры и Макао.</p>
     </section>
-
-    <section class="collection-grid">
+    <section class="cards-grid">
       ${state.content.collections.map((item) => renderCollectionItem(item, unlocked.has(item.id))).join("")}
     </section>
   `;
@@ -383,12 +330,16 @@ function renderCollectionsScreen(state) {
 
 function renderCollectionItem(item, unlocked) {
   return `
-    <article class="luxury-panel collection-card ${unlocked ? "unlocked" : "locked"}">
-      <h4>${unlocked ? escapeHtml(item.name) : "Закрыто"}</h4>
-      <p>${unlocked ? escapeHtml(item.flavor) : "Нужно открыть в игре."}</p>
-      ${badges([item.category, item.rarity, unlocked ? "unlocked" : "locked"], unlocked ? "gold" : "")}
+    <article class="simple-card panel-soft ${unlocked ? "" : "locked"}">
+      <strong>${unlocked ? escapeHtml(item.name) : "Закрыто"}</strong>
+      <p>${unlocked ? escapeHtml(item.flavor) : "Откроется в игре."}</p>
+      ${badges([item.category, item.rarity], unlocked ? "gold" : "")}
     </article>
   `;
+}
+
+function isPlayerWinner(hand) {
+  return hand?.lastResult?.winnerId === "player" || hand?.lastResult?.winner === "player";
 }
 
 function initials(name) {
@@ -401,11 +352,17 @@ function initials(name) {
     .toUpperCase();
 }
 
+function shortName(name) {
+  const parts = String(name ?? "").split(/\s+/).filter(Boolean);
+  if (parts.length <= 2) return name;
+  return `${parts[0]} ${parts[1]}`;
+}
+
 function actionLabel(action) {
   const labels = {
     blind: "Blind",
     fold: "Fold",
-    folded: "Folded",
+    folded: "Fold",
     call: "Call",
     check: "Check",
     raise: "Raise",
@@ -431,4 +388,12 @@ function actionTitle(action) {
     log: "Log",
   };
   return labels[action] ?? action;
+}
+
+function cleanEventText(event) {
+  if (!event) return "";
+  if (event.action === "winner") return event.message;
+  if (["flop", "turn", "river"].includes(event.action)) return event.message;
+  if (event.amount) return `$${event.amount}`;
+  return event.message.replace(event.actorName, "").replace(/^[\s·:—-]+/, "").trim();
 }

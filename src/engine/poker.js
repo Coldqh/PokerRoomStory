@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.3";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.3";
+} from "./cards.js?v=0.4.4";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.4";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -146,35 +146,93 @@ export function startNewHand({ content, table, club, player, previousTableState 
 export function buildStartHandTimeline(tableState, table) {
   const smallBlind = findBlindSeat(tableState, "small");
   const bigBlind = findBlindSeat(tableState, "big");
-  const events = [
-    event("dealer", "Dealer", "shuffle", `Новая раздача · $${table.smallBlind}/$${table.bigBlind}`, {
-      pot: 0,
-      revealCount: 0,
-    }),
-  ];
+  const base = makeStartSnapshotBase(tableState);
+  const events = [];
 
-  if (smallBlind) {
-    events.push(
-      event(smallBlind.id, smallBlind.name, "blind", `SB $${table.smallBlind}`, {
-        amount: table.smallBlind,
-        pot: table.smallBlind,
+  events.push(
+    eventWithSnapshot(
+      base,
+      event("dealer", "Dealer", "shuffle", `Новая раздача · $${table.smallBlind}/$${table.bigBlind}`, {
+        pot: 0,
         revealCount: 0,
       }),
+    ),
+  );
+
+  let staged = base;
+
+  if (smallBlind) {
+    staged = applyBlindToSnapshot(staged, smallBlind.id, table.smallBlind);
+    events.push(
+      eventWithSnapshot(
+        staged,
+        event(smallBlind.id, smallBlind.name, "blind", `SB $${table.smallBlind}`, {
+          amount: table.smallBlind,
+          pot: staged.pot,
+          revealCount: 0,
+        }),
+      ),
     );
   }
 
   if (bigBlind) {
+    staged = applyBlindToSnapshot(staged, bigBlind.id, table.bigBlind);
     events.push(
-      event(bigBlind.id, bigBlind.name, "blind", `BB $${table.bigBlind}`, {
-        amount: table.bigBlind,
-        pot: tableState.pot,
-        revealCount: 0,
-      }),
+      eventWithSnapshot(
+        staged,
+        event(bigBlind.id, bigBlind.name, "blind", `BB $${table.bigBlind}`, {
+          amount: table.bigBlind,
+          pot: staged.pot,
+          revealCount: 0,
+        }),
+      ),
     );
   }
 
-  events.push(event("dealer", "Dealer", "deal", "Карты розданы", { pot: tableState.pot, revealCount: 0 }));
-  return events.map((entry) => eventWithSnapshot(tableState, entry));
+  events.push(eventWithSnapshot(tableState, event("dealer", "Dealer", "deal", "Карты розданы", { pot: tableState.pot, revealCount: 0 })));
+  return events;
+}
+
+function makeStartSnapshotBase(tableState) {
+  const resetSeat = (seat) => ({
+    ...seat,
+    invested: 0,
+    currentBet: 0,
+    folded: false,
+    allIn: false,
+    acted: false,
+    lastAction: "ready",
+    lastAmount: 0,
+  });
+
+  return syncTableState({
+    ...tableState,
+    pot: 0,
+    currentBet: 0,
+    currentActorId: null,
+    currentActorName: null,
+    awaitingPlayer: false,
+    heroSeat: tableState.heroSeat ? resetSeat(tableState.heroSeat) : null,
+    npcSeats: (tableState.npcSeats ?? []).map(resetSeat),
+  });
+}
+
+function applyBlindToSnapshot(tableState, seatId, amount) {
+  const seat = getSeatById(tableState, seatId);
+  if (!seat) return tableState;
+  const posted = Math.min(amount, seat.stack);
+  const nextSeat = {
+    ...applyContribution(seat, posted),
+    acted: false,
+    lastAction: seat.isSmallBlind ? "sb" : seat.isBigBlind ? "bb" : "blind",
+    lastAmount: posted,
+  };
+
+  return syncTableState({
+    ...setSeat(tableState, nextSeat),
+    pot: (tableState.pot ?? 0) + posted,
+    currentBet: Math.max(tableState.currentBet ?? 0, nextSeat.currentBet ?? 0),
+  });
 }
 
 export function advanceUntilPlayerOrEnd({ tableState, table }) {
@@ -195,9 +253,9 @@ export function applyPlayerAction({ tableState, player, action, table }) {
 
   const commit = commitSeatAction(state, hero.id, normalizeAction(action, state, hero, table), table, { source: "player" });
   state = commit.tableState;
-  const timeline = [eventWithSnapshot(state, commit.event)];
+  const timeline = commit.event ? [eventWithSnapshot(state, commit.event)] : [];
 
-  state = { ...state, lastPlayerAction: commit.event.action, awaitingPlayer: false };
+  state = { ...state, lastPlayerAction: commit.event?.action ?? state.lastPlayerAction, awaitingPlayer: false };
 
   if (state.heroSeat.folded) {
     const result = buildFoldResult(state, table);
@@ -410,7 +468,7 @@ function autoAdvance(initialState, table, forcedActorId = null) {
     const decision = decideNpcForState(state, actor, table);
     const commit = commitSeatAction(state, actor.id, decision, table, { source: "npc" });
     state = commit.tableState;
-    timeline.push(eventWithSnapshot(state, commit.event));
+    if (commit.event) timeline.push(eventWithSnapshot(state, commit.event));
 
     state = setCurrentActor(state, getNextSeatId(state, actor.seatIndex));
   }
@@ -460,6 +518,13 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
   let state = syncTableState(tableState);
   const seat = getSeatById(state, seatId);
   if (!seat) return { tableState: state, event: event("dealer", "Dealer", "log", "Нет игрока", { pot: state.pot }) };
+
+  if (seat.folded || seat.allIn) {
+    return {
+      tableState: movePastInactiveActor(state, seat),
+      event: null,
+    };
+  }
 
   const toCall = getToCall(state, seat);
   const normalized = normalizeAction(decision.action, state, seat, table);
@@ -941,10 +1006,16 @@ function getAllSeats(tableState) {
 function syncTableState(tableState) {
   const heroSeat = tableState.heroSeat ? { ...tableState.heroSeat } : null;
   const npcSeats = (tableState.npcSeats ?? []).map((seat) => ({ ...seat, npc: seat.npc }));
+  const allSeats = [heroSeat, ...npcSeats].filter(Boolean);
+  const currentActor = allSeats.find((seat) => seat.id === tableState.currentActorId) ?? null;
+  const currentActorCanAct = Boolean(currentActor && !currentActor.folded && !currentActor.allIn);
+
   return {
     ...tableState,
     heroSeat,
     npcSeats,
+    currentActorId: currentActorCanAct ? tableState.currentActorId : null,
+    currentActorName: currentActorCanAct ? tableState.currentActorName : null,
     playerHoleCards: heroSeat?.holeCards ?? tableState.playerHoleCards ?? [],
     activeNpcSeats: npcSeats.filter((seat) => !seat.folded).map((seat) => seat.id),
     playerInvested: heroSeat?.invested ?? tableState.playerInvested ?? 0,

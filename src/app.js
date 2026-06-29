@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.3";
-import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.3";
-import { applyUnlocks } from "./engine/collections.js?v=0.4.3";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.4";
+import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.4";
+import { applyUnlocks } from "./engine/collections.js?v=0.4.4";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.4.3";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.3";
-import { getClubContext } from "./engine/world.js?v=0.4.3";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.3";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.3";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.3";
-import { escapeHtml } from "./ui/components.js?v=0.4.3";
+} from "./engine/poker.js?v=0.4.4";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.4";
+import { getClubContext } from "./engine/world.js?v=0.4.4";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.4";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.4";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.4";
+import { escapeHtml } from "./ui/components.js?v=0.4.4";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -52,7 +52,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · clean timeline fold fix.`],
+      log: [`Patch v${APP_VERSION} · clean hard fold state fix.`],
       settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };
@@ -84,7 +84,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.4.3");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.4.4");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -362,9 +362,14 @@ export class PokerRoomStoryApp {
     if (this.timelineTimer) window.clearTimeout(this.timelineTimer);
 
     if (!events?.length) {
+      const terminalHand = finalTableState.phase === "finished" || finalTableState.phase === "folded";
       const completed = {
         ...finalTableState,
-        animation: createAnimationState({ revealedCommunityCount: finalTableState.communityCards?.length ?? 0 }),
+        animation: createAnimationState({
+          currentEvent: null,
+          revealedCommunityCount: finalTableState.communityCards?.length ?? 0,
+          showWinner: terminalHand,
+        }),
       };
       this.setState({ tableState: completed });
       if (onComplete) onComplete(completed);
@@ -406,16 +411,17 @@ export class PokerRoomStoryApp {
 
       this.timelineTimer = window.setTimeout(() => {
         const lastEvent = stripTimelineSnapshot(events.at(-1));
+        const terminalHand = finalTableState.phase === "finished" || finalTableState.phase === "folded";
         const completedState = {
           ...finalTableState,
           animation: createAnimationState({
             isPlaying: false,
             index: events.length,
             total: events.length,
-            currentEvent: lastEvent,
+            currentEvent: terminalHand ? lastEvent : null,
             recentEvents: recentEvents.slice(-5),
             revealedCommunityCount: finalTableState.communityCards?.length ?? revealedCommunityCount,
-            showWinner: finalTableState.phase === "finished" || finalTableState.phase === "folded",
+            showWinner: terminalHand,
           }),
         };
         this.setState({ tableState: completedState });

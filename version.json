@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.4.3",
+  "appVersion": "0.4.4",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.4.3",
-  "buildId": "prs-0.4.3-20260629-timeline-fold-fix",
+  "contentVersion": "core-v0.4.4",
+  "buildId": "prs-0.4.4-20260629-hard-fold-state-fix",
   "buildDate": "2026-06-29",
   "notes": [
-    "Timeline snapshots added",
-    "Folded players no longer appear folded before their action animation",
-    "Unsafe active hands from older saves are reset safely",
-    "Offline cache bumped to v0.4.3"
+    "Hard guard inside commitSeatAction",
+    "Folded/all-in actors cannot be currentActor",
+    "Active hands from versions below 0.4.4 are reset safely",
+    "Street state and stale action UI cleaned"
   ]
 }

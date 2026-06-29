@@ -1,46 +1,52 @@
-# Poker Room Story v0.3.1
+# Poker Room Story v0.4.0
 
-Static mobile-first web prototype for GitHub Pages.
+## Patch v0.4.0 — Update Safe / Mini Review
 
-## Patch v0.3.1 — UI Polish / Cards
+Аккуратный патч без разрастания систем.
 
-Small safe interface patch after v0.3:
+### Главное
 
-- fixed topbar layout where the Poker Room Story title could overlap bankroll stats;
-- constrained the action progress strip inside the central action toast;
-- replaced hidden-card question marks with an original PNG card-back asset;
-- improved front card rendering: corners, center suit, cleaner face, better highlighting;
-- added `assets/card-back.png` to the offline cache;
-- updated app/service-worker version to `0.3.1`.
+- версия обновлена до `0.4.0` во всех местах: `appMeta`, `sw.js`, `version.json`, `index.html`, content pack;
+- проверена база `v0.3.2`: состав NPC за столом сохраняется, dealer button двигается по кругу;
+- service worker стал безопаснее для обновлений;
+- JS/CSS/version теперь грузятся по `network-first`, чтобы старый кэш меньше мешал;
+- добавлен `version.json` для проверки свежей версии;
+- кнопка `Проверить` в системной панели;
+- кнопка `Принудительно обновить` теперь чистит кэши, снимает старый service worker и перезагружает страницу;
+- добавлен короткий разбор после руки: 1–2 строки, без лекций.
 
-No poker logic changes in this patch.
-No save schema changes.
-
-## Run locally
+### Запуск локально
 
 ```powershell
 cd C:\PokerRoomStory
 python -m http.server 8080
 ```
 
-Open:
+Открыть:
 
 ```text
 http://localhost:8080
 ```
 
-## GitHub Pages
-
-After replacing files:
+### GitHub Pages
 
 ```powershell
+cd C:\PokerRoomStory
 git add .
-git commit -m "Patch v0.3.1 UI polish cards"
+git commit -m "Patch v0.4.0 update safe mini review"
 git push
 ```
 
-Then in the app press **Принудительно обновить** and reload with **Ctrl + F5**.
+После пуша:
 
-## Notes
+1. открыть сайт;
+2. нажать `Проверить`;
+3. если версия старая — нажать `Принудительно обновить`;
+4. сделать `Ctrl + F5`.
 
-The game is a static PWA. It uses `localStorage` for save data and a service worker for offline caching after the first load.
+Если на телефоне стоит PWA — закрыть приложение полностью и открыть заново.
+
+### Сейвы
+
+Save schema не менялась: `2`.
+Сейвы с v0.3.1/v0.3.2 должны открываться без миграции.

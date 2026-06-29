@@ -1,7 +1,7 @@
-import { canEnterTable, getClubContext } from "../engine/world.js";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js";
-import { getXpProgress } from "../engine/career.js";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.0";
+import { getXpProgress } from "../engine/career.js?v=0.4.0";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.0";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -74,7 +74,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.3.0")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.0")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -84,6 +84,7 @@ function renderSystemPanel(state) {
       <div class="system-actions">
         <button class="small-button" data-action="export-save">Экспорт сейва</button>
         <button class="small-button" data-action="import-save">Импорт</button>
+        <button class="small-button" data-action="check-update">Проверить</button>
         <button class="small-button" data-action="force-update">Принудительно обновить</button>
         <button class="small-button danger" data-action="reset-save">Сброс</button>
       </div>
@@ -275,6 +276,13 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}) {
         <strong>${escapeHtml(result.winnerName ?? "—")}</strong>
         <p>${result.bankrollDelta >= 0 ? "+" : "-"}$${Math.abs(result.bankrollDelta)} · банк $${result.pot}</p>
       </div>
+      ${result.review ? `
+        <div class="info-block review-block">
+          <span>${escapeHtml(result.review.title ?? "Разбор")}</span>
+          <strong>Короткий разбор</strong>
+          <p>${escapeHtml(result.review.text ?? "")}</p>
+        </div>
+      ` : ""}
     ` : ""}
     <div class="mini-feed">
       ${rows.length ? rows.slice(-5).reverse().map((event) => `<div><b>${escapeHtml(actionTitle(event.action))}</b><span>${escapeHtml(event.actorName)}</span></div>`).join("") : ""}

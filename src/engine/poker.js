@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js";
-import { decideNpcAction, getArchetypeUnlockConditions, selectTableNpcs } from "./npc.js";
+} from "./cards.js?v=0.4.0";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.0";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -68,11 +68,11 @@ export function createAnimationState(patch = {}) {
   };
 }
 
-export function startNewHand({ content, table, club, player }) {
+export function startNewHand({ content, table, club, player, previousTableState = null }) {
   const deck = createDeck();
-  const npcs = selectTableNpcs(content, table, club, Math.max(2, table.seats - 1));
+  const npcs = prepareTableNpcs(content, table, club, previousTableState, Math.max(2, table.seats - 1));
   const totalSeats = npcs.length + 1;
-  const buttonSeatIndex = getNextButtonIndex(totalSeats);
+  const buttonSeatIndex = getNextButtonIndex(totalSeats, previousTableState?.buttonSeatIndex);
   const heroStack = clampMoney(Math.min(player.bankroll, table.maxBuyIn));
 
   const heroSeat = buildHeroSeat({
@@ -609,6 +609,7 @@ function resolveShowdown(tableState, table) {
       cards: entry.seat.holeCards,
     })),
     logs: buildResultLogs({ playerWinner, split, winners, best, state, bankrollDelta }),
+    review: buildHandReview({ state, playerWinner, split, bankrollDelta, playerHand }),
   };
 }
 
@@ -641,6 +642,7 @@ function buildFoldResult(tableState, table) {
     playerHand: null,
     showdown: false,
     logs: [`Fold · -$${state.playerInvested}.`],
+    review: buildHandReview({ state, playerWinner: false, folded: true, bankrollDelta: -state.playerInvested, playerHand: null }),
   };
 }
 
@@ -659,6 +661,7 @@ function buildSingleWinnerResult(tableState, table, winnerSeat) {
     playerHand: null,
     showdown: false,
     logs: [isPlayer ? `Все сбросили · +$${state.pot - state.playerInvested}.` : `${winnerSeat.name} забирает банк.`],
+    review: buildHandReview({ state, playerWinner: isPlayer, folded: false, bankrollDelta: isPlayer ? state.pot - state.playerInvested : -state.playerInvested, playerHand: null }),
   };
 }
 
@@ -669,6 +672,36 @@ function buildWinnerEvent(tableState, result) {
     revealCount: tableState.phase === "finished" ? getRevealCountForPhase(tableState.phase, tableState) : tableState.communityCards?.length ?? 0,
     handName: result.winningHand?.categoryName,
   });
+}
+
+function buildHandReview({ state, playerWinner, split = false, folded = false, bankrollDelta = 0, playerHand = null }) {
+  const invested = state.playerInvested ?? 0;
+  const lastAction = state.lastPlayerAction ?? "";
+
+  if (folded) {
+    return {
+      title: "Пас",
+      text: invested > state.bigBlind * 3 ? "Проверь, не слишком дорого зашёл до фолда." : "Нормально. Иногда лучший ход — не платить дальше.",
+    };
+  }
+
+  if (split) {
+    return { title: "Сплит", text: "Банк поделён. Рука дошла до равного шоудауна." };
+  }
+
+  if (playerWinner) {
+    return {
+      title: "Плюс",
+      text: lastAction === "raise" || lastAction === "bet" ? "Инициатива сработала. Следи, чтобы ставка была на вэлью." : "Банк забран. Проверь, где соперники оплатили руку.",
+    };
+  }
+
+  if (bankrollDelta < 0) {
+    const handName = playerHand?.categoryName ?? "руку";
+    return { title: "Минус", text: `Проиграл ${handName}. Посмотри, сколько стоил последний колл.` };
+  }
+
+  return { title: "Разбор", text: "Раздача закрыта. Главное — банк, позиция, цена колла." };
 }
 
 function buildResultLogs({ playerWinner, split, winners, best, bankrollDelta }) {
@@ -928,8 +961,48 @@ function findBlindSeat(tableState, type) {
   return getAllSeats(tableState).find((seat) => (type === "small" ? seat.isSmallBlind : seat.isBigBlind)) ?? null;
 }
 
-function getNextButtonIndex(totalSeats) {
+function prepareTableNpcs(content, table, club, previousTableState, count) {
+  const previousIds = (previousTableState?.npcSeats ?? [])
+    .map((seat) => seat?.npc?.id ?? seat?.npcId ?? seat?.id)
+    .filter(Boolean);
+
+  const reused = previousIds
+    .map((id) => content.byId.npcs[id])
+    .filter(Boolean)
+    .filter((npc) => canNpcSitAtTable(npc, table))
+    .map((npc) => hydrateNpc(content, npc));
+
+  const unique = [];
+  const used = new Set();
+
+  for (const npc of reused) {
+    if (used.has(npc.id)) continue;
+    unique.push(npc);
+    used.add(npc.id);
+    if (unique.length >= count) return unique;
+  }
+
+  const replacements = selectTableNpcs(content, table, club, count * 2)
+    .filter((npc) => !used.has(npc.id));
+
+  for (const npc of replacements) {
+    unique.push(npc);
+    used.add(npc.id);
+    if (unique.length >= count) break;
+  }
+
+  return unique.slice(0, count);
+}
+
+function canNpcSitAtTable(npc, table) {
+  const rules = table?.npcSelectionRules ?? {};
+  if (rules.tiers?.length && !rules.tiers.includes(npc.tier)) return false;
+  return true;
+}
+
+function getNextButtonIndex(totalSeats, previousButtonIndex = null) {
   if (totalSeats <= 0) return 0;
+  if (Number.isInteger(previousButtonIndex)) return normalizeIndex(previousButtonIndex + 1, totalSeats);
   return Math.floor(Math.random() * totalSeats);
 }
 

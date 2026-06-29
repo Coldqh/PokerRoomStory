@@ -1,4 +1,4 @@
-import { cardLabel, cardRankLabel, isRedSuit } from "../engine/cards.js";
+import { cardLabel, cardRankLabel, isRedSuit } from "../engine/cards.js?v=0.4.0";
 
 export function escapeHtml(value) {
   return String(value ?? "")

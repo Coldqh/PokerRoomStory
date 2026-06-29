@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js";
-import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js";
-import { applyUnlocks } from "./engine/collections.js";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.0";
+import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.0";
+import { applyUnlocks } from "./engine/collections.js?v=0.4.0";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js";
-import { getClubContext } from "./engine/world.js";
-import { APP_VERSION } from "./config/appMeta.js";
-import { applyPendingUpdate, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js";
-import { renderScreen, SCREENS } from "./ui/screens.js";
-import { escapeHtml } from "./ui/components.js";
+} from "./engine/poker.js?v=0.4.0";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.0";
+import { getClubContext } from "./engine/world.js?v=0.4.0";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.0";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.0";
+import { escapeHtml } from "./ui/components.js?v=0.4.0";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -27,10 +27,14 @@ export class PokerRoomStoryApp {
     this.root.addEventListener("change", (event) => this.handleChange(event));
     window.addEventListener("online", () => this.setSystem({ online: true }));
     window.addEventListener("offline", () => this.setSystem({ online: false }));
-    onUpdateReady(() => this.setSystem({ updateAvailable: true, updateMessage: "Доступно обновление." }));
+    onUpdateReady((event) => this.setSystem({ updateAvailable: true, updateMessage: event.detail?.message ?? "Доступно обновление." }));
     registerAppServiceWorker().then((status) => {
       const runtime = getRuntimeStatus();
       this.setSystem({ serviceWorker: status.ok, controlled: runtime.controlled });
+      checkForRemoteVersion();
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) checkForRemoteVersion();
     });
     this.render();
   }
@@ -48,7 +52,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · stability system.`],
+      log: [`Patch v${APP_VERSION} · update-safe build.`],
       system: this.createSystemState(saveMeta),
     };
 
@@ -74,11 +78,13 @@ export class PokerRoomStoryApp {
     const runtime = getRuntimeStatus();
     return {
       appVersion: APP_VERSION,
+      buildId: BUILD_ID,
       online: runtime.online,
       serviceWorker: runtime.serviceWorker,
       controlled: runtime.controlled,
       updateAvailable: false,
       updateMessage: null,
+      lastUpdateCheckAt: null,
       notice: null,
       saveMeta,
       saveInfo: getSaveInfo(),
@@ -132,7 +138,7 @@ export class PokerRoomStoryApp {
       return;
     }
 
-    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "export-save", "import-save", "dismiss-notice", "reset-save"].includes(action)) return;
+    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "check-update", "export-save", "import-save", "dismiss-notice", "reset-save"].includes(action)) return;
 
     if (action === "select-table") {
       this.setState({ activeTableId: id, currentScreen: "table", tableState: createInitialTableState() });
@@ -160,6 +166,15 @@ export class PokerRoomStoryApp {
     if (action === "force-update") {
       this.setSystem({ notice: "Чищу кэш и запрашиваю свежую версию..." });
       forceAppUpdate();
+      return;
+    }
+
+    if (action === "check-update") {
+      this.setSystem({ notice: "Проверяю обновления..." });
+      checkForRemoteVersion().then((result) => {
+        if (result?.updateAvailable) return;
+        this.setSystem({ notice: result?.ok ? "Установлена свежая версия." : "Не удалось проверить. Офлайн или кэш." });
+      });
       return;
     }
 
@@ -234,6 +249,7 @@ export class PokerRoomStoryApp {
       table,
       club: context.club,
       player: this.state.player,
+      previousTableState: this.state.tableState,
     });
 
     const auto = advanceUntilPlayerOrEnd({ tableState: initialTableState, table });
@@ -288,6 +304,7 @@ export class PokerRoomStoryApp {
       ...this.state.log,
       ...tableState.actionLog.slice(-5),
       ...result.logs,
+      ...(result.review ? [`Разбор: ${result.review.text}`] : []),
       ...unlockResult.messages,
       `Банкролл: ${formatDelta(result.bankrollDelta)} · XP +${result.xp + unlockResult.xpReward}`,
     ].slice(-100);

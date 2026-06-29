@@ -1,4 +1,4 @@
-import { evaluateBestHand, estimatePreflopStrength } from "./cards.js";
+import { evaluateBestHand, estimatePreflopStrength } from "./cards.js?v=0.4.0";
 
 const ARCHETYPE_PROFILES = {
   ARCH_TIGHT_NIT: {
@@ -16,24 +16,24 @@ const ARCHETYPE_PROFILES = {
     showdownCuriosity: 0.12,
   },
   ARCH_CALLING_STATION: {
-    openBoost: 0.12,
-    callBoost: 0.24,
-    raiseBoost: -0.12,
-    bluffBoost: -0.1,
-    showdownCuriosity: 0.2,
+    openBoost: 0.1,
+    callBoost: 0.2,
+    raiseBoost: -0.14,
+    bluffBoost: -0.12,
+    showdownCuriosity: 0.18,
   },
   ARCH_TOURIST_GAMBLER: {
-    openBoost: 0.14,
-    callBoost: 0.1,
-    raiseBoost: 0.04,
-    bluffBoost: 0.02,
-    showdownCuriosity: 0.1,
+    openBoost: 0.12,
+    callBoost: 0.09,
+    raiseBoost: 0.02,
+    bluffBoost: 0,
+    showdownCuriosity: 0.09,
   },
   ARCH_AGGRESSIVE_REG: {
-    openBoost: 0.04,
-    callBoost: -0.03,
-    raiseBoost: 0.13,
-    bluffBoost: 0.06,
+    openBoost: 0.03,
+    callBoost: -0.04,
+    raiseBoost: 0.11,
+    bluffBoost: 0.05,
     showdownCuriosity: -0.02,
   },
   ARCH_MATH_GRINDER: {
@@ -44,10 +44,10 @@ const ARCHETYPE_PROFILES = {
     showdownCuriosity: -0.04,
   },
   ARCH_BANKROLL_BULLY: {
-    openBoost: 0.05,
-    callBoost: -0.02,
-    raiseBoost: 0.16,
-    bluffBoost: 0.08,
+    openBoost: 0.04,
+    callBoost: -0.03,
+    raiseBoost: 0.13,
+    bluffBoost: 0.06,
     showdownCuriosity: -0.01,
   },
   ARCH_OLD_SCHOOL_REG: {

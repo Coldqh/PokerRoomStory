@@ -459,6 +459,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 /* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
+/* v0.4.0 keeps clean UI; update safety and mini review live in engine. */
 .brand { min-width: 0; }
 .brand-card { overflow: hidden; }
 .brand h1 {
@@ -595,3 +596,6 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .card-corner-top { top: 6px; left: 6px; }
   .card-corner-bottom { right: 6px; bottom: 6px; }
 }
+
+.review-block { border-color: rgba(216,161,95,0.18); }
+.review-block span { color: var(--gold); }

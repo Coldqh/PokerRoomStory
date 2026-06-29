@@ -1,6 +1,6 @@
-# Poker Room Story v0.4.6
+# Poker Room Story v0.4.7
 
-## Patch v0.4.6 — Hard Hero Fold Fix
+## Patch v0.4.7 — Hand Continuation Fix
 
 Исправляет главный баг Fold у игрока.
 
@@ -11,7 +11,7 @@
 - Раздача закрывается сразу после Fold игрока.
 - Карты игрока убираются и заменяются на метку `Fold`.
 - В terminal-фазах `idle / folded / finished` игровые кнопки не активны.
-- Обновлены version/cache до `0.4.6`.
+- Обновлены version/cache до `0.4.7`.
 
 ### Установка
 

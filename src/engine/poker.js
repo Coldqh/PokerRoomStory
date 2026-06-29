@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.6";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.6";
+} from "./cards.js?v=0.4.7";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.7";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -259,18 +259,31 @@ export function applyPlayerAction({ tableState, player, action, table }) {
   state = { ...state, lastPlayerAction: commit.event?.action ?? state.lastPlayerAction, awaitingPlayer: false };
 
   if (state.heroSeat.folded) {
-    const result = buildFoldResult(state, table);
-    const finished = syncTableState({
-      ...state,
-      phase: "folded",
-      awaitingPlayer: false,
-      currentActorId: null,
-      currentActorName: null,
-      lastResult: result,
-      actionLog: [...state.actionLog, ...result.logs],
-    });
-    timeline.push(eventWithSnapshot(finished, buildWinnerEvent(finished, result)));
-    return { tableState: finished, player, result, timeline };
+    const activeNpcs = getActiveNpcSeats(state);
+
+    if (activeNpcs.length <= 1) {
+      const result = buildFoldResult(state, table);
+      const finished = syncTableState({
+        ...state,
+        phase: "folded",
+        awaitingPlayer: false,
+        currentActorId: null,
+        currentActorName: null,
+        lastResult: result,
+        actionLog: [...state.actionLog, ...result.logs],
+      });
+      timeline.push(eventWithSnapshot(finished, buildWinnerEvent(finished, result)));
+      return { tableState: finished, player, result, timeline };
+    }
+
+    const nextNpcId = getNextSeatId(state, hero.seatIndex) ?? activeNpcs[0]?.id ?? null;
+    const auto = autoAdvance(state, table, nextNpcId);
+    return {
+      tableState: auto.tableState,
+      player,
+      result: auto.result,
+      timeline: [...timeline, ...auto.timeline],
+    };
   }
 
   const auto = autoAdvance(state, table, getNextSeatId(state, hero.seatIndex));
@@ -477,7 +490,11 @@ function autoAdvance(initialState, table, forcedActorId = null) {
       };
     }
 
-    const decision = decideNpcForState(state, actor, table);
+    let decision = decideNpcForState(state, actor, table);
+    if (shouldKeepNpcInHandBeforeHeroDecision(state, actor, decision)) {
+      decision = { action: getToCall(state, actor) > 0 ? "call" : "check", reason: "protect_first_player_decision" };
+    }
+
     const commit = commitSeatAction(state, actor.id, decision, table, { source: "npc" });
     state = commit.tableState;
     if (commit.event) timeline.push(eventWithSnapshot(state, commit.event));
@@ -904,6 +921,25 @@ function isBettingRoundComplete(tableState) {
 function getOnlyActiveSeat(tableState) {
   const active = getAllSeats(tableState).filter((seat) => !seat.folded);
   return active.length === 1 ? active[0] : null;
+}
+
+function getActiveNpcSeats(tableState) {
+  return (tableState.npcSeats ?? []).filter((seat) => !seat.folded);
+}
+
+function shouldKeepNpcInHandBeforeHeroDecision(tableState, actor, decision) {
+  const requestedAction = typeof decision === "string" ? decision : decision?.action;
+  if (requestedAction !== "fold") return false;
+  if (!actor || actor.id === "player") return false;
+  if (tableState.phase !== "preflop") return false;
+  if ((tableState.communityCards?.length ?? 0) > 0) return false;
+  if (tableState.lastPlayerAction) return false;
+
+  const hero = tableState.heroSeat;
+  if (!hero || hero.folded || hero.allIn) return false;
+
+  const remainingAfterFold = getAllSeats(tableState).filter((seat) => !seat.folded && seat.id !== actor.id);
+  return remainingAfterFold.length === 1 && remainingAfterFold[0]?.id === "player";
 }
 
 function getNextPhase(phase) {

@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.6";
-import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.6";
-import { applyUnlocks } from "./engine/collections.js?v=0.4.6";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.7";
+import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.7";
+import { applyUnlocks } from "./engine/collections.js?v=0.4.7";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.4.6";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.6";
-import { getClubContext } from "./engine/world.js?v=0.4.6";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.6";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.6";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.6";
-import { escapeHtml } from "./ui/components.js?v=0.4.6";
+} from "./engine/poker.js?v=0.4.7";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.7";
+import { getClubContext } from "./engine/world.js?v=0.4.7";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.7";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.7";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.7";
+import { escapeHtml } from "./ui/components.js?v=0.4.7";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -52,7 +52,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · clean hard fold state fix.`],
+      log: [`Patch v${APP_VERSION} · hand continuation fix.`],
       settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };
@@ -84,7 +84,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.4.6");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.4.7");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 

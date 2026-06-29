@@ -1,7 +1,7 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.6";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.6";
-import { getXpProgress } from "../engine/career.js?v=0.4.6";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.6";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.7";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.7";
+import { getXpProgress } from "../engine/career.js?v=0.4.7";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.7";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -74,7 +74,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.6")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.7")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

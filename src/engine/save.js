@@ -1,5 +1,5 @@
-import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.4.6";
-import { hydrateNpc } from "./npc.js?v=0.4.6";
+import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.4.7";
+import { hydrateNpc } from "./npc.js?v=0.4.7";
 
 const CURRENT_SAVE_KEY = "prs.save.current";
 const BACKUP_SAVE_KEY = "prs.save.backup";

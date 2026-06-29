@@ -1,4 +1,4 @@
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "0.3.1";
 const CACHE_NAME = `poker-room-story-${APP_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -21,7 +21,8 @@ const APP_SHELL = [
   "./src/ui/components.js",
   "./src/ui/screens.js",
   "./assets/icon-192.png",
-  "./assets/icon-512.png"
+  "./assets/icon-512.png",
+  "./assets/card-back.png"
 ];
 
 self.addEventListener("install", (event) => {

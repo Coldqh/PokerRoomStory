@@ -1,26 +1,24 @@
-# Poker Room Story v0.3.0
+# Poker Room Story v0.3.1
 
-Static mobile-first poker room career prototype.
+Static mobile-first web prototype for GitHub Pages.
 
-## Patch v0.3.0
+## Patch v0.3.1 — UI Polish / Cards
 
-NPC Poker Brain patch.
+Small safe interface patch after v0.3:
 
-### Added
+- fixed topbar layout where the Poker Room Story title could overlap bankroll stats;
+- constrained the action progress strip inside the central action toast;
+- replaced hidden-card question marks with an original PNG card-back asset;
+- improved front card rendering: corners, center suit, cleaner face, better highlighting;
+- added `assets/card-back.png` to the offline cache;
+- updated app/service-worker version to `0.3.1`.
 
-- more realistic NPC decisions by archetype;
-- preflop behavior now uses hand strength, position, VPIP/PFR and pressure;
-- postflop behavior now reacts to made hand strength, pot pressure, simple draws and board danger;
-- safer restored active hands: NPC seats are hydrated with archetype stats after page reload;
-- no new giant systems, no fantasy archetypes, no heavy content expansion.
-
-### Current direction
-
-Clean premium poker-room UI, compact text, real hand flow, realistic low-limit NPC behavior.
+No poker logic changes in this patch.
+No save schema changes.
 
 ## Run locally
 
-```bash
+```powershell
 cd C:\PokerRoomStory
 python -m http.server 8080
 ```
@@ -33,30 +31,16 @@ http://localhost:8080
 
 ## GitHub Pages
 
-Put these files in the repository root:
+After replacing files:
 
-```text
-index.html
-manifest.webmanifest
-sw.js
-assets/
-src/
-README.md
-.nojekyll
+```powershell
+git add .
+git commit -m "Patch v0.3.1 UI polish cards"
+git push
 ```
 
-Then enable:
+Then in the app press **Принудительно обновить** and reload with **Ctrl + F5**.
 
-```text
-Settings → Pages → Deploy from branch → main → /root
-```
+## Notes
 
-## Update notes
-
-After pushing a new version, open the game and use:
-
-```text
-Система → Принудительно обновить
-```
-
-If the browser has an installed PWA, close and reopen it after update.
+The game is a static PWA. It uses `localStorage` for save data and a service worker for offline caching after the first load.

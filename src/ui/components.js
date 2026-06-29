@@ -22,7 +22,7 @@ export function playingCards(cards, options = {}) {
   const { hidden = false, highlightedIds = new Set(), size = "normal" } = opts;
   const highlightSet = highlightedIds instanceof Set ? highlightedIds : new Set(highlightedIds ?? []);
 
-  if (!cards?.length) return `<div class="playing-cards ${size}"><span class="playing-card hidden">?</span></div>`;
+  if (!cards?.length) return `<div class="playing-cards ${size}"><span class="playing-card hidden" aria-label="Закрытая карта"><span class="card-back-emblem">PRS</span></span></div>`;
 
   return `<div class="playing-cards ${size}">${cards
     .map((card) => {
@@ -30,9 +30,15 @@ export function playingCards(cards, options = {}) {
       if (hidden) classes.push("hidden");
       if (!hidden && isRedSuit(card)) classes.push("red");
       if (!hidden && highlightSet.has(card.id)) classes.push("made");
+      const rank = escapeHtml(cardRankLabel(card));
+      const suit = escapeHtml(card.suit);
       return `
-        <span class="${classes.join(" ")}" title="${escapeHtml(cardLabel(card))}">
-          ${hidden ? "?" : `<b>${escapeHtml(cardRankLabel(card))}</b><i>${escapeHtml(card.suit)}</i>`}
+        <span class="${classes.join(" ")}" title="${hidden ? "Закрытая карта" : escapeHtml(cardLabel(card))}">
+          ${hidden ? `<span class="card-back-emblem">PRS</span>` : `
+            <span class="card-corner card-corner-top"><b>${rank}</b><i>${suit}</i></span>
+            <span class="card-center-suit">${suit}</span>
+            <span class="card-corner card-corner-bottom"><b>${rank}</b><i>${suit}</i></span>
+          `}
         </span>
       `;
     })

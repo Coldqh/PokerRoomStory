@@ -457,3 +457,141 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .system-grid { grid-template-columns: 1fr; }
   .system-actions { grid-template-columns: 1fr; }
 }
+
+/* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
+.brand { min-width: 0; }
+.brand-card { overflow: hidden; }
+.brand h1 {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.quick-stats { min-width: 0; }
+.top-stat strong,
+.top-stat small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.action-bubble { overflow: hidden; }
+.action-bubble i {
+  right: auto;
+  max-width: calc(100% - 24px);
+}
+
+.playing-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  border-color: rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 32% 20%, rgba(255,255,255,0.92), transparent 26%),
+    linear-gradient(155deg, #fffdf7 0%, #efe5d8 54%, #d9cbbb 100%);
+  box-shadow:
+    0 13px 24px rgba(0,0,0,0.38),
+    inset 0 0 0 1px rgba(255,255,255,0.48),
+    inset 0 -10px 22px rgba(89,63,36,0.08);
+}
+.playing-card::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(18, 15, 14, 0.08);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.card-corner {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  line-height: 0.9;
+  font-weight: 950;
+  letter-spacing: -0.06em;
+  z-index: 2;
+}
+.card-corner b {
+  font-size: 0.96rem;
+  line-height: 0.95;
+}
+.card-corner i {
+  margin-top: 1px;
+  font-style: normal;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+.card-corner-top { top: 7px; left: 7px; }
+.card-corner-bottom { right: 7px; bottom: 7px; transform: rotate(180deg); }
+.card-center-suit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 2.1rem;
+  line-height: 1;
+  opacity: 0.9;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+}
+.playing-card.red .card-center-suit,
+.playing-card.red .card-corner { color: #bd111b; }
+.playing-card:not(.red) .card-center-suit,
+.playing-card:not(.red) .card-corner { color: #101015; }
+.playing-card.hidden {
+  place-items: center;
+  border-color: rgba(238, 196, 126, 0.72);
+  background-image: url("../assets/card-back.png");
+  background-size: cover;
+  background-position: center;
+  box-shadow:
+    0 13px 24px rgba(0,0,0,0.42),
+    0 0 0 1px rgba(227,41,47,0.12),
+    inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+.playing-card.hidden::before {
+  inset: 3px;
+  border-color: rgba(255,255,255,0.08);
+}
+.card-back-emblem {
+  display: none;
+}
+.playing-card.made {
+  outline: 2px solid rgba(216,161,95,0.95);
+  box-shadow:
+    0 0 0 5px rgba(216,161,95,0.14),
+    0 16px 30px rgba(0,0,0,0.42),
+    inset 0 0 0 1px rgba(255,255,255,0.48);
+}
+.playing-cards.small .playing-card { width: 30px; height: 42px; }
+.playing-cards.small .card-corner { display: none; }
+.playing-cards.small .card-center-suit { font-size: 1.18rem; }
+.playing-cards.large .card-center-suit { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+.playing-cards.large .card-corner b { font-size: clamp(0.78rem, 1.7vw, 1.02rem); }
+.playing-cards.large .card-corner i { font-size: clamp(0.62rem, 1.3vw, 0.82rem); }
+.card-slot {
+  border-style: solid;
+  border-color: rgba(255,255,255,0.09);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(0,0,0,0.12)),
+    rgba(0,0,0,0.18);
+}
+
+@media (max-width: 1260px) and (min-width: 1081px) {
+  .club-topbar {
+    grid-template-columns: minmax(0, 205px) minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .brand h1 { font-size: 1.02rem; letter-spacing: 0.08em; }
+  .quick-stats { gap: 6px; }
+  .top-stat { padding: 0.56rem 0.58rem; border-radius: 14px; }
+  .top-stat small { font-size: 0.52rem; }
+  .top-stat strong { font-size: 0.84rem; }
+  .app-nav button { min-width: 58px; padding-inline: 0.46rem; }
+}
+
+@media (max-width: 740px) {
+  .brand h1 { white-space: normal; line-height: 1.05; }
+  .playing-card::before { inset: 3px; border-radius: 9px; }
+  .card-corner-top { top: 6px; left: 6px; }
+  .card-corner-bottom { right: 6px; bottom: 6px; }
+}

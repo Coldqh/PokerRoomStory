@@ -36,6 +36,20 @@ export function createInitialTableState() {
     lastResult: null,
     actionLog: [],
     awaitingPlayer: false,
+    animation: createAnimationState(),
+  };
+}
+
+export function createAnimationState(patch = {}) {
+  return {
+    isPlaying: false,
+    index: 0,
+    total: 0,
+    currentEvent: null,
+    recentEvents: [],
+    revealedCommunityCount: 0,
+    showWinner: false,
+    ...patch,
   };
 }
 
@@ -46,14 +60,18 @@ export function startNewHand({ content, table, club, player }) {
   const npcAnte = table.bigBlind;
   const pot = playerAnte + npcs.length * npcAnte;
 
-  const npcSeats = npcs.map((npc) => ({
+  const npcSeats = npcs.map((npc, index) => ({
     npc,
     holeCards: draw(deck, 2),
     folded: false,
     invested: npcAnte,
+    stack: Math.max(0, Math.min(npc.bankroll ?? table.maxBuyIn, table.maxBuyIn) - npcAnte),
+    seatIndex: index + 1,
+    lastAction: "blind",
+    lastAmount: npcAnte,
   }));
 
-  return {
+  const tableState = {
     phase: "preflop",
     handNumber: Date.now(),
     deck,
@@ -71,25 +89,45 @@ export function startNewHand({ content, table, club, player }) {
     ],
     awaitingPlayer: true,
     buyInWarning: player.bankroll < table.bigBlind * 20,
+    animation: createAnimationState(),
   };
+
+  return tableState;
+}
+
+export function buildStartHandTimeline(tableState, table) {
+  return [
+    event("dealer", "Дилер", "shuffle", `Новая раздача · $${table.smallBlind}/$${table.bigBlind}`, { pot: 0, revealCount: 0 }),
+    event("dealer", "Дилер", "blind", `Блайнды внесены. Банк $${tableState.pot}.`, { pot: tableState.pot, revealCount: 0 }),
+    event("player", "Ты", "deal", `Твои карты розданы. Решение на префлопе.`, { pot: tableState.pot, revealCount: 0 }),
+  ];
 }
 
 export function applyPlayerAction({ tableState, player, action, table }) {
-  if (!tableState || !tableState.awaitingPlayer) return { tableState, player, result: null };
+  if (!tableState || !tableState.awaitingPlayer || tableState.animation?.isPlaying) return { tableState, player, result: null, timeline: [] };
 
   if (action === "fold") {
     const result = buildFoldResult(tableState, table);
+    const nextState = {
+      ...tableState,
+      phase: "folded",
+      awaitingPlayer: false,
+      lastPlayerAction: action,
+      lastResult: result,
+      actionLog: [...tableState.actionLog, "Ты сбросил руку. Банк ушёл столу."],
+    };
     return {
-      tableState: {
-        ...tableState,
-        phase: "folded",
-        awaitingPlayer: false,
-        lastPlayerAction: action,
-        lastResult: result,
-        actionLog: [...tableState.actionLog, "Ты сбросил руку. Банк ушёл столу."],
-      },
+      tableState: nextState,
       player,
       result,
+      timeline: [
+        event("player", "Ты", "fold", "Ты сбрасываешь. Деньги остаются в банке.", { pot: tableState.pot }),
+        event("dealer", "Дилер", "winner", `Раздача завершена. Потеря: $${tableState.playerInvested}.`, {
+          pot: tableState.pot,
+          winnerId: "table",
+          revealCount: tableState.communityCards.length,
+        }),
+      ],
     };
   }
 
@@ -97,17 +135,21 @@ export function applyPlayerAction({ tableState, player, action, table }) {
   let pot = tableState.pot;
   let playerInvested = tableState.playerInvested;
   const actionLog = [...tableState.actionLog];
+  const timeline = [];
 
   if (action === "raise") {
     pot += pressure;
     playerInvested += pressure;
     actionLog.push(`Ты рейзишь на $${pressure}.`);
+    timeline.push(event("player", "Ты", "raise", `Ты рейзишь · +$${pressure}`, { amount: pressure, pot }));
   } else if (action === "call") {
     pot += table.bigBlind;
     playerInvested += table.bigBlind;
     actionLog.push(`Ты коллируешь $${table.bigBlind}.`);
+    timeline.push(event("player", "Ты", "call", `Ты коллируешь · $${table.bigBlind}`, { amount: table.bigBlind, pot }));
   } else {
     actionLog.push("Ты чекаешь.");
+    timeline.push(event("player", "Ты", "check", "Ты чекаешь.", { pot }));
   }
 
   const npcRound = resolveNpcRound({
@@ -118,11 +160,14 @@ export function applyPlayerAction({ tableState, player, action, table }) {
 
   pot = npcRound.pot;
   actionLog.push(...npcRound.logs);
+  timeline.push(...npcRound.events);
 
   const advanced = advancePhase({ ...tableState, pot, playerInvested, actionLog, npcSeats: npcRound.npcSeats });
+  if (advanced.stageEvent) timeline.push(advanced.stageEvent);
 
   if (advanced.phase === "showdown") {
     const result = resolveShowdown(advanced, table);
+    timeline.push(...buildShowdownTimeline(advanced, result));
     return {
       tableState: {
         ...advanced,
@@ -134,6 +179,7 @@ export function applyPlayerAction({ tableState, player, action, table }) {
       },
       player,
       result,
+      timeline,
     };
   }
 
@@ -146,11 +192,12 @@ export function applyPlayerAction({ tableState, player, action, table }) {
     },
     player,
     result: null,
+    timeline,
   };
 }
 
 export function getAvailableActions(tableState) {
-  if (!tableState || !tableState.awaitingPlayer) return [];
+  if (!tableState || !tableState.awaitingPlayer || tableState.animation?.isPlaying) return [];
   return ["fold", "check", "call", "raise"];
 }
 
@@ -220,8 +267,9 @@ export function getUnlockConditionsFromHand(tableState, result) {
 function resolveNpcRound({ tableState, phase, pressure }) {
   let pot = tableState.pot;
   const logs = [];
+  const events = [];
   const npcSeats = tableState.npcSeats.map((seat) => {
-    if (seat.folded) return seat;
+    if (seat.folded) return { ...seat, lastAction: "folded" };
 
     const decision = decideNpcAction({
       npc: seat.npc,
@@ -234,28 +282,32 @@ function resolveNpcRound({ tableState, phase, pressure }) {
 
     if (decision.action === "fold") {
       logs.push(`${seat.npc.name} сбрасывает.`);
-      return { ...seat, folded: true };
+      events.push(event(seat.npc.id, seat.npc.name, "fold", `${seat.npc.name} сбрасывает.`, { pot }));
+      return { ...seat, folded: true, lastAction: "fold", lastAmount: 0 };
     }
 
     if (decision.action === "raise") {
       const amount = pressure > 0 ? pressure * 2 : 6;
       pot += amount;
       logs.push(`${seat.npc.name} рейзит. +$${amount} в банк.`);
-      return { ...seat, invested: seat.invested + amount };
+      events.push(event(seat.npc.id, seat.npc.name, "raise", `${seat.npc.name} рейзит · +$${amount}`, { amount, pot }));
+      return { ...seat, invested: seat.invested + amount, stack: Math.max(0, seat.stack - amount), lastAction: "raise", lastAmount: amount };
     }
 
     if (decision.action === "call") {
       const amount = pressure || 2;
       pot += amount;
       logs.push(`${seat.npc.name} коллирует $${amount}.`);
-      return { ...seat, invested: seat.invested + amount };
+      events.push(event(seat.npc.id, seat.npc.name, "call", `${seat.npc.name} коллирует · $${amount}`, { amount, pot }));
+      return { ...seat, invested: seat.invested + amount, stack: Math.max(0, seat.stack - amount), lastAction: "call", lastAmount: amount };
     }
 
     logs.push(`${seat.npc.name} чекает.`);
-    return seat;
+    events.push(event(seat.npc.id, seat.npc.name, "check", `${seat.npc.name} чекает.`, { pot }));
+    return { ...seat, lastAction: "check", lastAmount: 0 };
   });
 
-  return { pot, logs, npcSeats };
+  return { pot, logs, npcSeats, events };
 }
 
 function advancePhase(tableState) {
@@ -264,20 +316,26 @@ function advancePhase(tableState) {
   const deck = [...tableState.deck];
   const communityCards = [...tableState.communityCards];
   const actionLog = [...tableState.actionLog];
+  let stageEvent = null;
 
   if (nextPhase === "flop") {
     communityCards.push(...draw(deck, 3));
     actionLog.push("Флоп открыт.");
+    stageEvent = event("dealer", "Дилер", "flop", `Флоп: ${describeCards(communityCards.slice(0, 3))}`, { revealCount: 3, pot: tableState.pot });
   }
 
   if (nextPhase === "turn") {
-    communityCards.push(...draw(deck, 1));
+    const card = draw(deck, 1)[0];
+    communityCards.push(card);
     actionLog.push("Тёрн открыт.");
+    stageEvent = event("dealer", "Дилер", "turn", `Тёрн: ${describeCards([card])}`, { revealCount: 4, pot: tableState.pot });
   }
 
   if (nextPhase === "river") {
-    communityCards.push(...draw(deck, 1));
+    const card = draw(deck, 1)[0];
+    communityCards.push(card);
     actionLog.push("Ривер открыт.");
+    stageEvent = event("dealer", "Дилер", "river", `Ривер: ${describeCards([card])}`, { revealCount: 5, pot: tableState.pot });
   }
 
   return {
@@ -286,6 +344,7 @@ function advancePhase(tableState) {
     communityCards,
     phase: nextPhase,
     actionLog,
+    stageEvent,
   };
 }
 
@@ -299,20 +358,32 @@ function resolveShowdown(tableState, table) {
   allHands.sort((a, b) => compareHands(a.hand, b.hand)).reverse();
   const winner = allHands[0];
 
+  const showdownHands = allHands.map((entry) => ({
+    id: entry.type === "player" ? "player" : entry.seat.npc.id,
+    name: entry.type === "player" ? "Ты" : entry.seat.npc.name,
+    hand: entry.hand,
+    cards: entry.type === "player" ? tableState.playerHoleCards : entry.seat.holeCards,
+  }));
+
   if (winner.type === "player") {
     return {
       winner: "player",
+      winnerId: "player",
+      winnerName: "Ты",
+      winningHand: playerHand,
       pot: tableState.pot,
       bankrollDelta: tableState.pot - tableState.playerInvested,
       reputationGain: table.difficulty + 2,
       xp: 20 + table.difficulty * 5,
       playerHand,
+      showdownHands,
       logs: [`Шоудаун: ${playerHand.categoryName}. Ты забираешь банк $${tableState.pot}.`],
     };
   }
 
   return {
     winner: winner.seat.npc.id,
+    winnerId: winner.seat.npc.id,
     winnerName: winner.seat.npc.name,
     pot: tableState.pot,
     bankrollDelta: -tableState.playerInvested,
@@ -320,6 +391,8 @@ function resolveShowdown(tableState, table) {
     xp: 8 + table.difficulty * 3,
     playerHand,
     winnerHand: winner.hand,
+    winningHand: winner.hand,
+    showdownHands,
     logs: [
       `Шоудаун: у тебя ${playerHand.categoryName}.`,
       `${winner.seat.npc.name} забирает банк с рукой: ${winner.hand.categoryName}.`,
@@ -327,14 +400,50 @@ function resolveShowdown(tableState, table) {
   };
 }
 
+function buildShowdownTimeline(tableState, result) {
+  const revealEvents = tableState.npcSeats
+    .filter((seat) => !seat.folded)
+    .slice(0, 3)
+    .map((seat) => event(seat.npc.id, seat.npc.name, "show", `${seat.npc.name} вскрывает карты.`, { pot: tableState.pot, revealCount: 5 }));
+
+  return [
+    event("dealer", "Дилер", "showdown", "Шоудаун. Карты открыты.", { pot: tableState.pot, revealCount: 5 }),
+    ...revealEvents,
+    event(result.winnerId ?? result.winner, result.winnerName ?? "Победитель", "winner", `${result.winnerName ?? "Победитель"} забирает $${tableState.pot} · ${result.winningHand?.categoryName ?? "банк"}`, {
+      pot: tableState.pot,
+      winnerId: result.winnerId ?? result.winner,
+      revealCount: 5,
+      handName: result.winningHand?.categoryName,
+    }),
+  ];
+}
+
 function buildFoldResult(tableState, table) {
   return {
     winner: "table",
+    winnerId: "table",
+    winnerName: "Стол",
     pot: tableState.pot,
     bankrollDelta: -tableState.playerInvested,
     reputationGain: 0,
     xp: 4 + table.difficulty,
     playerHand: null,
     logs: ["Пас тоже решение. Главное — не платить из злости."],
+  };
+}
+
+function event(actorId, actorName, action, message, patch = {}) {
+  return {
+    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    actorId,
+    actorName,
+    action,
+    message,
+    amount: patch.amount ?? null,
+    pot: patch.pot ?? null,
+    revealCount: patch.revealCount,
+    winnerId: patch.winnerId,
+    handName: patch.handName,
+    createdAt: Date.now(),
   };
 }

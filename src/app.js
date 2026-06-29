@@ -1,16 +1,24 @@
 import { buildContentRegistry } from "./data/contentRegistry.js";
 import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js";
 import { applyUnlocks } from "./engine/collections.js";
-import { createInitialTableState, getUnlockConditionsFromHand, startNewHand, applyPlayerAction } from "./engine/poker.js";
+import {
+  buildStartHandTimeline,
+  createAnimationState,
+  createInitialTableState,
+  getUnlockConditionsFromHand,
+  startNewHand,
+  applyPlayerAction,
+} from "./engine/poker.js";
 import { clearSave, loadSave, saveGame } from "./engine/save.js";
 import { getClubContext } from "./engine/world.js";
 import { renderScreen, SCREENS } from "./ui/screens.js";
-import { statPill, escapeHtml } from "./ui/components.js";
+import { escapeHtml } from "./ui/components.js";
 
 export class PokerRoomStoryApp {
   constructor(root) {
     this.root = root;
     this.content = buildContentRegistry();
+    this.timelineTimer = null;
     this.state = this.createInitialState();
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.render();
@@ -28,7 +36,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: ["Patch v0.1.3 загружен. Новый Poker World UI: стол, HUD, инспектор раздачи, мобильный dock."],
+      log: ["Patch v0.1.4 загружен. Добавлены анимации действий, улиц и победителя."],
     };
 
     if (!saved) return base;
@@ -41,14 +49,14 @@ export class PokerRoomStoryApp {
     };
   }
 
-  setState(patch) {
+  setState(patch, options = {}) {
     this.state = {
       ...this.state,
       ...patch,
       content: this.content,
     };
 
-    saveGame(this.state);
+    if (!options.skipSave) saveGame(this.state);
     this.render();
   }
 
@@ -63,6 +71,8 @@ export class PokerRoomStoryApp {
       this.setState({ currentScreen: id });
       return;
     }
+
+    if (this.state.tableState?.animation?.isPlaying) return;
 
     if (action === "select-table") {
       this.setState({ activeTableId: id, currentScreen: "table", tableState: createInitialTableState() });
@@ -80,7 +90,7 @@ export class PokerRoomStoryApp {
     }
 
     if (action === "reset-save") {
-      const confirmed = confirm("Сбросить прогресс Poker Room Story?");
+      const confirmed = confirm("Сбросить прогресс Poker Room Story v0.1?");
       if (!confirmed) return;
       clearSave();
       this.state = this.createInitialState();
@@ -104,12 +114,14 @@ export class PokerRoomStoryApp {
       player: this.state.player,
     });
 
-    this.setState({ tableState, currentScreen: "table" });
+    const timeline = buildStartHandTimeline(tableState, table);
+    this.setState({ currentScreen: "table" }, { skipSave: true });
+    this.playTimeline(tableState, timeline);
   }
 
   playAction(action) {
     const table = this.content.byId.tables[this.state.activeTableId];
-    const { tableState, result } = applyPlayerAction({
+    const { tableState, result, timeline = [] } = applyPlayerAction({
       tableState: this.state.tableState,
       player: this.state.player,
       action,
@@ -117,37 +129,104 @@ export class PokerRoomStoryApp {
     });
 
     if (!result) {
-      this.setState({ tableState });
+      this.playTimeline(tableState, timeline);
       return;
     }
 
-    const unlockConditions = getUnlockConditionsFromHand(tableState, result);
-    const unlockResult = applyUnlocks({
-      content: this.content,
-      career: this.state.career,
-      unlockConditions,
-    });
+    this.playTimeline(tableState, timeline, (animatedTableState) => {
+      const unlockConditions = getUnlockConditionsFromHand(tableState, result);
+      const unlockResult = applyUnlocks({
+        content: this.content,
+        career: this.state.career,
+        unlockConditions,
+      });
 
-    const playerAfterHand = applyHandResult(this.state.player, {
-      ...result,
-      xp: result.xp + unlockResult.xpReward,
-    });
+      const playerAfterHand = applyHandResult(this.state.player, {
+        ...result,
+        xp: result.xp + unlockResult.xpReward,
+      });
 
-    const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, unlockResult.career, this.content);
-    const log = [
-      ...this.state.log,
-      ...tableState.actionLog.slice(-2),
-      ...result.logs,
-      ...unlockResult.messages,
-      `Банкролл: ${formatDelta(result.bankrollDelta)} · XP +${result.xp + unlockResult.xpReward}`,
-    ].slice(-100);
+      const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, unlockResult.career, this.content);
+      const log = [
+        ...this.state.log,
+        ...tableState.actionLog.slice(-4),
+        ...result.logs,
+        ...unlockResult.messages,
+        `Банкролл: ${formatDelta(result.bankrollDelta)} · XP +${result.xp + unlockResult.xpReward}`,
+      ].slice(-100);
 
-    this.setState({
-      player: playerAfterHand,
-      career: careerAfterUnlocks,
-      tableState,
-      log,
+      this.setState({
+        player: playerAfterHand,
+        career: careerAfterUnlocks,
+        tableState: animatedTableState,
+        log,
+      });
     });
+  }
+
+  playTimeline(finalTableState, events, onComplete) {
+    if (this.timelineTimer) window.clearTimeout(this.timelineTimer);
+
+    if (!events?.length) {
+      const completed = {
+        ...finalTableState,
+        animation: createAnimationState({ revealedCommunityCount: finalTableState.communityCards?.length ?? 0 }),
+      };
+      this.setState({ tableState: completed });
+      if (onComplete) onComplete(completed);
+      return;
+    }
+
+    let index = 0;
+    let revealedCommunityCount = this.state.tableState?.animation?.revealedCommunityCount ?? 0;
+    const recentEvents = [];
+
+    const step = () => {
+      const currentEvent = events[index];
+      if (typeof currentEvent.revealCount === "number") revealedCommunityCount = currentEvent.revealCount;
+      recentEvents.push(currentEvent);
+
+      const animatedState = {
+        ...finalTableState,
+        awaitingPlayer: false,
+        animation: createAnimationState({
+          isPlaying: true,
+          index,
+          total: events.length,
+          currentEvent,
+          recentEvents: recentEvents.slice(-5),
+          revealedCommunityCount,
+          showWinner: currentEvent.action === "winner",
+        }),
+      };
+
+      this.setState({ tableState: animatedState }, { skipSave: true });
+
+      index += 1;
+      if (index < events.length) {
+        this.timelineTimer = window.setTimeout(step, eventDuration(currentEvent));
+        return;
+      }
+
+      this.timelineTimer = window.setTimeout(() => {
+        const completedState = {
+          ...finalTableState,
+          animation: createAnimationState({
+            isPlaying: false,
+            index: events.length,
+            total: events.length,
+            currentEvent: events.at(-1),
+            recentEvents: recentEvents.slice(-5),
+            revealedCommunityCount: finalTableState.communityCards?.length ?? revealedCommunityCount,
+            showWinner: finalTableState.phase === "finished" || finalTableState.phase === "folded",
+          }),
+        };
+        this.setState({ tableState: completedState });
+        if (onComplete) onComplete(completedState);
+      }, eventDuration(currentEvent));
+    };
+
+    step();
   }
 
   pushLog(message) {
@@ -156,7 +235,7 @@ export class PokerRoomStoryApp {
 
   render() {
     this.root.innerHTML = `
-      <main class="app-shell">
+      <main class="app-shell ${this.state.currentScreen === "table" ? "table-mode" : ""}">
         ${this.renderTopbar()}
         ${renderScreen(this.state)}
       </main>
@@ -166,26 +245,27 @@ export class PokerRoomStoryApp {
   renderTopbar() {
     const player = this.state.player;
     return `
-      <header class="topbar">
-        <div class="brand-row">
+      <header class="topbar club-topbar">
+        <div class="brand-card">
+          <div class="crest">♠</div>
           <div class="brand">
+            <p>Premium Poker Career</p>
             <h1>Poker Room Story</h1>
-            <p>v0.1.3 · Poker World UI Patch</p>
           </div>
         </div>
 
-        <div class="stats-strip">
-          ${statPill("Bankroll", `$${player.bankroll}`)}
-          ${statPill("Rank", rankLabel(player.rank))}
-          ${statPill("Rep", player.reputation)}
-          ${statPill("Poker", `Lv.${player.pokerLevel}`)}
+        <div class="quick-stats">
+          ${topStat("Bankroll", `$${player.bankroll}`)}
+          ${topStat("Rank", rankLabel(player.rank))}
+          ${topStat("Hands", player.handsPlayed)}
+          ${topStat("Win", `${winRate(player)}%`)}
         </div>
 
-        <nav class="nav">
+        <nav class="nav app-nav">
           ${SCREENS.map(
             (screen) => `
               <button data-action="screen" data-id="${escapeHtml(screen.id)}" class="${this.state.currentScreen === screen.id ? "active" : ""}">
-                ${escapeHtml(screen.label)}
+                <span>${navIcon(screen.id)}</span>${escapeHtml(screen.label)}
               </button>
             `,
           ).join("")}
@@ -193,6 +273,10 @@ export class PokerRoomStoryApp {
       </header>
     `;
   }
+}
+
+function topStat(label, value) {
+  return `<div class="top-stat"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></div>`;
 }
 
 function rankLabel(rank) {
@@ -205,6 +289,31 @@ function rankLabel(rank) {
   return labels[rank] ?? rank;
 }
 
+function winRate(player) {
+  if (!player.handsPlayed) return 0;
+  return Math.round((player.handsWon / player.handsPlayed) * 100);
+}
+
+function navIcon(id) {
+  const icons = {
+    club: "⌂",
+    table: "♣",
+    career: "♕",
+    npcs: "◉",
+    glossary: "◇",
+    collections: "✦",
+  };
+  return icons[id] ?? "•";
+}
+
 function formatDelta(value) {
   return value >= 0 ? `+$${value}` : `-$${Math.abs(value)}`;
+}
+
+function eventDuration(event) {
+  if (!event) return 650;
+  if (["flop", "turn", "river", "showdown"].includes(event.action)) return 1050;
+  if (event.action === "winner") return 1500;
+  if (event.action === "shuffle" || event.action === "deal") return 900;
+  return 760;
 }

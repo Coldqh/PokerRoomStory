@@ -1,7 +1,7 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.1";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.1";
-import { getXpProgress } from "../engine/career.js?v=0.4.1";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.1";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.2";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.2";
+import { getXpProgress } from "../engine/career.js?v=0.4.2";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.2";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -74,7 +74,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.1")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.2")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -171,7 +171,7 @@ function renderTableScreen(state) {
         </main>
 
         <aside class="table-info panel-soft">
-          ${renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta)}
+          ${renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta, state.settings)}
         </aside>
       </div>
 
@@ -256,7 +256,7 @@ function renderActionDock(actions, hand, actionMeta = {}) {
   `;
 }
 
-function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}) {
+function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, settings = {}) {
   const result = hand?.lastResult;
   const rows = hand?.animation?.recentEvents ?? [];
   const current = hand?.awaitingPlayer ? "Ты" : hand?.currentActorName ?? "—";
@@ -265,6 +265,11 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}) {
       <span>Ход</span>
       <strong>${escapeHtml(current)}</strong>
       <p>${actionMeta.toCall ? `Call $${actionMeta.toCall}` : hand?.currentBet ? `Bet $${hand.currentBet}` : "Check available"}</p>
+    </div>
+    <div class="info-block pace-block">
+      <span>Темп</span>
+      <strong>${escapeHtml(speedLabel(settings?.animationSpeed ?? "normal"))}</strong>
+      <button class="small-button" data-action="toggle-speed">Сменить</button>
     </div>
     <div class="info-block">
       <span>Рука</span>
@@ -391,6 +396,15 @@ function renderCollectionItem(item, unlocked) {
       ${badges([item.category, item.rarity], unlocked ? "gold" : "")}
     </article>
   `;
+}
+
+function speedLabel(value) {
+  const labels = {
+    normal: "Обычный",
+    fast: "Быстрый",
+    instant: "Мгновенный",
+  };
+  return labels[value] ?? labels.normal;
 }
 
 function isPlayerWinner(hand) {

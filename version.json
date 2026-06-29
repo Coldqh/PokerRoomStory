@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.4.1",
+  "appVersion": "0.4.2",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.4.1",
-  "buildId": "prs-0.4.1-20260629-fold-guard",
+  "contentVersion": "core-v0.4.2",
+  "buildId": "prs-0.4.2-20260629-mobile-nav-pacing",
   "buildDate": "2026-06-29",
   "notes": [
-    "Update-safe service worker",
-    "v0.3.2 table continuity verified",
-    "minimal learning review layer",
-    "folded players are skipped by actor queue"
+    "Mobile bottom navigation overflow fixed",
+    "Animation speed control added",
+    "Fold guard from v0.4.1 retained",
+    "Offline cache bumped to v0.4.2"
   ]
 }

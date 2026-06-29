@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.1";
-import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.1";
-import { applyUnlocks } from "./engine/collections.js?v=0.4.1";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.4.2";
+import { createNewCareer, createNewPlayer, applyHandResult, updateCareerUnlocks } from "./engine/career.js?v=0.4.2";
+import { applyUnlocks } from "./engine/collections.js?v=0.4.2";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.4.1";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.1";
-import { getClubContext } from "./engine/world.js?v=0.4.1";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.1";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.1";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.1";
-import { escapeHtml } from "./ui/components.js?v=0.4.1";
+} from "./engine/poker.js?v=0.4.2";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.4.2";
+import { getClubContext } from "./engine/world.js?v=0.4.2";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.4.2";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.4.2";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.4.2";
+import { escapeHtml } from "./ui/components.js?v=0.4.2";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -52,7 +52,8 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · update-safe build.`],
+      log: [`Patch v${APP_VERSION} · clean mobile nav + pacing.`],
+      settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };
 
@@ -63,6 +64,7 @@ export class PokerRoomStoryApp {
       ...base,
       ...savedPayload,
       content: this.content,
+      settings: { ...createDefaultSettings(), ...(savedPayload.settings ?? {}) },
       tableState: savedPayload.tableState ?? createInitialTableState(),
       system: {
         ...base.system,
@@ -155,6 +157,11 @@ export class PokerRoomStoryApp {
       return;
     }
 
+    if (action === "toggle-speed") {
+      this.toggleAnimationSpeed();
+      return;
+    }
+
     if (action === "apply-update") {
       this.setSystem({ notice: "Обновляю приложение..." });
       applyPendingUpdate().then((result) => {
@@ -233,6 +240,18 @@ export class PokerRoomStoryApp {
     link.remove();
     URL.revokeObjectURL(url);
     this.setSystem({ notice: "Сейв экспортирован." });
+  }
+
+  toggleAnimationSpeed() {
+    const current = this.state.settings?.animationSpeed ?? "normal";
+    const next = current === "normal" ? "fast" : current === "fast" ? "instant" : "normal";
+    this.setState({
+      settings: {
+        ...createDefaultSettings(),
+        ...(this.state.settings ?? {}),
+        animationSpeed: next,
+      },
+    });
   }
 
   startHand() {
@@ -357,7 +376,7 @@ export class PokerRoomStoryApp {
 
       index += 1;
       if (index < events.length) {
-        this.timelineTimer = window.setTimeout(step, eventDuration(currentEvent));
+        this.timelineTimer = window.setTimeout(step, this.getEventDuration(currentEvent));
         return;
       }
 
@@ -376,10 +395,18 @@ export class PokerRoomStoryApp {
         };
         this.setState({ tableState: completedState });
         if (onComplete) onComplete(completedState);
-      }, eventDuration(currentEvent));
+      }, this.getEventDuration(currentEvent));
     };
 
     step();
+  }
+
+  getEventDuration(event) {
+    const base = eventDuration(event);
+    const speed = this.state.settings?.animationSpeed ?? "normal";
+    if (speed === "fast") return Math.max(260, Math.round(base * 0.58));
+    if (speed === "instant") return Math.max(90, Math.round(base * 0.16));
+    return base;
   }
 
   pushLog(message) {
@@ -452,6 +479,12 @@ export class PokerRoomStoryApp {
       </section>
     `;
   }
+}
+
+function createDefaultSettings() {
+  return {
+    animationSpeed: "normal",
+  };
 }
 
 function topStat(label, value) {

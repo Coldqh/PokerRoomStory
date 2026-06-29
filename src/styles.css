@@ -459,7 +459,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 /* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
-/* v0.4.1 keeps clean UI; update safety and mini review live in engine. */
+/* v0.4.2 keeps clean UI; update safety and mini review live in engine. */
 .brand { min-width: 0; }
 .brand-card { overflow: hidden; }
 .brand h1 {
@@ -600,7 +600,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 .review-block { border-color: rgba(216,161,95,0.18); }
 .review-block span { color: var(--gold); }
 
-/* v0.4.1 folded seat clarity */
+/* v0.4.2 folded seat clarity */
 .seat.folded {
   opacity: 0.38;
   filter: grayscale(0.9);
@@ -622,4 +622,70 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   color: rgba(255,255,255,0.58);
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* v0.4.2 mobile nav polish + pacing */
+.app-nav {
+  min-width: 0;
+  overflow: hidden;
+  scrollbar-width: none;
+}
+.app-nav::-webkit-scrollbar { display: none; }
+.app-nav button {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pace-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+}
+.pace-block span,
+.pace-block strong { grid-column: 1; }
+.pace-block button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 0.48rem 0.62rem;
+}
+
+@media (max-width: 1080px) {
+  .app-nav { overflow: hidden; }
+}
+
+@media (max-width: 740px) {
+  .app-nav {
+    display: flex;
+    overflow: hidden;
+    gap: 4px;
+  }
+  .app-nav button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.46rem 0.2rem;
+    font-size: 0.58rem;
+  }
+  .app-nav button span {
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-nav {
+    left: 6px;
+    right: 6px;
+    bottom: 8px;
+    padding: 5px;
+    border-radius: 18px;
+  }
+  .app-nav button {
+    font-size: 0;
+    padding: 0.48rem 0.1rem;
+  }
+  .app-nav button span {
+    font-size: 1rem;
+  }
 }

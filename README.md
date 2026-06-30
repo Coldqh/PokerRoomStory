@@ -2,7 +2,7 @@
 
 Static web MVP for a poker-room career game.
 
-## v0.6.3 — Drawer Mobile Table Fix
+## v0.6.4 — Drawer Mobile Table Fix
 
 - Replaced the cramped visible navigation with a proper hamburger side drawer.
 - Drawer works on desktop and phone.

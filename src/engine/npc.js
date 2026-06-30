@@ -1,4 +1,4 @@
-import { evaluateBestHand, estimatePreflopStrength } from "./cards.js?v=0.6.3";
+import { evaluateBestHand, estimatePreflopStrength } from "./cards.js?v=0.6.4";
 
 const ARCHETYPE_PROFILES = {
   ARCH_TIGHT_NIT: {

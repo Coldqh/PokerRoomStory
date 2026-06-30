@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.3";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.3";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.3";
-import { applyUnlocks } from "./engine/collections.js?v=0.6.3";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.4";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.4";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.4";
+import { applyUnlocks } from "./engine/collections.js?v=0.6.4";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,19 +10,20 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.6.3";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.3";
-import { getClubContext } from "./engine/world.js?v=0.6.3";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.3";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.3";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.3";
-import { escapeHtml } from "./ui/components.js?v=0.6.3";
+} from "./engine/poker.js?v=0.6.4";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.4";
+import { getClubContext } from "./engine/world.js?v=0.6.4";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.4";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.4";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.4";
+import { escapeHtml } from "./ui/components.js?v=0.6.4";
 
 export class PokerRoomStoryApp {
   constructor(root) {
     this.root = root;
     this.content = buildContentRegistry();
     this.timelineTimer = null;
+    this.menuOpen = false;
     this.state = this.createInitialState();
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
@@ -88,7 +89,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.3");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.4");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -162,7 +163,20 @@ export class PokerRoomStoryApp {
     const action = target.dataset.action;
     const id = target.dataset.id;
 
+    if (action === "open-menu") {
+      this.menuOpen = true;
+      this.render();
+      return;
+    }
+
+    if (action === "close-menu") {
+      this.menuOpen = false;
+      this.render();
+      return;
+    }
+
     if (action === "screen") {
+      this.menuOpen = false;
       this.setState({ currentScreen: id });
       return;
     }
@@ -170,6 +184,7 @@ export class PokerRoomStoryApp {
     if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "check-update", "export-save", "import-save", "dismiss-notice", "dismiss-reward", "reset-save"].includes(action)) return;
 
     if (action === "select-table") {
+      this.menuOpen = false;
       this.setState({ activeTableId: id, currentScreen: "table", tableState: createInitialTableState() });
       return;
     }
@@ -493,9 +508,8 @@ export class PokerRoomStoryApp {
 
   render() {
     this.root.innerHTML = `
-      <main class="app-shell ${this.state.currentScreen === "table" ? "table-mode" : ""}">
+      <main class="app-shell ${this.state.currentScreen === "table" ? "table-mode" : ""} ${this.menuOpen ? "menu-open" : ""}">
         <input id="save-import-input" type="file" accept="application/json,.json" hidden />
-        <input id="main-menu-toggle" class="main-menu-toggle" type="checkbox" hidden />
         ${this.renderTopbar()}
         ${this.renderSideDrawer()}
         ${this.renderUpdateBanner()}
@@ -509,7 +523,7 @@ export class PokerRoomStoryApp {
     const player = this.state.player;
     return `
       <header class="topbar club-topbar drawer-topbar">
-        <label class="menu-button" for="main-menu-toggle" aria-label="Открыть меню"><span>☰</span></label>
+        <button class="menu-button" data-action="open-menu" aria-label="Открыть меню"><span>☰</span></button>
         <div class="brand-card">
           <div class="crest">♠</div>
           <div class="brand">
@@ -533,14 +547,14 @@ export class PokerRoomStoryApp {
     const player = this.state.player;
     const speed = this.state.settings?.animationSpeed ?? "normal";
     return `
-      <label class="drawer-backdrop" for="main-menu-toggle" aria-label="Закрыть меню"></label>
+      <button class="drawer-backdrop" data-action="close-menu" aria-label="Закрыть меню"></button>
       <aside class="side-drawer panel-soft" aria-label="Главное меню">
         <div class="drawer-head">
           <div>
             <span>Poker Room Story</span>
             <strong>Меню</strong>
           </div>
-          <label class="drawer-close" for="main-menu-toggle" aria-label="Закрыть">×</label>
+          <button class="drawer-close" data-action="close-menu" aria-label="Закрыть">×</button>
         </div>
 
         <div class="drawer-player">

@@ -1,13 +1,14 @@
 {
-  "appVersion": "0.6.2",
+  "appVersion": "0.6.3",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.6.2",
-  "buildId": "prs-0.6.2-20260629-hybrid-compact-layout",
+  "contentVersion": "core-v0.6.3",
+  "buildId": "prs-0.6.3-20260629-drawer-mobile-table-fix",
   "buildDate": "2026-06-29",
   "notes": [
-    "Hybrid compact desktop/mobile layout",
-    "Reduced whitespace and table height",
-    "Mobile topbar, nav and action dock compacted",
+    "Drawer navigation for desktop and mobile",
+    "Mobile table card sizes fixed",
+    "Opponent cards visible on phone",
+    "Animation pace moved into menu/settings",
     "Save schema unchanged"
   ]
 }

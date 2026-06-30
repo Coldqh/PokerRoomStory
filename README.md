@@ -2,13 +2,17 @@
 
 Static web MVP for a poker-room career game.
 
-## v0.6.2 — Country Name Pools
+## v0.6.3 — Drawer Mobile Table Fix
 
-- Removed nickname-style NPC names from River Room.
-- Added a country-based name pool architecture.
-- Russia now has 10 first names and 10 last names.
-- NPCs are generated from deterministic first-name / last-name rosters.
-- Future countries can get their own name pools without touching poker logic.
+- Replaced the cramped visible navigation with a proper hamburger side drawer.
+- Drawer works on desktop and phone.
+- Moved animation pace control into the drawer/settings area.
+- Removed pace block from the table side info.
+- Fixed mobile card sizes.
+- Reduced central suit overlap on small cards.
+- Made opponent cards visible on phone again.
+- Removed table mood text from unlock rows.
+- Renamed the ugly `Regulars` table to `Club Cash`.
 - Save schema is unchanged.
 
 ## Run locally

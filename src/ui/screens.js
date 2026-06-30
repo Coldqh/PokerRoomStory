@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.2";
-import { getClubMoodLabel, getClubRepInfo, getClubRoomState, getNpcMoodProfile } from "../engine/club.js?v=0.6.2";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.2";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.2";
-import { describeCards } from "../engine/cards.js?v=0.6.2";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.2";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.3";
+import { getClubMoodLabel, getClubRepInfo, getClubRoomState, getNpcMoodProfile } from "../engine/club.js?v=0.6.3";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.3";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.3";
+import { describeCards } from "../engine/cards.js?v=0.6.3";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.3";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -117,7 +117,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.2")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.3")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -327,11 +327,6 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
       <span>Ход</span>
       <strong>${escapeHtml(current)}</strong>
       <p>${escapeHtml(tablePrompt)}</p>
-    </div>
-    <div class="info-block pace-block">
-      <span>Темп</span>
-      <strong>${escapeHtml(speedLabel(settings?.animationSpeed ?? "normal"))}</strong>
-      <button class="small-button" data-action="toggle-speed">Сменить</button>
     </div>
     <div class="info-block">
       <span>Рука</span>
@@ -618,7 +613,7 @@ function renderTableUnlockItem(state, table) {
     <div class="table-unlock-item ${access.ok ? "open" : "locked"} ${active ? "active" : ""}">
       <div>
         <strong>${escapeHtml(table.name)}</strong>
-        <span>$${table.smallBlind}/$${table.bigBlind} · ${escapeHtml(table.tableMood)} · ${escapeHtml(reqText)}</span>
+        <span>$${table.smallBlind}/$${table.bigBlind} · ${escapeHtml(reqText)}</span>
       </div>
       <em>${active ? "active" : access.ok ? "open" : "locked"}</em>
     </div>

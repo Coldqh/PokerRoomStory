@@ -1229,7 +1229,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .living-club-hero { min-height: auto; }
 }
 
-/* v0.6.2 hybrid compact layout */
+/* v0.6.3 hybrid compact layout */
 :root {
   --radius: 18px;
   --shadow: 0 18px 48px rgba(0, 0, 0, 0.46);
@@ -1565,4 +1565,309 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .club-status-row { grid-template-columns: 1fr; }
   .quick-stats { grid-template-columns: 1fr 1fr; }
   .system-grid { grid-template-columns: 1fr; }
+}
+
+/* v0.6.3 drawer navigation + mobile table repair */
+.drawer-topbar {
+  grid-template-columns: auto minmax(0, 260px) minmax(0, 1fr);
+  gap: 10px;
+}
+.menu-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,69,75,0.28);
+  border-radius: 14px;
+  color: #ffe6e7;
+  background: rgba(255,255,255,0.045);
+  cursor: pointer;
+  user-select: none;
+}
+.menu-button span { font-size: 1.18rem; line-height: 1; transform: translateY(-1px); }
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 105;
+  background: rgba(0,0,0,0.48);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.side-drawer {
+  position: fixed;
+  z-index: 110;
+  top: 14px;
+  left: 14px;
+  bottom: 14px;
+  width: min(360px, calc(100vw - 28px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  padding: 14px;
+  transform: translateX(calc(-100% - 30px));
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.main-menu-toggle:checked ~ .drawer-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+.main-menu-toggle:checked ~ .side-drawer {
+  transform: translateX(0);
+  opacity: 1;
+}
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.drawer-head span,
+.drawer-settings span,
+.drawer-system span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+.drawer-head strong { display: block; margin-top: 0.12rem; color: #ff6469; font-size: 1.18rem; }
+.drawer-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  color: var(--soft);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+.drawer-player {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.drawer-player .top-stat { padding: 0.58rem 0.6rem; border-radius: 13px; }
+.drawer-player .top-stat small { font-size: 0.5rem; }
+.drawer-player .top-stat strong { font-size: 0.8rem; }
+.drawer-nav {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.drawer-nav button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 0.72rem 0.76rem;
+  border-radius: 15px;
+  text-align: left;
+  background: rgba(255,255,255,0.035);
+}
+.drawer-nav button span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 11px;
+  color: #ff888c;
+  background: rgba(255,69,75,0.075);
+}
+.drawer-nav button b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.86rem; }
+.drawer-nav button.active {
+  border-color: rgba(255,69,75,0.45);
+  background: rgba(255,69,75,0.11);
+}
+.drawer-settings,
+.drawer-system {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 15px;
+  background: rgba(255,255,255,0.03);
+}
+.drawer-settings strong { display: block; margin-top: 0.14rem; }
+.drawer-system { margin-top: -4px; }
+
+/* Remove old always-visible nav layout after drawer migration */
+.app-nav { display: none !important; }
+.pace-block { display: none !important; }
+
+@media (min-width: 1100px) {
+  .drawer-topbar { grid-template-columns: auto minmax(0, 280px) minmax(0, 1fr); }
+  .side-drawer { width: 340px; }
+}
+
+@media (max-width: 740px) {
+  .app-shell { padding: 7px 7px 76px; }
+  .drawer-topbar {
+    position: sticky;
+    top: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 8px 9px;
+    margin: -7px -7px 8px;
+    gap: 8px;
+  }
+  .menu-button { width: 36px; height: 36px; border-radius: 12px; }
+  .crest { width: 32px; height: 32px; border-radius: 12px; }
+  .brand-card { gap: 7px; }
+  .brand h1 { font-size: 0.78rem; line-height: 1; letter-spacing: 0.045em; white-space: nowrap; }
+  .brand p { display: none; }
+  .quick-stats {
+    grid-template-columns: 1fr;
+    width: min(104px, 28vw);
+  }
+  .quick-stats .top-stat { padding: 0.42rem 0.48rem; border-radius: 11px; }
+  .quick-stats .top-stat:nth-child(n+2) { display: none; }
+  .top-stat small { font-size: 0.46rem; }
+  .top-stat strong { font-size: 0.72rem; }
+
+  .side-drawer {
+    top: 8px;
+    left: 8px;
+    bottom: 8px;
+    width: min(310px, calc(100vw - 16px));
+    border-radius: 22px;
+    padding: 12px;
+    gap: 10px;
+  }
+  .drawer-player { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .drawer-player > div:nth-child(3) { display: none; }
+  .drawer-nav button { padding: 0.64rem 0.68rem; border-radius: 14px; }
+
+  .game-area { gap: 8px; }
+  .felt-stage {
+    min-height: 520px;
+    border-radius: 24px;
+  }
+  .table-ring { inset: 11% 5% 16%; }
+  .pot-chip {
+    top: 40%;
+    min-width: 94px;
+    padding: 0.52rem 0.72rem;
+  }
+  .pot-chip strong { font-size: 1.12rem; }
+  .pot-chip small { font-size: 0.62rem; }
+  .board-zone { top: 53%; width: 96%; }
+  .playing-cards { gap: 3px; }
+
+  .board-zone .playing-cards.large .playing-card,
+  .board-zone .card-slot {
+    width: 34px !important;
+    height: 49px !important;
+    min-width: 34px;
+    padding: 4px;
+    border-radius: 9px;
+  }
+  .hero-cards .playing-cards.large .playing-card {
+    width: 42px !important;
+    height: 59px !important;
+    padding: 5px;
+    border-radius: 10px;
+  }
+  .playing-cards.large .card-corner-bottom { display: none; }
+  .playing-cards.large .card-corner-top { top: 4px; left: 4px; }
+  .playing-cards.large .card-corner b { font-size: 0.58rem; }
+  .playing-cards.large .card-corner i { font-size: 0.44rem; }
+  .board-zone .playing-cards.large .card-center-suit { font-size: 1.05rem; transform: translateY(5px); }
+  .hero-cards .playing-cards.large .card-center-suit { font-size: 1.28rem; transform: translateY(5px); }
+  .playing-card.made { transform: translateY(-1px); outline-width: 1px; box-shadow: 0 0 0 3px rgba(216,161,95,0.12), 0 9px 18px rgba(0,0,0,0.36); }
+
+  .seat {
+    width: 124px;
+    min-height: 56px;
+    padding: 6px;
+    gap: 5px;
+    border-radius: 14px;
+  }
+  .seat-avatar { width: 28px; height: 28px; font-size: 0.58rem; }
+  .seat-main strong { font-size: 0.64rem; }
+  .seat-main span { font-size: 0.56rem; }
+  .seat-status { font-size: 0.5rem; padding: 0.12rem 0.38rem; }
+  .seat-cards {
+    display: block !important;
+    right: 5px;
+    bottom: -10px;
+  }
+  .seat-cards .playing-cards.small { gap: 2px; }
+  .seat-cards .playing-cards.small .playing-card {
+    width: 19px;
+    height: 27px;
+    padding: 2px;
+    border-radius: 5px;
+  }
+  .seat-cards .playing-cards.small .card-center-suit { font-size: 0.84rem; }
+  .seat-1 { top: 5%; left: 50%; transform: translateX(-50%); }
+  .seat-2 { right: 2%; top: 18%; }
+  .seat-3 { right: 2%; bottom: 28%; }
+  .seat-4 { left: 2%; bottom: 28%; }
+  .seat-5 { left: 2%; top: 18%; }
+  .hero-player {
+    bottom: 4%;
+    width: min(285px, 92%);
+    min-height: 66px;
+    padding: 7px;
+    border-radius: 17px;
+  }
+  .hero-info strong { font-size: 0.74rem; }
+  .hero-info span { font-size: 0.66rem; }
+  .action-bubble {
+    top: 31%;
+    width: min(300px, 86%);
+    padding: 9px 11px 12px;
+    border-radius: 16px;
+  }
+  .action-bubble strong { font-size: 0.9rem; }
+  .action-bubble small { font-size: 0.72rem; }
+  .table-info {
+    grid-template-columns: 1fr;
+    padding: 8px;
+    gap: 7px;
+  }
+  .info-block { padding: 9px; border-radius: 13px; }
+  .action-dock {
+    position: sticky;
+    bottom: 7px;
+    z-index: 80;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+    border-radius: 17px;
+  }
+  .action-dock button {
+    min-width: 0;
+    padding: 0.54rem 0.22rem;
+    border-radius: 11px;
+    font-size: 0.62rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .felt-stage { min-height: 500px; }
+  .seat { width: 112px; }
+  .board-zone .playing-cards.large .playing-card,
+  .board-zone .card-slot { width: 31px !important; height: 46px !important; }
+  .hero-cards .playing-cards.large .playing-card { width: 39px !important; height: 55px !important; }
+  .board-zone .playing-cards.large .card-center-suit { font-size: 0.98rem; }
+  .hero-cards .playing-cards.large .card-center-suit { font-size: 1.18rem; }
+}
+.table-mode .drawer-topbar {
+  grid-template-columns: auto minmax(0, 260px) minmax(0, 1fr);
+}
+@media (max-width: 740px) {
+  .table-mode .drawer-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
 }

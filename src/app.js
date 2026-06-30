@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.2";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.2";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.2";
-import { applyUnlocks } from "./engine/collections.js?v=0.6.2";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.3";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.3";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.3";
+import { applyUnlocks } from "./engine/collections.js?v=0.6.3";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,13 +10,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.6.2";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.2";
-import { getClubContext } from "./engine/world.js?v=0.6.2";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.2";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.2";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.2";
-import { escapeHtml } from "./ui/components.js?v=0.6.2";
+} from "./engine/poker.js?v=0.6.3";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.3";
+import { getClubContext } from "./engine/world.js?v=0.6.3";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.3";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.3";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.3";
+import { escapeHtml } from "./ui/components.js?v=0.6.3";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -88,7 +88,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.2");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.3");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -495,7 +495,9 @@ export class PokerRoomStoryApp {
     this.root.innerHTML = `
       <main class="app-shell ${this.state.currentScreen === "table" ? "table-mode" : ""}">
         <input id="save-import-input" type="file" accept="application/json,.json" hidden />
+        <input id="main-menu-toggle" class="main-menu-toggle" type="checkbox" hidden />
         ${this.renderTopbar()}
+        ${this.renderSideDrawer()}
         ${this.renderUpdateBanner()}
         ${this.renderRewardToast()}
         ${renderScreen(this.state)}
@@ -506,7 +508,8 @@ export class PokerRoomStoryApp {
   renderTopbar() {
     const player = this.state.player;
     return `
-      <header class="topbar club-topbar">
+      <header class="topbar club-topbar drawer-topbar">
+        <label class="menu-button" for="main-menu-toggle" aria-label="Открыть меню"><span>☰</span></label>
         <div class="brand-card">
           <div class="crest">♠</div>
           <div class="brand">
@@ -522,17 +525,53 @@ export class PokerRoomStoryApp {
           ${topStat("Win", `${winRate(player)}%`)}
           ${topStat("Version", `v${this.state.system?.appVersion ?? APP_VERSION}`)}
         </div>
+      </header>
+    `;
+  }
 
-        <nav class="nav app-nav">
+  renderSideDrawer() {
+    const player = this.state.player;
+    const speed = this.state.settings?.animationSpeed ?? "normal";
+    return `
+      <label class="drawer-backdrop" for="main-menu-toggle" aria-label="Закрыть меню"></label>
+      <aside class="side-drawer panel-soft" aria-label="Главное меню">
+        <div class="drawer-head">
+          <div>
+            <span>Poker Room Story</span>
+            <strong>Меню</strong>
+          </div>
+          <label class="drawer-close" for="main-menu-toggle" aria-label="Закрыть">×</label>
+        </div>
+
+        <div class="drawer-player">
+          <div>${topStat("Bankroll", `$${player.bankroll}`)}</div>
+          <div>${topStat("Rank", rankLabel(player.rank))}</div>
+          <div>${topStat("Win", `${winRate(player)}%`)}</div>
+        </div>
+
+        <nav class="drawer-nav">
           ${SCREENS.map(
             (screen) => `
               <button data-action="screen" data-id="${escapeHtml(screen.id)}" class="${this.state.currentScreen === screen.id ? "active" : ""}">
-                <span>${navIcon(screen.id)}</span>${escapeHtml(screen.label)}
+                <span>${navIcon(screen.id)}</span><b>${escapeHtml(screen.label)}</b>
               </button>
             `,
           ).join("")}
         </nav>
-      </header>
+
+        <div class="drawer-settings">
+          <div>
+            <span>Темп</span>
+            <strong>${escapeHtml(speedLabel(speed))}</strong>
+          </div>
+          <button class="small-button" data-action="toggle-speed">Сменить</button>
+        </div>
+
+        <div class="drawer-system">
+          <span>v${escapeHtml(this.state.system?.appVersion ?? APP_VERSION)}</span>
+          <button class="small-button" data-action="check-update">Проверить</button>
+        </div>
+      </aside>
     `;
   }
 
@@ -625,6 +664,15 @@ function rankLabel(rank) {
 function winRate(player) {
   if (!player.handsPlayed) return 0;
   return Math.round((player.handsWon / player.handsPlayed) * 100);
+}
+
+function speedLabel(value) {
+  const labels = {
+    normal: "Обычный",
+    fast: "Быстрый",
+    instant: "Мгновенный",
+  };
+  return labels[value] ?? labels.normal;
 }
 
 function navIcon(id) {

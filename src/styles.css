@@ -3213,7 +3213,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 
-/* v0.8.5 — mini UI polish: neutral Raise, felt Leave, gray table stack, centered drawer close */
+/* v0.8.6 — mini UI polish: neutral Raise, felt Leave, gray table stack, centered drawer close */
 .action-dock button.primary {
   color: var(--text) !important;
   border-color: var(--line) !important;
@@ -3249,4 +3249,31 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 .drawer-close::first-letter {
   line-height: 1 !important;
+}
+
+/* v0.8.6 — move leave button below side panel, keep stack block clean */
+.table-session-block button[data-action="leave-table"] {
+  display: none !important;
+}
+.table-leave-bottom {
+  width: 100%;
+  margin-top: 6px;
+  color: #d7e7df !important;
+  border-color: rgba(83, 142, 112, 0.22) !important;
+  background: linear-gradient(180deg, rgba(9, 48, 35, 0.92), rgba(3, 21, 16, 0.98)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.055) !important;
+}
+.table-leave-bottom:hover:not(:disabled) {
+  border-color: rgba(114, 178, 142, 0.34) !important;
+  background: linear-gradient(180deg, rgba(11, 57, 41, 0.96), rgba(4, 25, 18, 1)) !important;
+}
+.table-info .table-leave-bottom {
+  align-self: end;
+}
+@media (max-width: 860px) {
+  .table-leave-bottom {
+    grid-column: 1 / -1;
+    padding: 0.48rem 0.58rem !important;
+    border-radius: 12px !important;
+  }
 }

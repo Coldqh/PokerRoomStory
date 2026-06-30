@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.5";
-import { getClubRoomState } from "../engine/club.js?v=0.8.5";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.5";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.5";
-import { describeCards } from "../engine/cards.js?v=0.8.5";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.5";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.6";
+import { getClubRoomState } from "../engine/club.js?v=0.8.6";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.6";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.6";
+import { describeCards } from "../engine/cards.js?v=0.8.6";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.6";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -363,7 +363,6 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
         <span>Стек за столом</span>
         <strong>$${escapeHtml(String(session.stack ?? 0))}</strong>
         <p>${escapeHtml(table?.gameLabel ?? "NL Hold’em")} · Buy-in $${escapeHtml(String(session.buyIn ?? 0))}</p>
-        <button class="small-button ghost" data-action="leave-table">Выйти</button>
       </div>
     ` : ""}
     <div class="info-block table-hand-row">
@@ -395,6 +394,9 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
     <div class="mini-feed">
       ${rows.length ? rows.slice(-5).reverse().map((event) => `<div><b>${escapeHtml(actionTitle(event.action))}</b><span>${escapeHtml(event.actorName)}</span></div>`).join("") : ""}
     </div>
+    ${session ? `
+      <button class="small-button table-leave-bottom" data-action="leave-table">Выйти из стола</button>
+    ` : ""}
   `;
 }
 
@@ -780,7 +782,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.5")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.6")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

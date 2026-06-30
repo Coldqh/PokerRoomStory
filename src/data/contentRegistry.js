@@ -1,4 +1,4 @@
-import { coreV01 } from "./packs/coreV01.js?v=0.8.5";
+import { coreV01 } from "./packs/coreV01.js?v=0.8.6";
 
 const packs = [coreV01];
 

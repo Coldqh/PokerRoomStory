@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.8.1",
+  "appVersion": "0.8.3",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.8.1",
-  "buildId": "prs-0.8.1-20260630-real-table-entry",
+  "contentVersion": "core-v0.8.3",
+  "buildId": "prs-0.8.3-20260630-hand-clarity-tutor-lite",
   "buildDate": "2026-06-30",
   "notes": [
-    "Buy-in modal before taking a seat",
-    "Table session stack",
-    "Balanced table buy-ins and limits",
-    "Hidden desktop scrollbar in club journal"
+    "Adds hand clarity in the result modal",
+    "Highlights the winning five cards after showdown",
+    "Adds a compact hand-rank guide to the glossary",
+    "Keeps save schema unchanged"
   ]
 }

@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.1";
-import { getClubRoomState } from "../engine/club.js?v=0.8.1";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.1";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.1";
-import { describeCards } from "../engine/cards.js?v=0.8.1";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.1";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.3";
+import { getClubRoomState } from "../engine/club.js?v=0.8.3";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.3";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.3";
+import { describeCards } from "../engine/cards.js?v=0.8.3";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.3";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -197,7 +197,10 @@ function renderTableScreen(state) {
   const actions = getAvailableActions(hand);
   const actionMeta = getActionMeta(hand, table);
   const handInfo = getCurrentHandInfo(displayHand);
-  const highlightedIds = handInfo.highlightedIds ?? new Set();
+  const resultHighlightIds = hand?.lastResult?.showdown && hand?.lastResult?.winningHand?.cardIds?.length
+    ? new Set(hand.lastResult.winningHand.cardIds)
+    : null;
+  const highlightedIds = resultHighlightIds ?? handInfo.highlightedIds ?? new Set();
   const currentEvent = animation.currentEvent;
   const revealNpcCards = hand?.lastResult?.showdown || currentEvent?.action === "showdown" || currentEvent?.action === "show";
   const heroFolded = Boolean(hand?.heroSeat?.folded || hand?.phase === "folded");
@@ -215,7 +218,7 @@ function renderTableScreen(state) {
     <section class="table-page">
       <div class="game-area">
         <main class="felt-stage ${animation.isPlaying ? "is-playing" : ""} ${animation.showWinner ? "has-winner" : ""}">
-          ${renderNpcSeats(hand, currentEvent, revealNpcCards)}
+          ${renderNpcSeats(hand, currentEvent, revealNpcCards, highlightedIds)}
 
           <div class="table-ring"></div>
 
@@ -251,7 +254,7 @@ function renderTableScreen(state) {
   `;
 }
 
-function renderNpcSeats(hand, currentEvent, revealCards) {
+function renderNpcSeats(hand, currentEvent, revealCards, highlightedIds = new Set()) {
   const seats = hand?.npcSeats ?? [];
   if (!seats.length) return `<div class="empty-seat-note">Нажми «Новая раздача».</div>`;
   return seats
@@ -261,7 +264,7 @@ function renderNpcSeats(hand, currentEvent, revealCards) {
       const status = seat.folded ? "Fold" : actionLabel(seat.lastAction);
       const amount = !seat.folded && seat.lastAmount ? ` $${seat.lastAmount}` : "";
       const betText = !seat.folded && seat.currentBet ? ` · Bet $${seat.currentBet}` : "";
-      const cards = seat.folded ? `<div class="fold-marker">Fold</div>` : playingCards(seat.holeCards, { hidden: !revealCards, size: "small" });
+      const cards = seat.folded ? `<div class="fold-marker">Fold</div>` : playingCards(seat.holeCards, { hidden: !revealCards, highlightedIds, size: "small" });
       return `
         <div class="seat seat-${index + 1} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner" : ""}">
           <div class="seat-avatar">${escapeHtml(initials(seat.name))}</div>
@@ -414,11 +417,12 @@ function renderHandResultModal(state) {
         <section class="result-modal-grid">
           <div><span>Банк</span><strong>$${escapeHtml(String(result.pot ?? hand?.pot ?? 0))}</strong></div>
           <div><span>Ты</span><strong>${escapeHtml(playerLine)}</strong></div>
-          <div><span>Победная рука</span><strong>${escapeHtml(winningHand)}</strong></div>
+          <div><span>Комбинация</span><strong>${escapeHtml(winningHand)}</strong></div>
           <div><span>Board</span><strong>${escapeHtml(board)}</strong></div>
         </section>
 
         ${foldNote ? `<p class="result-modal-note">${escapeHtml(foldNote)}</p>` : ""}
+        ${renderHandClarity(hand, result, heroFolded)}
         ${renderHandTranscript(hand)}
         ${result.review ? `<div class="result-modal-review"><span>${escapeHtml(result.review.title ?? "Разбор")}</span><p>${escapeHtml(result.review.text ?? "")}</p></div>` : ""}
 
@@ -429,6 +433,54 @@ function renderHandResultModal(state) {
       </article>
     </div>
   `;
+}
+
+function renderHandClarity(hand, result, heroFolded) {
+  if (!result?.showdown || !result?.winningHand) {
+    return `<div class="result-modal-clarity"><span>Без вскрытия</span><p>Банк забрали фолдами. Победную комбинацию не показывали.</p></div>`;
+  }
+
+  const winningCards = result.winningHand.cards ?? [];
+  const highlightedIds = new Set(result.winningHand.cardIds ?? winningCards.map((card) => card.id));
+  const cardsLine = winningCards.length ? playingCards(winningCards, { highlightedIds, size: "small" }) : "";
+  const why = explainWinningHand(result, heroFolded);
+  const summary = result.winningHand.summary ?? result.winningHand.categoryName ?? "Showdown";
+
+  return `
+    <div class="result-modal-clarity">
+      <span>Победные 5 карт</span>
+      ${cardsLine ? `<div class="winning-card-row">${cardsLine}</div>` : ""}
+      <strong>${escapeHtml(summary)}</strong>
+      <p>${escapeHtml(why)}</p>
+    </div>
+  `;
+}
+
+function explainWinningHand(result, heroFolded) {
+  if (result.split) return "Одинаковая сила руки. Банк поделен.";
+  if (heroFolded) return "Ты уже вышел из раздачи, поэтому сравнивались только оставшиеся игроки.";
+
+  const winning = result.winningHand;
+  const player = result.playerHand;
+  if (player && result.winner !== "player" && player.category === winning.category) {
+    return "Категория одинаковая. Решили старшие карты или кикер.";
+  }
+  if (player && result.winner !== "player" && player.category < winning.category) {
+    return `${winning.categoryName} старше, чем ${player.categoryName}.`;
+  }
+
+  const reasons = {
+    high_card: "Ни у кого не было пары. Сравнили старшие карты.",
+    pair: "Одна пара старше старшей карты.",
+    two_pair: "Две пары старше одной пары.",
+    three_of_a_kind: "Три карты одного ранга старше двух пар.",
+    straight: "Пять карт идут подряд по рангу.",
+    flush: "Все пять карт одной масти.",
+    full_house: "Сет и пара вместе сильнее флеша.",
+    four_of_a_kind: "Четыре карты одного ранга почти всегда забирают банк.",
+    straight_flush: "Пять карт подряд одной масти — сильнейшая редкая рука.",
+  };
+  return reasons[winning?.categoryKey] ?? "Победила самая сильная пятёрка карт.";
 }
 
 function renderHandSummary(hand) {
@@ -713,7 +765,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.1")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.3")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -767,9 +819,37 @@ function renderGlossaryScreen(state) {
       <div class="kicker">Terms</div>
       <h2>Словарь</h2>
     </section>
+    <section class="hand-rank-guide panel-soft">
+      <div class="section-title"><h3>Комбинации</h3><span>Texas Hold’em</span></div>
+      <div class="hand-rank-grid">
+        ${HAND_RANK_GUIDE.map(renderHandRankGuideItem).join("")}
+      </div>
+    </section>
     <section class="cards-grid">
       ${state.content.glossaryTerms.map((term) => renderGlossaryTerm(term, unlocked.has(term.id))).join("")}
     </section>
+  `;
+}
+
+const HAND_RANK_GUIDE = [
+  ["Старшая карта", "Нет пары. Решает самая высокая карта."],
+  ["Пара", "Две карты одного ранга."],
+  ["Две пары", "Две разные пары."],
+  ["Сет", "Три карты одного ранга."],
+  ["Стрит", "Пять карт подряд."],
+  ["Флеш", "Пять карт одной масти."],
+  ["Фулл-хаус", "Сет плюс пара."],
+  ["Каре", "Четыре карты одного ранга."],
+  ["Стрит-флеш", "Стрит одной масти."],
+];
+
+function renderHandRankGuideItem([name, text], index) {
+  return `
+    <div class="hand-rank-item">
+      <em>${index + 1}</em>
+      <strong>${escapeHtml(name)}</strong>
+      <span>${escapeHtml(text)}</span>
+    </div>
   `;
 }
 

@@ -1,26 +1,12 @@
-# Poker Room Story v0.8.1
+# Poker Room Story v0.8.3
 
-Patch: Real Table Entry / Buy-in / Balance.
+Hand Clarity / Poker Tutor Lite.
 
-## Changes
+## Patch notes
 
-- Added buy-in modal before taking a seat.
-- Added table session stack: table hands now use the chosen stack.
-- Added leave-table action from the table info panel.
-- Balanced table buy-ins and bankroll requirements:
-  - Table 1: $1/$2, buy-in $100–300.
-  - Table 2: $2/$5, buy-in $300–800.
-  - Table 3: $5/$10, buy-in $800–2000.
-- Start hand now opens buy-in if the player is not seated.
-- Club lobby buttons now distinguish Buy-in / Play.
-- Hidden the bright desktop scrollbar in the club journal.
+- Result modal now explains the winning hand in short form.
+- Shows the winning five cards after showdown.
+- Highlights winning cards on the table after showdown.
+- Handles fold, no-showdown, split pot and kicker situations.
+- Adds a compact combination guide to the glossary.
 - Save schema unchanged.
-
-## Run
-
-```powershell
-cd C:\PokerRoomStory
-python -m http.server 8080
-```
-
-Open `http://localhost:8080`.

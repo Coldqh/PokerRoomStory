@@ -2862,7 +2862,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
 }
 
-/* v0.8.1 — real table entry, buy-in modal, journal scrollbar cleanup */
+/* v0.8.2 — real table entry, buy-in modal, journal scrollbar cleanup */
 .table-status.seated {
   color: #ffdca7;
   border-color: rgba(216,161,95,0.26);
@@ -2990,4 +2990,119 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 @media (max-width: 400px) {
   .felt-stage .pot-chip { top: 29.5% !important; }
   .felt-stage .action-bubble { top: 61% !important; }
+}
+
+/* v0.8.3 — hand clarity / tutor lite */
+.result-modal-clarity {
+  display: grid;
+  gap: 7px;
+  margin-top: 9px;
+  padding: 9px;
+  border: 1px solid rgba(216,161,95,0.16);
+  border-radius: 14px;
+  background: rgba(216,161,95,0.045);
+}
+.result-modal-clarity span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.54rem;
+  font-weight: 900;
+}
+.result-modal-clarity strong {
+  color: #fff3df;
+  font-size: 0.78rem;
+  line-height: 1.22;
+}
+.result-modal-clarity p {
+  margin: 0;
+  color: var(--soft);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+.winning-card-row .playing-cards {
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.result-modal-clarity .playing-card {
+  width: 34px;
+  height: 48px;
+  border-radius: 8px;
+}
+.result-modal-clarity .card-corner b {
+  font-size: 0.52rem;
+}
+.result-modal-clarity .card-corner i {
+  font-size: 0.48rem;
+}
+.result-modal-clarity .card-center-suit {
+  font-size: 1.06rem;
+}
+.hand-rank-guide {
+  padding: 13px;
+  margin-bottom: 12px;
+}
+.hand-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.hand-rank-item {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 10px 10px 10px 38px;
+  min-height: 66px;
+  border: 1px solid rgba(255,255,255,0.075);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.032);
+}
+.hand-rank-item em {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  color: #1b1110;
+  background: #d8a15f;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 900;
+}
+.hand-rank-item strong {
+  color: #fff;
+  font-size: 0.82rem;
+}
+.hand-rank-item span {
+  color: var(--soft);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+@media (max-width: 900px) {
+  .hand-rank-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .result-modal-clarity {
+    gap: 6px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+  .result-modal-clarity .playing-card {
+    width: 29px;
+    height: 41px;
+    border-radius: 7px;
+  }
+  .result-modal-clarity .card-center-suit { font-size: 0.9rem; }
+  .hand-rank-guide { padding: 10px; }
+  .hand-rank-grid { grid-template-columns: 1fr; gap: 6px; }
+  .hand-rank-item {
+    min-height: 0;
+    padding: 8px 8px 8px 34px;
+    border-radius: 12px;
+  }
+  .hand-rank-item strong { font-size: 0.76rem; }
+  .hand-rank-item span { font-size: 0.63rem; }
 }

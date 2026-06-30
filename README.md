@@ -2,7 +2,7 @@
 
 Static web MVP for a poker-room career game.
 
-## v0.6.1 — Country Name Pools
+## v0.6.2 — Country Name Pools
 
 - Removed nickname-style NPC names from River Room.
 - Added a country-based name pool architecture.

@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.6.1",
+  "appVersion": "0.6.2",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.6.1",
-  "buildId": "prs-0.6.1-20260629-country-name-pools",
+  "contentVersion": "core-v0.6.2",
+  "buildId": "prs-0.6.2-20260629-hybrid-compact-layout",
   "buildDate": "2026-06-29",
   "notes": [
-    "Country-based NPC name pools",
-    "Russia pool: 10 first names and 10 last names",
-    "River Room NPC nicknames replaced with regular names",
+    "Hybrid compact desktop/mobile layout",
+    "Reduced whitespace and table height",
+    "Mobile topbar, nav and action dock compacted",
     "Save schema unchanged"
   ]
 }

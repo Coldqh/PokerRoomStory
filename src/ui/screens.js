@@ -1,8 +1,8 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.1";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.1";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.1";
-import { describeCards } from "../engine/cards.js?v=0.5.1";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.1";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.2";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.2";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.2";
+import { describeCards } from "../engine/cards.js?v=0.5.2";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.2";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -77,7 +77,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.1")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.2")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -463,7 +463,6 @@ function renderCareerScreen(state) {
           ${activeChallenges.slice(0, 3).map((challenge) => renderChallengeItem(challenge, false, challengeContext)).join("")}
         </div>
         <button class="small-button primary" data-action="screen" data-id="tasks">Открыть задания</button>
-        <p class="panel-note">Выполненные уходят в отдельный список. На их место появляются новые.</p>
       </article>
 
       <article class="panel-soft career-panel">
@@ -493,18 +492,25 @@ function renderTasksScreen(state) {
     <section class="page-card panel-soft tasks-hero">
       <div class="kicker">Career tasks</div>
       <h2>Задания</h2>
-      <p>Активных максимум 6. Выполнил — оно уходит вниз, новое встаёт на место.</p>
     </section>
 
-    <section class="tasks-grid">
-      <article class="panel-soft career-panel">
+    <section class="tasks-board">
+      <input class="task-tab-input" type="radio" name="task-tab" id="task-tab-active" checked />
+      <input class="task-tab-input" type="radio" name="task-tab" id="task-tab-completed" />
+
+      <div class="task-tab-switch panel-soft">
+        <label for="task-tab-active">Активные <span>${activeChallenges.length}/6</span></label>
+        <label for="task-tab-completed">Выполненные <span>${completedChallenges.length}</span></label>
+      </div>
+
+      <article class="panel-soft career-panel task-tab-panel task-panel-active">
         <div class="section-title"><h3>Активные</h3><span>${activeChallenges.length}/6</span></div>
         <div class="challenge-list active-task-list">
           ${activeChallenges.length ? activeChallenges.map((challenge) => renderChallengeItem(challenge, false, challengeContext)).join("") : emptyState("Активных заданий нет.")}
         </div>
       </article>
 
-      <article class="panel-soft career-panel">
+      <article class="panel-soft career-panel task-tab-panel task-panel-completed">
         <div class="section-title"><h3>Выполненные</h3><span>${completedChallenges.length}</span></div>
         <div class="challenge-list completed-task-list">
           ${completedChallenges.length ? completedChallenges.slice().reverse().map((challenge) => renderChallengeItem(challenge, true, challengeContext, completedLog.get(challenge.id))).join("") : emptyState("Пока пусто.")}
@@ -530,7 +536,7 @@ function renderChallengeItem(challenge, completed, context, completedLog = null)
         <span>${escapeHtml(challenge.description)}</span>
       </div>
       <div class="challenge-progress">
-        <em>${completed ? "Done" : `${progress.current}/${progress.target}`}</em>
+        <em>${completed ? "Выполнено" : `${progress.current}/${progress.target}`}</em>
         ${progressBar(percent)}
         <small>${escapeHtml(reward)}</small>
       </div>

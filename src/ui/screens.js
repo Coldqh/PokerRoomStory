@@ -1,8 +1,8 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.2";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.2";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.2";
-import { describeCards } from "../engine/cards.js?v=0.5.2";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.2";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.3";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.3";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.3";
+import { describeCards } from "../engine/cards.js?v=0.5.3";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.3";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -77,7 +77,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.2")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.3")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -524,24 +524,54 @@ function renderChallengeItem(challenge, completed, context, completedLog = null)
   const progress = completed ? { current: 1, target: 1, completed: true } : getChallengeProgress(challenge, context);
   const percent = completed ? 100 : Math.round((progress.current / Math.max(progress.target, 1)) * 100);
   const reward = formatChallengeReward(challenge.reward ?? completedLog ?? {});
-  const difficulty = getChallengeDifficultyLabel(challenge.difficulty ?? completedLog?.difficulty ?? "easy");
+  const difficultyId = challenge.difficulty ?? completedLog?.difficulty ?? "easy";
+  const difficulty = getChallengeDifficultyLabel(difficultyId);
+  const category = challenge.category ?? "task";
+  const progressText = completed ? "Выполнено" : `${progress.current}/${progress.target}`;
+  const completedAt = completedLog?.completedAt ? formatDateShort(completedLog.completedAt) : "";
 
   return `
-    <div class="challenge-item ${completed ? "completed" : ""} difficulty-${escapeHtml(challenge.difficulty ?? "easy")}">
-      <div>
+    <div class="challenge-item ${completed ? "completed" : ""} difficulty-${escapeHtml(difficultyId)}">
+      <div class="challenge-copy">
         <div class="challenge-headline">
           <strong>${escapeHtml(challenge.name)}</strong>
           <em>${escapeHtml(difficulty)}</em>
         </div>
         <span>${escapeHtml(challenge.description)}</span>
+        <div class="challenge-meta">
+          <small>${escapeHtml(categoryLabel(category))}</small>
+          ${completedAt ? `<small>${escapeHtml(completedAt)}</small>` : ""}
+        </div>
       </div>
       <div class="challenge-progress">
-        <em>${completed ? "Выполнено" : `${progress.current}/${progress.target}`}</em>
+        <em>${escapeHtml(progressText)}</em>
         ${progressBar(percent)}
-        <small>${escapeHtml(reward)}</small>
+        <small class="reward-pill">${escapeHtml(reward)}</small>
       </div>
     </div>
   `;
+}
+
+function categoryLabel(category) {
+  const labels = {
+    starter: "старт",
+    winning: "победа",
+    decision: "решение",
+    learning: "обучение",
+    pot: "банк",
+    collection: "коллекция",
+    volume: "объём",
+    hand_made: "комбинация",
+  };
+  return labels[category] ?? category ?? "задание";
+}
+
+function formatDateShort(value) {
+  try {
+    return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit" }).format(new Date(value));
+  } catch (error) {
+    return "";
+  }
 }
 
 function formatChallengeReward(reward = {}) {

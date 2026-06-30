@@ -1011,3 +1011,104 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .task-tab-switch { grid-template-columns: 1fr; }
   .task-tab-switch label { justify-content: space-between; }
 }
+
+
+/* v0.5.3 career polish */
+.reward-toast {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: -6px 0 14px;
+  padding: 12px 14px;
+  border-color: rgba(216,161,95,0.34);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(216,161,95,0.16), transparent 34%),
+    linear-gradient(180deg, rgba(216,161,95,0.085), rgba(255,255,255,0.025)),
+    var(--panel);
+}
+.reward-toast div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.reward-toast span {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.6rem;
+  font-weight: 900;
+}
+.reward-toast strong,
+.reward-toast small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reward-toast strong { font-size: 0.96rem; }
+.reward-toast small { color: var(--soft); font-size: 0.78rem; }
+.challenge-copy { min-width: 0; }
+.challenge-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.challenge-meta small,
+.reward-pill {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.22rem 0.48rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.026);
+  font-size: 0.64rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.reward-pill {
+  justify-self: end;
+  color: #f4c780 !important;
+  border-color: rgba(216,161,95,0.26);
+  background: rgba(216,161,95,0.07);
+}
+.challenge-item {
+  position: relative;
+  overflow: hidden;
+}
+.challenge-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(255,255,255,0.12);
+}
+.challenge-item.difficulty-easy::before { background: rgba(255,255,255,0.22); }
+.challenge-item.difficulty-medium::before { background: rgba(66,215,125,0.7); }
+.challenge-item.difficulty-hard::before { background: rgba(216,161,95,0.8); }
+.challenge-item.difficulty-rare::before { background: rgba(255,69,75,0.86); }
+.challenge-item.completed::before { background: rgba(216,161,95,0.6); }
+.task-preview-list .challenge-item {
+  grid-template-columns: minmax(0, 1fr);
+}
+.task-preview-list .challenge-progress {
+  grid-template-columns: auto minmax(80px, 1fr) auto;
+  align-items: center;
+}
+.task-preview-list .challenge-progress em,
+.task-preview-list .challenge-progress small {
+  text-align: left;
+}
+
+@media (max-width: 740px) {
+  .reward-toast {
+    align-items: stretch;
+  }
+  .reward-pill { justify-self: start; }
+  .task-preview-list .challenge-progress { grid-template-columns: 1fr; }
+}

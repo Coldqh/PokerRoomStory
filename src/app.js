@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.5.2";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.5.2";
-import { applyUnlocks } from "./engine/collections.js?v=0.5.2";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.5.3";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.5.3";
+import { applyUnlocks } from "./engine/collections.js?v=0.5.3";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.5.2";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.5.2";
-import { getClubContext } from "./engine/world.js?v=0.5.2";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.5.2";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.5.2";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.5.2";
-import { escapeHtml } from "./ui/components.js?v=0.5.2";
+} from "./engine/poker.js?v=0.5.3";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.5.3";
+import { getClubContext } from "./engine/world.js?v=0.5.3";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.5.3";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.5.3";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.5.3";
+import { escapeHtml } from "./ui/components.js?v=0.5.3";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -52,7 +52,7 @@ export class PokerRoomStoryApp {
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · task subtabs.`],
+      log: [`Patch v${APP_VERSION} · career polish.`],
       settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };
@@ -86,7 +86,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.5.2");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.5.3");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -112,6 +112,7 @@ export class PokerRoomStoryApp {
       updateMessage: null,
       lastUpdateCheckAt: null,
       notice: null,
+      rewardToast: null,
       saveMeta,
       saveInfo: getSaveInfo(),
       lastSavedAt: saveMeta?.updatedAt ?? null,
@@ -164,7 +165,7 @@ export class PokerRoomStoryApp {
       return;
     }
 
-    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "check-update", "export-save", "import-save", "dismiss-notice", "reset-save"].includes(action)) return;
+    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "check-update", "export-save", "import-save", "dismiss-notice", "dismiss-reward", "reset-save"].includes(action)) return;
 
     if (action === "select-table") {
       this.setState({ activeTableId: id, currentScreen: "table", tableState: createInitialTableState() });
@@ -221,6 +222,11 @@ export class PokerRoomStoryApp {
 
     if (action === "dismiss-notice") {
       this.setSystem({ notice: null, updateAvailable: false, updateMessage: null });
+      return;
+    }
+
+    if (action === "dismiss-reward") {
+      this.setSystem({ rewardToast: null });
       return;
     }
 
@@ -360,6 +366,7 @@ export class PokerRoomStoryApp {
     const totalXp = result.xp + unlockResult.xpReward + challengeResult.xpReward;
     const totalRep = (result.reputationGain ?? 0) + challengeResult.reputationReward;
     const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...challengeResult.messages] });
+    const rewardToast = buildRewardToast(this.content, challengeResult);
     const log = [
       ...this.state.log,
       ...tableState.actionLog.slice(-5),
@@ -375,6 +382,10 @@ export class PokerRoomStoryApp {
       career: careerAfterUnlocks,
       tableState: animatedTableState,
       log,
+      system: {
+        ...this.state.system,
+        rewardToast,
+      },
     });
   }
 
@@ -470,6 +481,7 @@ export class PokerRoomStoryApp {
         <input id="save-import-input" type="file" accept="application/json,.json" hidden />
         ${this.renderTopbar()}
         ${this.renderUpdateBanner()}
+        ${this.renderRewardToast()}
         ${renderScreen(this.state)}
       </main>
     `;
@@ -505,6 +517,22 @@ export class PokerRoomStoryApp {
           ).join("")}
         </nav>
       </header>
+    `;
+  }
+
+  renderRewardToast() {
+    const toast = this.state.system?.rewardToast;
+    if (!toast) return "";
+
+    return `
+      <section class="reward-toast panel-soft">
+        <div>
+          <span>${escapeHtml(toast.kicker ?? "Задание выполнено")}</span>
+          <strong>${escapeHtml(toast.title ?? "Прогресс")}</strong>
+          <small>${escapeHtml(toast.reward ?? "")}</small>
+        </div>
+        <button class="small-button ghost" data-action="dismiss-reward">×</button>
+      </section>
     `;
   }
 
@@ -601,6 +629,23 @@ function buildProgressLine({ xp, reputation, messages }) {
   if (reputation > 0) bits.push(`Rep +${reputation}`);
   if (messages?.length) bits.push(`${messages.length} unlock`);
   return `Прогресс: ${bits.join(" · ")}`;
+}
+
+function buildRewardToast(content, challengeResult) {
+  const ids = challengeResult?.completedNow ?? [];
+  if (!ids.length) return null;
+
+  const first = content.byId?.challenges?.[ids[0]] ?? null;
+  const extra = ids.length > 1 ? ` + ещё ${ids.length - 1}` : "";
+  const parts = [];
+  if (challengeResult.xpReward) parts.push(`XP +${challengeResult.xpReward}`);
+  if (challengeResult.reputationReward) parts.push(`Rep +${challengeResult.reputationReward}`);
+
+  return {
+    kicker: "Задание выполнено",
+    title: `${first?.name ?? "Прогресс"}${extra}`,
+    reward: parts.join(" · ") || "Награда получена",
+  };
 }
 
 function formatDelta(value) {

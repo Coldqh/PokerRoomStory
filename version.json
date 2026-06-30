@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.5.2",
+  "appVersion": "0.5.3",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.5.2",
-  "buildId": "prs-0.5.2-20260630-task-subtabs",
-  "buildDate": "2026-06-30",
+  "contentVersion": "core-v0.5.3",
+  "buildId": "prs-0.5.3-20260629-career-polish",
+  "buildDate": "2026-06-29",
   "notes": [
-    "Tasks screen now uses active/completed subtabs",
-    "Removed explanatory copy from the tasks hero",
-    "Completed tasks are shown in their own switchable subtab",
-    "Save schema unchanged"
+    "Career and tasks visual polish",
+    "Task completion toast",
+    "Improved task cards and progress display",
+    "No save schema change"
   ]
 }

@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.5";
-import { getClubMoodLabel, getClubRepInfo, getClubRoomState, getNpcMoodProfile } from "../engine/club.js?v=0.6.5";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.5";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.5";
-import { describeCards } from "../engine/cards.js?v=0.6.5";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.5";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.6";
+import { getClubRoomState } from "../engine/club.js?v=0.6.6";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.6";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.6";
+import { describeCards } from "../engine/cards.js?v=0.6.6";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.6";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -30,45 +30,12 @@ export function renderScreen(state) {
 
 function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
-  const { club, city, country, tables } = context;
-  const activeTable = state.content.byId.tables[state.activeTableId];
+  const { tables } = context;
   const room = getClubRoomState(state.content, state.clubNpcState, state.activeClubId);
-  const rep = getClubRepInfo(room);
-  const event = room.activeEvent ?? {};
   const journal = room.journal ?? [];
 
   return `
-    <section class="club-clean-hero panel-soft">
-      <div class="club-clean-copy">
-        <div class="kicker">${escapeHtml(country.name)} · ${escapeHtml(city.name)}</div>
-        <h2>${escapeHtml(club.name)}</h2>
-        <p>${escapeHtml(club.description)}</p>
-      </div>
-      <div class="club-clean-actions">
-        <button class="primary" data-action="screen" data-id="table">Стол</button>
-        <button data-action="start-hand">Новая раздача</button>
-      </div>
-    </section>
-
-    <section class="club-mini-grid">
-      <article class="panel-soft club-mini-card">
-        <span>Сегодня</span>
-        <strong>${escapeHtml(event.title ?? "Обычный вечер")}</strong>
-        <small>${escapeHtml(getClubMoodLabel(event))}</small>
-      </article>
-      <article class="panel-soft club-mini-card">
-        <span>Club Rep</span>
-        <strong>${rep.rep}</strong>
-        <small>${escapeHtml(rep.tier)}</small>
-      </article>
-      <article class="panel-soft club-mini-card">
-        <span>Стол</span>
-        <strong>${escapeHtml(activeTable?.name ?? "—")}</strong>
-        <small>$${activeTable?.smallBlind ?? "?"}/$${activeTable?.bigBlind ?? "?"}</small>
-      </article>
-    </section>
-
-    <section class="content-section club-main-grid">
+    <section class="content-section club-main-grid club-main-grid-clean">
       <article class="panel-soft club-tables-panel">
         <div class="section-title"><h3>Столы</h3><span>${tables.length}</span></div>
         <div class="table-list clean-list">
@@ -86,45 +53,7 @@ function renderClubScreen(state) {
   `;
 }
 
-function renderClubNpcMoodItem(npc, moodId = "calm") {
-  const mood = getNpcMoodProfile(moodId);
-  return `
-    <div class="club-npc-mood">
-      <div class="seat-avatar">${escapeHtml(initials(npc.name))}</div>
-      <div>
-        <strong>${escapeHtml(shortName(npc.name))}</strong>
-        <span>${escapeHtml(mood.label)} · ${escapeHtml(mood.short)}</span>
-      </div>
-    </div>
-  `;
-}
 
-function renderSystemPanel(state) {
-  const system = state.system ?? {};
-  const info = system.saveInfo ?? {};
-  const updated = system.lastSavedAt ? formatDateTime(system.lastSavedAt) : "—";
-  const online = system.online === false ? "Офлайн" : "Онлайн";
-  const cache = system.controlled ? "PWA active" : system.serviceWorker ? "PWA ready" : "Browser";
-
-  return `
-    <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.5")}</span></div>
-      <div class="system-grid">
-        <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
-        <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
-        <div class="system-line"><span>Режим</span><strong>${escapeHtml(online)}</strong></div>
-        <div class="system-line"><span>Кэш</span><strong>${escapeHtml(cache)}</strong></div>
-      </div>
-      <div class="system-actions">
-        <button class="small-button" data-action="export-save">Экспорт сейва</button>
-        <button class="small-button" data-action="import-save">Импорт</button>
-        <button class="small-button" data-action="check-update">Проверить</button>
-        <button class="small-button" data-action="force-update">Принудительно обновить</button>
-        <button class="small-button danger" data-action="reset-save">Сброс</button>
-      </div>
-    </section>
-  `;
-}
 
 function formatDateTime(value) {
   try {
@@ -629,7 +558,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.5")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.6")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

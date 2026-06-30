@@ -1,13 +1,12 @@
 {
-  "appVersion": "0.6.5",
+  "appVersion": "0.6.6",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.6.5",
-  "buildId": "prs-0.6.5-20260630-ux-lock-settings-club-cleanup",
+  "contentVersion": "core-v0.6.6",
+  "buildId": "prs-0.6.6-20260630-club-clean-view",
   "buildDate": "2026-06-30",
   "notes": [
-    "System controls moved from Club into Settings",
-    "Club screen cleaned up: no large background/event block and no featured players panel",
-    "Drawer now links to Settings instead of holding system actions",
-    "No poker logic or save schema changes"
+    "Removed club hero/action cards",
+    "Club tab now shows only tables and journal",
+    "Settings remain in separate tab"
   ]
 }

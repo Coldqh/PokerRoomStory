@@ -1872,7 +1872,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
 }
 
-/* v0.6.5 iPhone drawer + compact table correction */
+/* v0.6.6 iPhone drawer + compact table correction */
 .table-page > .table-header {
   display: none !important;
 }
@@ -2102,7 +2102,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .hero-player { width: min(232px, 76%) !important; }
 }
 
-/* v0.6.5 UX lock: clean club + settings screen */
+/* v0.6.6 UX lock: clean club + settings screen */
 .club-clean-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2301,4 +2301,18 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
   .settings-actions .danger { grid-column: 1 / -1; }
   .side-drawer { grid-template-rows: auto auto minmax(0, 1fr) auto !important; }
+}
+
+/* v0.6.6 club clean view */
+.club-main-grid-clean {
+  margin-top: 0;
+}
+.club-main-grid-clean .club-tables-panel,
+.club-main-grid-clean .club-journal-panel {
+  min-height: 0;
+}
+@media (max-width: 740px) {
+  .club-main-grid-clean {
+    gap: 10px;
+  }
 }

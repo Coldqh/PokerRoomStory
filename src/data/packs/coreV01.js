@@ -1,8 +1,12 @@
+import { createNpcNameRoster } from "../namePools.js?v=0.6.1";
+
+const RUSSIA_NPC_NAMES = createNpcNameRoster("COUNTRY_RUSSIA", 32);
+
 export const coreV01 = {
   meta: {
     id: "PACK_CORE_V0_1",
     name: "Core v0.1 — First Local Room",
-    version: "0.6.0",
+    version: "0.6.1",
   },
 
   countries: [
@@ -283,7 +287,7 @@ export const coreV01 = {
   npcs: [
     {
       id: "NPC_RU_BRR_T2_001",
-      name: "Илья Сухой",
+      name: RUSSIA_NPC_NAMES[0],
       tier: "T2",
       countryId: "COUNTRY_RUSSIA",
       cityId: "CITY_RU_NORTH_DISTRICT",
@@ -305,7 +309,7 @@ export const coreV01 = {
     },
     {
       id: "NPC_RU_BRR_T2_002",
-      name: "Марк Давящий",
+      name: RUSSIA_NPC_NAMES[1],
       tier: "T2",
       countryId: "COUNTRY_RUSSIA",
       cityId: "CITY_RU_NORTH_DISTRICT",
@@ -327,7 +331,7 @@ export const coreV01 = {
     },
     ...Array.from({ length: 6 }, (_, index) => ({
       id: `NPC_RU_BRR_T1_${String(index + 1).padStart(3, "0")}`,
-      name: ["Витя Колл", "Саша Флоп", "Рома Тихий", "Никита Рейз", "Олег Ривер", "Паша Стек"][index],
+      name: RUSSIA_NPC_NAMES[index + 2],
       tier: "T1",
       countryId: "COUNTRY_RUSSIA",
       cityId: "CITY_RU_NORTH_DISTRICT",
@@ -363,7 +367,7 @@ export const coreV01 = {
     })),
     ...Array.from({ length: 10 }, (_, index) => ({
       id: `NPC_RU_BRR_T0_${String(index + 1).padStart(3, "0")}`,
-      name: `Игрок ${index + 1}`,
+      name: RUSSIA_NPC_NAMES[index + 8],
       tier: "T0",
       countryId: "COUNTRY_RUSSIA",
       cityId: "CITY_RU_NORTH_DISTRICT",

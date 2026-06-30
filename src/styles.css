@@ -1113,7 +1113,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .task-preview-list .challenge-progress { grid-template-columns: 1fr; }
 }
 
-/* v0.6.0 living club */
+/* v0.6.x living club */
 .club-living-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) 340px;

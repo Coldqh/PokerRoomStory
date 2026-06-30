@@ -2,13 +2,13 @@
 
 Static web MVP for a poker-room career game.
 
-## v0.6.0 — Living Club MVP
+## v0.6.1 — Country Name Pools
 
-- Living club screen for River Room.
-- Club Rep, club day, active room event, and journal.
-- NPC mood states: Calm, Hot, Tilted, Locked In, Pressure.
-- Small club-event / mood influence on NPC decisions.
-- Tasks removed from the Career screen; tasks remain in the separate Tasks tab.
+- Removed nickname-style NPC names from River Room.
+- Added a country-based name pool architecture.
+- Russia now has 10 first names and 10 last names.
+- NPCs are generated from deterministic first-name / last-name rosters.
+- Future countries can get their own name pools without touching poker logic.
 - Save schema is unchanged.
 
 ## Run locally

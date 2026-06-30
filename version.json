@@ -1,13 +1,14 @@
 {
-  "appVersion": "0.5.3",
+  "appVersion": "0.6.0",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.5.3",
-  "buildId": "prs-0.5.3-20260629-career-polish",
+  "contentVersion": "core-v0.6.0",
+  "buildId": "prs-0.6.0-20260629-living-club",
   "buildDate": "2026-06-29",
   "notes": [
-    "Career and tasks visual polish",
-    "Task completion toast",
-    "Improved task cards and progress display",
-    "No save schema change"
+    "Living club screen",
+    "Club Rep and journal",
+    "NPC mood states",
+    "Small club event influence on NPC decisions",
+    "Tasks removed from career screen"
   ]
 }

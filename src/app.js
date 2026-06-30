@@ -1,6 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.5.3";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.5.3";
-import { applyUnlocks } from "./engine/collections.js?v=0.5.3";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.0";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.0";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.0";
+import { applyUnlocks } from "./engine/collections.js?v=0.6.0";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +10,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.5.3";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.5.3";
-import { getClubContext } from "./engine/world.js?v=0.5.3";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.5.3";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.5.3";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.5.3";
-import { escapeHtml } from "./ui/components.js?v=0.5.3";
+} from "./engine/poker.js?v=0.6.0";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.0";
+import { getClubContext } from "./engine/world.js?v=0.6.0";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.0";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.0";
+import { escapeHtml } from "./ui/components.js?v=0.6.0";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -47,12 +48,12 @@ export class PokerRoomStoryApp {
       player: createNewPlayer(),
       career: ensureActiveChallenges(this.content, createNewCareer()),
       knownNpcIds: [],
-      clubNpcState: {},
+      clubNpcState: normalizeClubNpcState(this.content, {}, "CLUB_RU_BASEMENT_RIVER_001"),
       currentScreen: "club",
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · career polish.`],
+      log: [`Patch v${APP_VERSION} · living club.`],
       settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };
@@ -68,6 +69,7 @@ export class PokerRoomStoryApp {
       content: this.content,
       player: normalizePlayer(savedPayload.player),
       career: ensureActiveChallenges(this.content, normalizeCareer(savedPayload.career)),
+      clubNpcState: normalizeClubNpcState(this.content, savedPayload.clubNpcState, savedPayload.activeClubId ?? base.activeClubId),
       settings: { ...createDefaultSettings(), ...(savedPayload.settings ?? {}) },
       tableState: loadedTable.tableState,
       system: {
@@ -86,7 +88,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.5.3");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.0");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -299,6 +301,7 @@ export class PokerRoomStoryApp {
       club: context.club,
       player: this.state.player,
       previousTableState: this.state.tableState,
+      clubSnapshot: getClubSnapshotForTable(this.content, this.state.clubNpcState, this.state.activeClubId, this.state.activeTableId),
     });
 
     const auto = advanceUntilPlayerOrEnd({ tableState: initialTableState, table });
@@ -363,9 +366,17 @@ export class PokerRoomStoryApp {
     });
 
     const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, challengeResult.career, this.content);
+    const clubPatch = buildClubHandPatch({
+      content: this.content,
+      clubNpcState: this.state.clubNpcState,
+      clubId: this.state.activeClubId,
+      tableState,
+      result,
+      challengeMessages: challengeResult.messages,
+    });
     const totalXp = result.xp + unlockResult.xpReward + challengeResult.xpReward;
     const totalRep = (result.reputationGain ?? 0) + challengeResult.reputationReward;
-    const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...challengeResult.messages] });
+    const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...challengeResult.messages, ...clubPatch.clubMessages] });
     const rewardToast = buildRewardToast(this.content, challengeResult);
     const log = [
       ...this.state.log,
@@ -374,13 +385,18 @@ export class PokerRoomStoryApp {
       ...(result.review ? [`Разбор: ${result.review.text}`] : []),
       ...unlockResult.messages,
       ...challengeResult.messages,
+      ...clubPatch.clubMessages,
       progressLine,
     ].slice(-100);
 
     this.setState({
       player: playerAfterHand,
       career: careerAfterUnlocks,
-      tableState: animatedTableState,
+      clubNpcState: clubPatch.clubNpcState,
+      tableState: {
+        ...animatedTableState,
+        clubEvent: clubPatch.roomState.activeEvent,
+      },
       log,
       system: {
         ...this.state.system,

@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.5.3";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.5.3";
+} from "./cards.js?v=0.6.0";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.6.0";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -91,7 +91,7 @@ function createTimelineSnapshot(tableState, actionEvent = null) {
   };
 }
 
-export function startNewHand({ content, table, club, player, previousTableState = null }) {
+export function startNewHand({ content, table, club, player, previousTableState = null, clubSnapshot = null }) {
   const deck = createDeck();
   const npcs = prepareTableNpcs(content, table, club, previousTableState, Math.max(2, table.seats - 1));
   const totalSeats = npcs.length + 1;
@@ -110,6 +110,7 @@ export function startNewHand({ content, table, club, player, previousTableState 
       holeCards: draw(deck, 2),
       stack: clampMoney(Math.min(npc.bankroll ?? table.maxBuyIn, table.maxBuyIn)),
       seatIndex: index + 1,
+      mood: clubSnapshot?.npcMoods?.[npc.id] ?? "calm",
     }),
   );
 
@@ -135,6 +136,9 @@ export function startNewHand({ content, table, club, player, previousTableState 
     handEvents: [],
     awaitingPlayer: false,
     buyInWarning: player.bankroll < table.bigBlind * 20,
+    clubEvent: clubSnapshot?.activeEvent ?? null,
+    clubDay: clubSnapshot?.day ?? 1,
+    clubRep: clubSnapshot?.clubRep ?? 0,
     animation: createAnimationState(),
   });
 
@@ -505,6 +509,7 @@ function autoAdvance(initialState, table, forcedActorId = null) {
     if (shouldKeepNpcInHandBeforeHeroDecision(state, actor, decision)) {
       decision = { action: getToCall(state, actor) > 0 ? "call" : "check", reason: "protect_first_player_decision" };
     }
+    decision = applyClubDecisionBias(state, actor, decision, table);
 
     const commit = commitSeatAction(state, actor.id, decision, table, { source: "npc" });
     state = commit.tableState;
@@ -1166,7 +1171,7 @@ function buildHeroSeat({ holeCards, stack, seatIndex }) {
   };
 }
 
-function buildNpcSeat({ npc, holeCards, stack, seatIndex }) {
+function buildNpcSeat({ npc, holeCards, stack, seatIndex, mood = "calm" }) {
   return {
     id: npc.id,
     type: "npc",
@@ -1186,7 +1191,39 @@ function buildNpcSeat({ npc, holeCards, stack, seatIndex }) {
     isDealer: false,
     isSmallBlind: false,
     isBigBlind: false,
+    mood,
   };
+}
+
+function applyClubDecisionBias(state, actor, decision, table) {
+  const action = typeof decision === "string" ? decision : decision?.action;
+  const toCall = getToCall(state, actor);
+  const eventMod = state.clubEvent?.modifier ?? {};
+  const moodMod = getMoodDecisionModifier(actor?.mood);
+  const callBias = Number(eventMod.callBias ?? 0) + moodMod.callBias;
+  const raiseBias = Number(eventMod.raiseBias ?? 0) + moodMod.raiseBias;
+  const foldBias = Number(eventMod.foldBias ?? 0) + moodMod.foldBias;
+
+  if (toCall > 0) {
+    if (action === "fold" && callBias > 0 && Math.random() < Math.min(0.32, callBias)) return { action: "call", reason: "club_call_bias" };
+    if (action === "call" && foldBias > 0 && Math.random() < Math.min(0.24, foldBias)) return { action: "fold", reason: "club_fold_bias" };
+    if (action === "call" && raiseBias > 0 && canRaise(state, actor) && Math.random() < Math.min(0.16, raiseBias)) return { action: "raise", reason: "club_raise_bias" };
+    return decision;
+  }
+
+  if (action === "check" && raiseBias > 0 && canRaise(state, actor) && Math.random() < Math.min(0.18, raiseBias)) return { action: "raise", reason: "club_open_bias" };
+  if (action === "raise" && foldBias > 0 && Math.random() < Math.min(0.2, foldBias)) return { action: "check", reason: "club_control_bias" };
+  return decision;
+}
+
+function getMoodDecisionModifier(mood = "calm") {
+  const mods = {
+    hot: { callBias: 0.06, raiseBias: 0.07, foldBias: -0.04 },
+    tilted: { callBias: 0.1, raiseBias: 0.05, foldBias: -0.08 },
+    locked: { callBias: -0.03, raiseBias: -0.02, foldBias: 0.08 },
+    pressure: { callBias: 0.05, raiseBias: -0.03, foldBias: -0.01 },
+  };
+  return mods[mood] ?? { callBias: 0, raiseBias: 0, foldBias: 0 };
 }
 
 function findBlindSeat(tableState, type) {

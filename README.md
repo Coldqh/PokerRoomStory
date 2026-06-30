@@ -1,25 +1,29 @@
-# Poker Room Story v0.5.3
+# Poker Room Story
 
-Patch: Tasks subtabs.
+Static web MVP for a poker-room career game.
 
-## Изменения
+## v0.6.0 — Living Club MVP
 
-- Убрано описание под заголовком вкладки **Задания**.
-- **Активные** и **Выполненные** теперь переключаются как подвкладки.
-- Выполненные задания больше не лежат рядом с активными на одном экране.
-- Метка `Done` заменена на `Выполнено`.
-- Логика заданий, награды и сейвы не менялись.
-- Save schema не менялась.
+- Living club screen for River Room.
+- Club Rep, club day, active room event, and journal.
+- NPC mood states: Calm, Hot, Tilted, Locked In, Pressure.
+- Small club-event / mood influence on NPC decisions.
+- Tasks removed from the Career screen; tasks remain in the separate Tasks tab.
+- Save schema is unchanged.
 
-## Установка
-
-Распакуй архив в `C:\PokerRoomStory` с заменой файлов.
+## Run locally
 
 ```powershell
 cd C:\PokerRoomStory
 python -m http.server 8080
 ```
 
+Open `http://localhost:8080`.
+
 ## GitHub Pages
 
-После пуша нажми в игре `Проверить → Принудительно обновить`, потом `Ctrl + F5`.
+Push the files to the repository root. If the old version is cached, use:
+
+```text
+Проверить → Принудительно обновить → Ctrl + F5
+```

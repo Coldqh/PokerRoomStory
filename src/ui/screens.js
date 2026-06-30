@@ -1,8 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.3";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.3";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.3";
-import { describeCards } from "../engine/cards.js?v=0.5.3";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.3";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.0";
+import { getClubMoodLabel, getClubRepInfo, getClubRoomState, getNpcMoodProfile } from "../engine/club.js?v=0.6.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.0";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.0";
+import { describeCards } from "../engine/cards.js?v=0.6.0";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.0";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -29,42 +30,81 @@ function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
   const { club, city, country, tables, npcs } = context;
   const activeTable = state.content.byId.tables[state.activeTableId];
+  const room = getClubRoomState(state.content, state.clubNpcState, state.activeClubId);
+  const rep = getClubRepInfo(room);
+  const event = room.activeEvent ?? {};
+  const featuredNpcs = (room.featuredNpcIds ?? [])
+    .map((id) => state.content.byId.npcs[id])
+    .filter(Boolean)
+    .slice(0, 4);
+  const journal = room.journal ?? [];
 
   return `
-    <section class="home-grid">
-      <article class="hero-card panel-soft">
-        <div class="kicker">${escapeHtml(country.name)} · ${escapeHtml(city.name)}</div>
+    <section class="club-living-grid">
+      <article class="hero-card panel-soft living-club-hero">
+        <div class="kicker">${escapeHtml(country.name)} · ${escapeHtml(city.name)} · Day ${room.day ?? 1}</div>
         <h2>${escapeHtml(club.name)}</h2>
         <p>${escapeHtml(club.description)}</p>
+        <div class="club-status-row">
+          <div><span>Сегодня</span><strong>${escapeHtml(event.title ?? "Обычный вечер")}</strong><small>${escapeHtml(getClubMoodLabel(event))}</small></div>
+          <div><span>Club Rep</span><strong>${rep.rep}</strong><small>${escapeHtml(rep.tier)}</small></div>
+          <div><span>Стол</span><strong>${escapeHtml(activeTable?.name ?? "—")}</strong><small>$${activeTable?.smallBlind ?? "?"}/$${activeTable?.bigBlind ?? "?"}</small></div>
+        </div>
         <div class="hero-buttons">
           <button class="primary" data-action="screen" data-id="table">Открыть стол</button>
           <button data-action="start-hand">Новая раздача</button>
         </div>
       </article>
 
-      <aside class="panel-soft room-summary">
-        <div class="summary-row"><span>Активный стол</span><strong>${escapeHtml(activeTable?.name ?? "—")}</strong></div>
-        <div class="summary-row"><span>Лимиты</span><strong>$${club.minBuyIn}–$${club.maxBuyIn}</strong></div>
-        <div class="summary-row"><span>Игроки</span><strong>${npcs.length}</strong></div>
-        <div class="summary-row"><span>Тип</span><strong>${escapeHtml(club.type)}</strong></div>
+      <aside class="panel-soft club-event-card">
+        <div class="section-title"><h3>Фон клуба</h3><span>${escapeHtml(event.effectLabel ?? "обычно")}</span></div>
+        <strong>${escapeHtml(event.title ?? "Обычный вечер")}</strong>
+        <p>${escapeHtml(event.text ?? "Без особых движений.")}</p>
+        <div class="club-rep-meter">
+          <span>Club Rep · ${escapeHtml(rep.tier)}</span>
+          ${progressBar(rep.progress)}
+          <small>${rep.next ? `до следующего: ${rep.next - rep.rep}` : "max"}</small>
+        </div>
       </aside>
     </section>
 
-    <section class="content-section">
-      <div class="section-title"><h3>Столы</h3><span>${tables.length}</span></div>
-      <div class="table-list clean-list">
-        ${tables.map((table) => renderTableListItem(state, table)).join("")}
-      </div>
+    <section class="content-section club-dash-grid">
+      <article class="panel-soft career-panel">
+        <div class="section-title"><h3>Столы</h3><span>${tables.length}</span></div>
+        <div class="table-list clean-list">
+          ${tables.map((table) => renderTableListItem(state, table)).join("")}
+        </div>
+      </article>
+
+      <article class="panel-soft career-panel">
+        <div class="section-title"><h3>Заметные игроки</h3><span>${featuredNpcs.length}</span></div>
+        <div class="club-npc-strip">
+          ${featuredNpcs.length ? featuredNpcs.map((npc) => renderClubNpcMoodItem(npc, room.npcMoods?.[npc.id])).join("") : emptyState("Пока тихо.")}
+        </div>
+      </article>
     </section>
 
-    <section class="content-section compact-feed">
-      <div class="section-title"><h3>Журнал</h3><span>последнее</span></div>
-      <div class="feed-list">
-        ${state.log.length ? state.log.slice(-4).reverse().map((line) => `<div class="feed-line">${escapeHtml(line)}</div>`).join("") : emptyState("Пока пусто.")}
+    <section class="content-section club-journal-section">
+      <div class="section-title"><h3>Журнал клуба</h3><span>последнее</span></div>
+      <div class="feed-list club-journal-list">
+        ${journal.length ? journal.slice(-6).reverse().map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
       </div>
     </section>
 
     ${renderSystemPanel(state)}
+  `;
+}
+
+function renderClubNpcMoodItem(npc, moodId = "calm") {
+  const mood = getNpcMoodProfile(moodId);
+  return `
+    <div class="club-npc-mood">
+      <div class="seat-avatar">${escapeHtml(initials(npc.name))}</div>
+      <div>
+        <strong>${escapeHtml(shortName(npc.name))}</strong>
+        <span>${escapeHtml(mood.label)} · ${escapeHtml(mood.short)}</span>
+      </div>
+    </div>
   `;
 }
 
@@ -77,7 +117,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.3")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.0")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -422,10 +462,6 @@ function renderCareerScreen(state) {
   const player = state.player;
   const rankProgress = getRankProgress(player);
   const rankInfo = getRankInfo(player);
-  const activeChallenges = getActiveChallenges(state.content, state.career);
-  const completedChallenges = getCompletedChallenges(state.content, state.career);
-  const challengeContext = { player, tableState: state.tableState, result: state.tableState?.lastResult, unlockConditions: [] };
-
   return `
     <section class="career-hero panel-soft">
       <div>
@@ -457,15 +493,7 @@ function renderCareerScreen(state) {
     </section>
 
     <section class="career-grid">
-      <article class="panel-soft career-panel task-preview-panel">
-        <div class="section-title"><h3>Задания</h3><span>${activeChallenges.length} активных</span></div>
-        <div class="task-preview-list">
-          ${activeChallenges.slice(0, 3).map((challenge) => renderChallengeItem(challenge, false, challengeContext)).join("")}
-        </div>
-        <button class="small-button primary" data-action="screen" data-id="tasks">Открыть задания</button>
-      </article>
-
-      <article class="panel-soft career-panel">
+      <article class="panel-soft career-panel career-wide-panel">
         <div class="section-title"><h3>Столы</h3><span>доступ</span></div>
         <div class="table-unlock-list">
           ${state.content.tables.filter((table) => table.clubId === state.activeClubId).map((table) => renderTableUnlockItem(state, table)).join("")}
@@ -475,7 +503,7 @@ function renderCareerScreen(state) {
 
     <section class="page-card panel-soft save-card">
       <strong>Сохранение</strong>
-      <span>${completedChallenges.length}/${state.content.challenges?.length ?? 0} заданий выполнено</span>
+      <span>localStorage</span>
       <button class="danger small-button" data-action="reset-save">Сбросить</button>
     </section>
   `;

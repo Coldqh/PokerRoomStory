@@ -1,4 +1,4 @@
-# Poker Room Story v0.8.4
+# Poker Room Story v0.8.5
 
 Patch: table route flow, five real room tables, readable revealed cards.
 
@@ -18,7 +18,7 @@ Open `http://localhost:8080`.
 ```powershell
 cd C:\PokerRoomStory
 git add .
-git commit -m "Patch v0.8.4 table route flow"
+git commit -m "Patch v0.8.5 table route flow"
 git push
 ```
 

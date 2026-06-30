@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.4";
-import { getClubMoodLabel, getClubRepInfo, getClubRoomState, getNpcMoodProfile } from "../engine/club.js?v=0.6.4";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.4";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.4";
-import { describeCards } from "../engine/cards.js?v=0.6.4";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.4";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.5";
+import { getClubMoodLabel, getClubRepInfo, getClubRoomState, getNpcMoodProfile } from "../engine/club.js?v=0.6.5";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.5";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.5";
+import { describeCards } from "../engine/cards.js?v=0.6.5";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.5";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -13,6 +13,7 @@ export const SCREENS = [
   { id: "npcs", label: "Игроки" },
   { id: "glossary", label: "Словарь" },
   { id: "collections", label: "Коллекции" },
+  { id: "settings", label: "Настройки" },
 ];
 
 export function renderScreen(state) {
@@ -23,75 +24,65 @@ export function renderScreen(state) {
   if (state.currentScreen === "npcs") return renderNpcScreen(state);
   if (state.currentScreen === "glossary") return renderGlossaryScreen(state);
   if (state.currentScreen === "collections") return renderCollectionsScreen(state);
+  if (state.currentScreen === "settings") return renderSettingsScreen(state);
   return renderClubScreen(state);
 }
 
 function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
-  const { club, city, country, tables, npcs } = context;
+  const { club, city, country, tables } = context;
   const activeTable = state.content.byId.tables[state.activeTableId];
   const room = getClubRoomState(state.content, state.clubNpcState, state.activeClubId);
   const rep = getClubRepInfo(room);
   const event = room.activeEvent ?? {};
-  const featuredNpcs = (room.featuredNpcIds ?? [])
-    .map((id) => state.content.byId.npcs[id])
-    .filter(Boolean)
-    .slice(0, 4);
   const journal = room.journal ?? [];
 
   return `
-    <section class="club-living-grid">
-      <article class="hero-card panel-soft living-club-hero">
-        <div class="kicker">${escapeHtml(country.name)} · ${escapeHtml(city.name)} · Day ${room.day ?? 1}</div>
+    <section class="club-clean-hero panel-soft">
+      <div class="club-clean-copy">
+        <div class="kicker">${escapeHtml(country.name)} · ${escapeHtml(city.name)}</div>
         <h2>${escapeHtml(club.name)}</h2>
         <p>${escapeHtml(club.description)}</p>
-        <div class="club-status-row">
-          <div><span>Сегодня</span><strong>${escapeHtml(event.title ?? "Обычный вечер")}</strong><small>${escapeHtml(getClubMoodLabel(event))}</small></div>
-          <div><span>Club Rep</span><strong>${rep.rep}</strong><small>${escapeHtml(rep.tier)}</small></div>
-          <div><span>Стол</span><strong>${escapeHtml(activeTable?.name ?? "—")}</strong><small>$${activeTable?.smallBlind ?? "?"}/$${activeTable?.bigBlind ?? "?"}</small></div>
-        </div>
-        <div class="hero-buttons">
-          <button class="primary" data-action="screen" data-id="table">Открыть стол</button>
-          <button data-action="start-hand">Новая раздача</button>
-        </div>
-      </article>
-
-      <aside class="panel-soft club-event-card">
-        <div class="section-title"><h3>Фон клуба</h3><span>${escapeHtml(event.effectLabel ?? "обычно")}</span></div>
-        <strong>${escapeHtml(event.title ?? "Обычный вечер")}</strong>
-        <p>${escapeHtml(event.text ?? "Без особых движений.")}</p>
-        <div class="club-rep-meter">
-          <span>Club Rep · ${escapeHtml(rep.tier)}</span>
-          ${progressBar(rep.progress)}
-          <small>${rep.next ? `до следующего: ${rep.next - rep.rep}` : "max"}</small>
-        </div>
-      </aside>
+      </div>
+      <div class="club-clean-actions">
+        <button class="primary" data-action="screen" data-id="table">Стол</button>
+        <button data-action="start-hand">Новая раздача</button>
+      </div>
     </section>
 
-    <section class="content-section club-dash-grid">
-      <article class="panel-soft career-panel">
+    <section class="club-mini-grid">
+      <article class="panel-soft club-mini-card">
+        <span>Сегодня</span>
+        <strong>${escapeHtml(event.title ?? "Обычный вечер")}</strong>
+        <small>${escapeHtml(getClubMoodLabel(event))}</small>
+      </article>
+      <article class="panel-soft club-mini-card">
+        <span>Club Rep</span>
+        <strong>${rep.rep}</strong>
+        <small>${escapeHtml(rep.tier)}</small>
+      </article>
+      <article class="panel-soft club-mini-card">
+        <span>Стол</span>
+        <strong>${escapeHtml(activeTable?.name ?? "—")}</strong>
+        <small>$${activeTable?.smallBlind ?? "?"}/$${activeTable?.bigBlind ?? "?"}</small>
+      </article>
+    </section>
+
+    <section class="content-section club-main-grid">
+      <article class="panel-soft club-tables-panel">
         <div class="section-title"><h3>Столы</h3><span>${tables.length}</span></div>
         <div class="table-list clean-list">
           ${tables.map((table) => renderTableListItem(state, table)).join("")}
         </div>
       </article>
 
-      <article class="panel-soft career-panel">
-        <div class="section-title"><h3>Заметные игроки</h3><span>${featuredNpcs.length}</span></div>
-        <div class="club-npc-strip">
-          ${featuredNpcs.length ? featuredNpcs.map((npc) => renderClubNpcMoodItem(npc, room.npcMoods?.[npc.id])).join("") : emptyState("Пока тихо.")}
+      <article class="panel-soft club-journal-panel">
+        <div class="section-title"><h3>Журнал</h3><span>последнее</span></div>
+        <div class="feed-list club-journal-list">
+          ${journal.length ? journal.slice(-6).reverse().map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
         </div>
       </article>
     </section>
-
-    <section class="content-section club-journal-section">
-      <div class="section-title"><h3>Журнал клуба</h3><span>последнее</span></div>
-      <div class="feed-list club-journal-list">
-        ${journal.length ? journal.slice(-6).reverse().map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
-      </div>
-    </section>
-
-    ${renderSystemPanel(state)}
   `;
 }
 
@@ -117,7 +108,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.4")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.5")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -495,12 +486,6 @@ function renderCareerScreen(state) {
         </div>
       </article>
     </section>
-
-    <section class="page-card panel-soft save-card">
-      <strong>Сохранение</strong>
-      <span>localStorage</span>
-      <button class="danger small-button" data-action="reset-save">Сбросить</button>
-    </section>
   `;
 }
 
@@ -617,6 +602,49 @@ function renderTableUnlockItem(state, table) {
       </div>
       <em>${active ? "active" : access.ok ? "open" : "locked"}</em>
     </div>
+  `;
+}
+
+function renderSettingsScreen(state) {
+  const system = state.system ?? {};
+  const info = system.saveInfo ?? {};
+  const updated = system.lastSavedAt ? formatDateTime(system.lastSavedAt) : "—";
+  const online = system.online === false ? "Офлайн" : "Онлайн";
+  const cache = system.controlled ? "PWA active" : system.serviceWorker ? "PWA ready" : "Browser";
+  const speed = state.settings?.animationSpeed ?? "normal";
+
+  return `
+    <section class="page-card panel-soft settings-hero">
+      <div class="kicker">System</div>
+      <h2>Настройки</h2>
+    </section>
+
+    <section class="settings-grid">
+      <article class="panel-soft settings-card">
+        <div class="section-title"><h3>Игра</h3><span>темп</span></div>
+        <div class="settings-line">
+          <div><span>Анимации</span><strong>${escapeHtml(speedLabel(speed))}</strong></div>
+          <button class="small-button" data-action="toggle-speed">Сменить</button>
+        </div>
+      </article>
+
+      <article class="panel-soft settings-card settings-wide">
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.5")}</span></div>
+        <div class="system-grid">
+          <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
+          <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
+          <div class="system-line"><span>Режим</span><strong>${escapeHtml(online)}</strong></div>
+          <div class="system-line"><span>Кэш</span><strong>${escapeHtml(cache)}</strong></div>
+        </div>
+        <div class="system-actions settings-actions">
+          <button class="small-button" data-action="export-save">Экспорт сейва</button>
+          <button class="small-button" data-action="import-save">Импорт</button>
+          <button class="small-button" data-action="check-update">Проверить</button>
+          <button class="small-button" data-action="force-update">Принудительно обновить</button>
+          <button class="small-button danger" data-action="reset-save">Сброс</button>
+        </div>
+      </article>
+    </section>
   `;
 }
 

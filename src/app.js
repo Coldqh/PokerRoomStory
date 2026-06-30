@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.4";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.4";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.4";
-import { applyUnlocks } from "./engine/collections.js?v=0.6.4";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.5";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.5";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.5";
+import { applyUnlocks } from "./engine/collections.js?v=0.6.5";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,13 +10,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.6.4";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.4";
-import { getClubContext } from "./engine/world.js?v=0.6.4";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.4";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.4";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.4";
-import { escapeHtml } from "./ui/components.js?v=0.6.4";
+} from "./engine/poker.js?v=0.6.5";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.5";
+import { getClubContext } from "./engine/world.js?v=0.6.5";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.5";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.5";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.5";
+import { escapeHtml } from "./ui/components.js?v=0.6.5";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -89,7 +89,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.4");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.5");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -496,7 +496,6 @@ export class PokerRoomStoryApp {
 
   getEventDuration(event) {
     const base = eventDuration(event);
-    const speed = this.state.settings?.animationSpeed ?? "normal";
     if (speed === "fast") return Math.max(260, Math.round(base * 0.58));
     if (speed === "instant") return Math.max(90, Math.round(base * 0.16));
     return base;
@@ -545,7 +544,6 @@ export class PokerRoomStoryApp {
 
   renderSideDrawer() {
     const player = this.state.player;
-    const speed = this.state.settings?.animationSpeed ?? "normal";
     return `
       <button class="drawer-backdrop" data-action="close-menu" aria-label="Закрыть меню"></button>
       <aside class="side-drawer panel-soft" aria-label="Главное меню">
@@ -573,17 +571,9 @@ export class PokerRoomStoryApp {
           ).join("")}
         </nav>
 
-        <div class="drawer-settings">
-          <div>
-            <span>Темп</span>
-            <strong>${escapeHtml(speedLabel(speed))}</strong>
-          </div>
-          <button class="small-button" data-action="toggle-speed">Сменить</button>
-        </div>
-
-        <div class="drawer-system">
+        <div class="drawer-version">
           <span>v${escapeHtml(this.state.system?.appVersion ?? APP_VERSION)}</span>
-          <button class="small-button" data-action="check-update">Проверить</button>
+          <button class="small-button ghost" data-action="screen" data-id="settings">Настройки</button>
         </div>
       </aside>
     `;
@@ -698,6 +688,7 @@ function navIcon(id) {
     npcs: "◉",
     glossary: "◇",
     collections: "✦",
+    settings: "⚙",
   };
   return icons[id] ?? "•";
 }

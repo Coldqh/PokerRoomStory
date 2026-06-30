@@ -1,21 +1,18 @@
-# Poker Room Story
+# Poker Room Story v0.6.5
 
-Static web MVP for a poker-room career game.
+UX lock patch.
 
-## v0.6.4 — Drawer Mobile Table Fix
+## Changes
 
-- Replaced the cramped visible navigation with a proper hamburger side drawer.
-- Drawer works on desktop and phone.
-- Moved animation pace control into the drawer/settings area.
-- Removed pace block from the table side info.
-- Fixed mobile card sizes.
-- Reduced central suit overlap on small cards.
-- Made opponent cards visible on phone again.
-- Removed table mood text from unlock rows.
-- Renamed the ugly `Regulars` table to `Club Cash`.
-- Save schema is unchanged.
+- Cleaned up Club screen.
+- Removed big club background/event panel.
+- Removed featured players block from Club.
+- Moved system controls into a separate Settings tab.
+- Removed system panel from Club.
+- Drawer now contains navigation plus Settings shortcut.
+- Poker logic, saves, NPCs, career, and tasks are unchanged.
 
-## Run locally
+## Run
 
 ```powershell
 cd C:\PokerRoomStory
@@ -23,11 +20,3 @@ python -m http.server 8080
 ```
 
 Open `http://localhost:8080`.
-
-## GitHub Pages
-
-Push the files to the repository root. If the old version is cached, use:
-
-```text
-Проверить → Принудительно обновить → Ctrl + F5
-```

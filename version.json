@@ -1,13 +1,13 @@
 {
-  "appVersion": "0.6.4",
+  "appVersion": "0.6.5",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.6.4",
-  "buildId": "prs-0.6.4-20260630-iphone-drawer-compact-table-fix",
+  "contentVersion": "core-v0.6.5",
+  "buildId": "prs-0.6.5-20260630-ux-lock-settings-club-cleanup",
   "buildDate": "2026-06-30",
   "notes": [
-    "iPhone-safe drawer navigation uses real buttons instead of hidden checkbox labels",
-    "Table header strip removed from table view",
-    "Desktop and mobile card sizing separated to prevent suit/rank overlap",
-    "Mobile table compressed for iPhone 14 Pro layout"
+    "System controls moved from Club into Settings",
+    "Club screen cleaned up: no large background/event block and no featured players panel",
+    "Drawer now links to Settings instead of holding system actions",
+    "No poker logic or save schema changes"
   ]
 }

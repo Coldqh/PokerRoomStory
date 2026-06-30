@@ -1,4 +1,4 @@
-# Poker Room Story v0.7.1
+# Poker Room Story v0.8.0
 
 Patch: Better Table Experience.
 

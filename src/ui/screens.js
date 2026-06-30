@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.7.1";
-import { getClubRoomState } from "../engine/club.js?v=0.7.1";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.7.1";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.7.1";
-import { describeCards } from "../engine/cards.js?v=0.7.1";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.7.1";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.0";
+import { getClubRoomState } from "../engine/club.js?v=0.8.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.0";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.0";
+import { describeCards } from "../engine/cards.js?v=0.8.0";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.0";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -30,20 +30,26 @@ export function renderScreen(state) {
 
 function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
-  const { tables } = context;
+  const { club, tables } = context;
   const room = getClubRoomState(state.content, state.clubNpcState, state.activeClubId);
   const journal = room.journal ?? [];
 
   return `
-    <section class="content-section club-main-grid club-main-grid-clean">
-      <article class="panel-soft club-tables-panel">
-        <div class="section-title"><h3>Столы</h3><span>${tables.length}</span></div>
-        <div class="table-list clean-list">
+    <section class="room-lobby-layout">
+      <article class="panel-soft room-lobby-panel">
+        <div class="room-lobby-head">
+          <div>
+            <span>Cash lobby</span>
+            <strong>${escapeHtml(club.name)}</strong>
+          </div>
+          <em>${tables.length} tables</em>
+        </div>
+        <div class="room-table-list">
           ${tables.map((table) => renderTableListItem(state, table)).join("")}
         </div>
       </article>
 
-      <article class="panel-soft club-journal-panel">
+      <article class="panel-soft club-journal-panel room-journal-panel">
         <div class="section-title"><h3>Журнал</h3><span>последнее</span></div>
         <div class="feed-list club-journal-list">
           ${journal.length ? journal.slice(-6).reverse().map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
@@ -66,22 +72,63 @@ function formatDateTime(value) {
 function renderTableListItem(state, table) {
   const access = canEnterTable(state.player, table);
   const active = state.activeTableId === table.id;
+  const occupied = Math.min(table.seats ?? 6, table.occupiedSeats ?? Math.max(1, (table.seats ?? 6) - 1));
+  const seatsLabel = `${occupied}/${table.seats ?? 6}`;
+  const buyIn = `$${table.minBuyIn}–$${table.maxBuyIn}`;
+  const players = getLobbyTablePlayers(state, table).map((npc) => escapeHtml(npc.name)).join(" · ");
+  const status = access.ok ? (occupied >= (table.seats ?? 6) ? "Очередь" : "Свободно") : "Закрыт";
+  const buttonLabel = active ? "За столом" : access.ok ? "Сесть" : "Закрыт";
+  const statusClass = access.ok ? (occupied >= (table.seats ?? 6) ? "waiting" : "open") : "locked";
+
   return `
-    <article class="table-item ${active ? "selected" : ""}">
-      <div class="table-symbol">♠</div>
-      <div class="table-copy">
-        <strong>${escapeHtml(table.name)}</strong>
-        <span>$${table.smallBlind}/$${table.bigBlind} · ${escapeHtml(table.limitType)} · D${table.difficulty}</span>
+    <article class="table-item room-table-row ${active ? "selected" : ""} ${access.ok ? "" : "locked"}">
+      <div class="room-table-number">${escapeHtml(String(table.tableNumber ?? ""))}</div>
+      <div class="room-table-main">
+        <div class="room-table-title">
+          <strong>${escapeHtml(table.name)}</strong>
+          <span>${escapeHtml(table.gameLabel ?? `$${table.smallBlind}/$${table.bigBlind} NL Hold’em`)}</span>
+        </div>
+        <div class="room-table-meta">
+          <span>Buy-in ${escapeHtml(buyIn)}</span>
+          <span>Seats ${escapeHtml(seatsLabel)}</span>
+          <span>Avg pot $${Number(table.avgPot ?? table.bigBlind * 12)}</span>
+          <span>${Number(table.handsPerHour ?? 30)} hands/h</span>
+        </div>
+        <div class="room-table-players">${players || "Состав обновляется"}</div>
+        ${access.ok ? "" : `<div class="room-table-lock">${escapeHtml(access.reason)}</div>`}
       </div>
-      <button class="small-button ${active ? "primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${access.ok ? "" : "disabled"}>
-        ${active ? "Выбран" : access.ok ? "Сесть" : access.reason}
-      </button>
+      <div class="room-table-side">
+        <span class="table-status ${statusClass}">${escapeHtml(status)}</span>
+        <button class="small-button ${active ? "primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${access.ok ? "" : "disabled"}>
+          ${escapeHtml(buttonLabel)}
+        </button>
+      </div>
     </article>
   `;
 }
 
+function getLobbyTablePlayers(state, table) {
+  const rules = table.npcSelectionRules ?? {};
+  const tiers = new Set(rules.tiers ?? []);
+  const archetypes = new Set(rules.archetypes ?? []);
+  const pool = (state.content.npcs ?? []).filter((npc) => {
+    const tierOk = !tiers.size || tiers.has(npc.tier);
+    const archetypeOk = !archetypes.size || archetypes.has(npc.archetypeId);
+    return tierOk && archetypeOk;
+  });
+
+  const source = pool.length ? pool : state.content.npcs ?? [];
+  const start = stableIndex(table.id, Math.max(1, source.length));
+  return Array.from({ length: Math.min(4, source.length) }, (_, offset) => source[(start + offset) % source.length]).filter(Boolean);
+}
+
+function stableIndex(value, modulo) {
+  let hash = 0;
+  for (const char of String(value ?? "")) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return modulo ? hash % modulo : 0;
+}
+
 function renderTableScreen(state) {
-  const context = getClubContext(state.content, state.activeClubId);
   const table = state.content.byId.tables[state.activeTableId];
   const hand = state.tableState;
   const animation = hand?.animation ?? {};
@@ -107,15 +154,6 @@ function renderTableScreen(state) {
 
   return `
     <section class="table-page">
-      <div class="table-header panel-soft">
-        <button class="icon-button" data-action="screen" data-id="club">←</button>
-        <div>
-          <strong>${escapeHtml(table.name)}</strong>
-          <span>${escapeHtml(context.club.name)} · $${table.smallBlind}/$${table.bigBlind}</span>
-        </div>
-        <div class="phase-pill">${escapeHtml(getPhaseLabel(hand?.phase ?? "idle"))}</div>
-      </div>
-
       <div class="game-area">
         <main class="felt-stage ${animation.isPlaying ? "is-playing" : ""} ${animation.showWinner ? "has-winner" : ""}">
           ${renderNpcSeats(hand, currentEvent, revealNpcCards)}
@@ -607,7 +645,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.7.1")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.0")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

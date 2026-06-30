@@ -1872,7 +1872,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
 }
 
-/* v0.7.1 iPhone drawer + compact table correction */
+/* v0.8.0 iPhone drawer + compact table correction */
 .table-page > .table-header {
   display: none !important;
 }
@@ -2102,7 +2102,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .hero-player { width: min(232px, 76%) !important; }
 }
 
-/* v0.7.1 UX lock: clean club + settings screen */
+/* v0.8.0 UX lock: clean club + settings screen */
 .club-clean-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2303,7 +2303,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .side-drawer { grid-template-rows: auto auto minmax(0, 1fr) auto !important; }
 }
 
-/* v0.7.1 club clean view */
+/* v0.8.0 club clean view */
 .club-main-grid-clean {
   margin-top: 0;
 }
@@ -2317,7 +2317,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
 }
 
-/* v0.7.1 better table result modal */
+/* v0.8.0 better table result modal */
 .result-modal-layer {
   position: fixed;
   inset: 0;
@@ -2462,7 +2462,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
 }
 
-/* v0.7.1 result modal + table action toast polish */
+/* v0.8.0 result modal + table action toast polish */
 .result-modal-layer {
   padding: max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom));
 }
@@ -2644,5 +2644,220 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .felt-stage .action-bubble {
     top: 55.5% !important;
     width: min(176px, 50%) !important;
+  }
+}
+
+/* v0.8.0 — real poker-room lobby and table overlay cleanup */
+.room-lobby-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+  gap: 14px;
+  margin-top: 12px;
+}
+.room-lobby-panel,
+.room-journal-panel {
+  padding: 12px;
+}
+.room-lobby-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0 2px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.055);
+}
+.room-lobby-head span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+.room-lobby-head strong {
+  display: block;
+  margin-top: 2px;
+  color: #fff;
+  font-size: 1.02rem;
+  letter-spacing: 0.02em;
+}
+.room-lobby-head em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.76rem;
+}
+.room-table-list {
+  display: grid;
+  gap: 8px;
+}
+.table-item.room-table-row {
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 15px;
+}
+.room-table-number {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  color: #ffd7d9;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+.room-table-main {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.room-table-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.room-table-title strong {
+  color: #fff;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+.room-table-title span {
+  color: #ffb4b7;
+  font-size: 0.78rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.room-table-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.room-table-meta span,
+.table-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0.18rem 0.46rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.07);
+  color: var(--muted);
+  background: rgba(255,255,255,0.025);
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.room-table-players,
+.room-table-lock {
+  color: var(--muted);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.room-table-lock { color: #ffb4b7; }
+.room-table-side {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 7px;
+}
+.table-status.open { color: #b7ffd1; border-color: rgba(100,255,160,0.18); background: rgba(100,255,160,0.045); }
+.table-status.waiting { color: #ffe1a8; border-color: rgba(216,161,95,0.22); background: rgba(216,161,95,0.055); }
+.table-status.locked { color: #ffb4b7; border-color: rgba(255,69,75,0.2); background: rgba(255,69,75,0.055); }
+.table-item.room-table-row.locked { opacity: 0.72; }
+
+.table-page { gap: 8px; }
+.felt-stage .pot-chip {
+  top: 35% !important;
+}
+.felt-stage .board-zone {
+  top: 52% !important;
+}
+.felt-stage .action-bubble {
+  top: 66% !important;
+  width: min(226px, 54%) !important;
+}
+
+@media (max-width: 900px) {
+  .room-lobby-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .room-lobby-panel,
+  .room-journal-panel { padding: 10px; }
+}
+
+@media (max-width: 740px) {
+  .room-lobby-head {
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+  }
+  .room-lobby-head strong { font-size: 0.94rem; }
+  .room-lobby-head em { font-size: 0.68rem; }
+  .table-item.room-table-row {
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 8px;
+    gap: 8px;
+    border-radius: 13px;
+  }
+  .room-table-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+  }
+  .room-table-side {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .room-table-title {
+    display: grid;
+    gap: 1px;
+  }
+  .room-table-title strong { font-size: 0.84rem; }
+  .room-table-title span { font-size: 0.7rem; }
+  .room-table-meta { gap: 4px; }
+  .room-table-meta span,
+  .table-status {
+    min-height: 19px;
+    padding: 0.12rem 0.36rem;
+    font-size: 0.56rem;
+  }
+  .room-table-players,
+  .room-table-lock { font-size: 0.62rem; }
+  .table-item.room-table-row .small-button {
+    min-height: 28px;
+    padding: 0.34rem 0.58rem;
+    border-radius: 9px;
+    font-size: 0.62rem;
+  }
+  .felt-stage .pot-chip {
+    top: 33% !important;
+  }
+  .felt-stage .board-zone {
+    top: 49% !important;
+  }
+  .felt-stage .action-bubble {
+    top: 61% !important;
+    width: min(178px, 48%) !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .felt-stage .pot-chip { top: 32% !important; }
+  .felt-stage .board-zone { top: 48% !important; }
+  .felt-stage .action-bubble {
+    top: 60.5% !important;
+    width: min(166px, 46%) !important;
   }
 }

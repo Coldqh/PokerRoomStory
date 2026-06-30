@@ -1,13 +1,12 @@
 {
-  "appVersion": "0.7.1",
+  "appVersion": "0.8.0",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.7.1",
-  "buildId": "prs-0.7.1-20260630-result-mobile-polish",
+  "contentVersion": "core-v0.8.0",
+  "buildId": "prs-0.8.0-20260629-poker-room-lobby",
   "buildDate": "2026-06-30",
   "notes": [
-    "Compacted the post-hand result modal",
-    "Moved table action toast under the community cards",
-    "Reduced action toast size so it does not cover cards or hero seat",
-    "No save schema changes"
+    "Poker room lobby table rows",
+    "Realistic table metadata",
+    "Moved table pot/action overlays away from board"
   ]
 }

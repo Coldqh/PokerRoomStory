@@ -1,4 +1,4 @@
-import { createNpcNameRoster } from "../namePools.js?v=0.7.1";
+import { createNpcNameRoster } from "../namePools.js?v=0.8.0";
 
 const RUSSIA_NPC_NAMES = createNpcNameRoster("COUNTRY_RUSSIA", 32);
 
@@ -6,7 +6,7 @@ export const coreV01 = {
   meta: {
     id: "PACK_CORE_V0_1",
     name: "Core v0.1 — First Local Room",
-    version: "0.7.1",
+    version: "0.8.0",
   },
 
   countries: [
@@ -79,8 +79,7 @@ export const coreV01 = {
       visualTheme: "dark_local_room",
       glossaryPackId: "GLOSSARY_CORE_POKER_RU_V0_1",
       collectionPackId: "COLLECTION_CORE_V0_1",
-      description:
-        "Низкие лимиты. Регуляры. Первый стол карьеры.",
+      description: "Локальный poker room.",
     },
   ],
 
@@ -88,14 +87,19 @@ export const coreV01 = {
     {
       id: "TABLE_RU_BRR_LOW_001",
       clubId: "CLUB_RU_BASEMENT_RIVER_001",
-      name: "Low Cash",
+      name: "Table 1",
       gameType: "POKER_TEXAS_HOLDEM",
-      limitType: "cash",
+      gameLabel: "$1/$2 NL Hold’em",
+      limitType: "No Limit Hold’em",
       smallBlind: 1,
       bigBlind: 2,
       minBuyIn: 40,
       maxBuyIn: 160,
       seats: 6,
+      occupiedSeats: 5,
+      avgPot: 34,
+      handsPerHour: 31,
+      tableNumber: 1,
       difficulty: 1,
       tableMood: "starter",
       npcSelectionRules: {
@@ -108,14 +112,19 @@ export const coreV01 = {
     {
       id: "TABLE_RU_BRR_LOW_002",
       clubId: "CLUB_RU_BASEMENT_RIVER_001",
-      name: "Club Cash",
+      name: "Table 2",
       gameType: "POKER_TEXAS_HOLDEM",
-      limitType: "cash",
+      gameLabel: "$2/$5 NL Hold’em",
+      limitType: "No Limit Hold’em",
       smallBlind: 2,
       bigBlind: 5,
       minBuyIn: 120,
       maxBuyIn: 400,
       seats: 6,
+      occupiedSeats: 5,
+      avgPot: 92,
+      handsPerHour: 29,
+      tableNumber: 2,
       difficulty: 2,
       tableMood: "regulars",
       npcSelectionRules: {
@@ -124,21 +133,26 @@ export const coreV01 = {
       },
       specialRules: [],
       unlockRequirement: {
-        bankroll: 250,
-        reputation: 8,
+        bankroll: 1200,
+        reputation: 6,
       },
     },
     {
       id: "TABLE_RU_BRR_MID_001",
       clubId: "CLUB_RU_BASEMENT_RIVER_001",
-      name: "Deep River",
+      name: "Table 3",
       gameType: "POKER_TEXAS_HOLDEM",
-      limitType: "cash",
+      gameLabel: "$5/$10 NL Hold’em",
+      limitType: "No Limit Hold’em",
       smallBlind: 5,
       bigBlind: 10,
       minBuyIn: 250,
       maxBuyIn: 900,
       seats: 6,
+      occupiedSeats: 6,
+      avgPot: 210,
+      handsPerHour: 27,
+      tableNumber: 3,
       difficulty: 3,
       tableMood: "deep_regulars",
       npcSelectionRules: {
@@ -147,7 +161,7 @@ export const coreV01 = {
       },
       specialRules: [],
       unlockRequirement: {
-        bankroll: 1400,
+        bankroll: 3500,
         reputation: 16,
       },
     },

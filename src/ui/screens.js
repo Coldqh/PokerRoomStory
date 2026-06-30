@@ -1,13 +1,14 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.0";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.0";
-import { getChallengeProgress, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.0";
-import { describeCards } from "../engine/cards.js?v=0.5.0";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.0";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.1";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.1";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.1";
+import { describeCards } from "../engine/cards.js?v=0.5.1";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.1";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
   { id: "table", label: "Стол" },
   { id: "career", label: "Карьера" },
+  { id: "tasks", label: "Задания" },
   { id: "npcs", label: "Игроки" },
   { id: "glossary", label: "Словарь" },
   { id: "collections", label: "Коллекции" },
@@ -17,6 +18,7 @@ export function renderScreen(state) {
   if (state.currentScreen === "club") return renderClubScreen(state);
   if (state.currentScreen === "table") return renderTableScreen(state);
   if (state.currentScreen === "career") return renderCareerScreen(state);
+  if (state.currentScreen === "tasks") return renderTasksScreen(state);
   if (state.currentScreen === "npcs") return renderNpcScreen(state);
   if (state.currentScreen === "glossary") return renderGlossaryScreen(state);
   if (state.currentScreen === "collections") return renderCollectionsScreen(state);
@@ -75,7 +77,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.0")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.1")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -420,7 +422,8 @@ function renderCareerScreen(state) {
   const player = state.player;
   const rankProgress = getRankProgress(player);
   const rankInfo = getRankInfo(player);
-  const completedChallenges = new Set(state.career?.completedChallenges ?? []);
+  const activeChallenges = getActiveChallenges(state.content, state.career);
+  const completedChallenges = getCompletedChallenges(state.content, state.career);
   const challengeContext = { player, tableState: state.tableState, result: state.tableState?.lastResult, unlockConditions: [] };
 
   return `
@@ -454,11 +457,13 @@ function renderCareerScreen(state) {
     </section>
 
     <section class="career-grid">
-      <article class="panel-soft career-panel">
-        <div class="section-title"><h3>Челленджи</h3><span>${completedChallenges.size}/${state.content.challenges?.length ?? 0}</span></div>
-        <div class="challenge-list">
-          ${(state.content.challenges ?? []).map((challenge) => renderChallengeItem(challenge, completedChallenges.has(challenge.id), challengeContext)).join("")}
+      <article class="panel-soft career-panel task-preview-panel">
+        <div class="section-title"><h3>Задания</h3><span>${activeChallenges.length} активных</span></div>
+        <div class="task-preview-list">
+          ${activeChallenges.slice(0, 3).map((challenge) => renderChallengeItem(challenge, false, challengeContext)).join("")}
         </div>
+        <button class="small-button primary" data-action="screen" data-id="tasks">Открыть задания</button>
+        <p class="panel-note">Выполненные уходят в отдельный список. На их место появляются новые.</p>
       </article>
 
       <article class="panel-soft career-panel">
@@ -471,32 +476,73 @@ function renderCareerScreen(state) {
 
     <section class="page-card panel-soft save-card">
       <strong>Сохранение</strong>
-      <span>localStorage</span>
+      <span>${completedChallenges.length}/${state.content.challenges?.length ?? 0} заданий выполнено</span>
       <button class="danger small-button" data-action="reset-save">Сбросить</button>
     </section>
   `;
 }
 
-function renderChallengeItem(challenge, completed, context) {
-  const progress = completed ? { current: 1, target: 1, completed: true } : getChallengeProgress(challenge, context);
-  const percent = completed ? 100 : Math.round((progress.current / Math.max(progress.target, 1)) * 100);
-  const reward = [];
-  if (challenge.reward?.xp) reward.push(`XP +${challenge.reward.xp}`);
-  if (challenge.reward?.reputation) reward.push(`Rep +${challenge.reward.reputation}`);
+function renderTasksScreen(state) {
+  const player = state.player;
+  const activeChallenges = getActiveChallenges(state.content, state.career);
+  const completedChallenges = getCompletedChallenges(state.content, state.career);
+  const completedLog = new Map((state.career?.completedChallengeLog ?? []).map((entry) => [entry.id, entry]));
+  const challengeContext = { player, tableState: state.tableState, result: state.tableState?.lastResult, unlockConditions: [] };
 
   return `
-    <div class="challenge-item ${completed ? "completed" : ""}">
+    <section class="page-card panel-soft tasks-hero">
+      <div class="kicker">Career tasks</div>
+      <h2>Задания</h2>
+      <p>Активных максимум 6. Выполнил — оно уходит вниз, новое встаёт на место.</p>
+    </section>
+
+    <section class="tasks-grid">
+      <article class="panel-soft career-panel">
+        <div class="section-title"><h3>Активные</h3><span>${activeChallenges.length}/6</span></div>
+        <div class="challenge-list active-task-list">
+          ${activeChallenges.length ? activeChallenges.map((challenge) => renderChallengeItem(challenge, false, challengeContext)).join("") : emptyState("Активных заданий нет.")}
+        </div>
+      </article>
+
+      <article class="panel-soft career-panel">
+        <div class="section-title"><h3>Выполненные</h3><span>${completedChallenges.length}</span></div>
+        <div class="challenge-list completed-task-list">
+          ${completedChallenges.length ? completedChallenges.slice().reverse().map((challenge) => renderChallengeItem(challenge, true, challengeContext, completedLog.get(challenge.id))).join("") : emptyState("Пока пусто.")}
+        </div>
+      </article>
+    </section>
+  `;
+}
+
+function renderChallengeItem(challenge, completed, context, completedLog = null) {
+  const progress = completed ? { current: 1, target: 1, completed: true } : getChallengeProgress(challenge, context);
+  const percent = completed ? 100 : Math.round((progress.current / Math.max(progress.target, 1)) * 100);
+  const reward = formatChallengeReward(challenge.reward ?? completedLog ?? {});
+  const difficulty = getChallengeDifficultyLabel(challenge.difficulty ?? completedLog?.difficulty ?? "easy");
+
+  return `
+    <div class="challenge-item ${completed ? "completed" : ""} difficulty-${escapeHtml(challenge.difficulty ?? "easy")}">
       <div>
-        <strong>${escapeHtml(challenge.name)}</strong>
+        <div class="challenge-headline">
+          <strong>${escapeHtml(challenge.name)}</strong>
+          <em>${escapeHtml(difficulty)}</em>
+        </div>
         <span>${escapeHtml(challenge.description)}</span>
       </div>
       <div class="challenge-progress">
         <em>${completed ? "Done" : `${progress.current}/${progress.target}`}</em>
         ${progressBar(percent)}
-        <small>${escapeHtml(reward.join(" · "))}</small>
+        <small>${escapeHtml(reward)}</small>
       </div>
     </div>
   `;
+}
+
+function formatChallengeReward(reward = {}) {
+  const parts = [];
+  if (reward.xp) parts.push(`XP +${reward.xp}`);
+  if (reward.reputation) parts.push(`Rep +${reward.reputation}`);
+  return parts.join(" · ") || "—";
 }
 
 function renderTableUnlockItem(state, table) {

@@ -1,6 +1,6 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.5.0";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.5.0";
-import { applyUnlocks } from "./engine/collections.js?v=0.5.0";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.5.1";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.5.1";
+import { applyUnlocks } from "./engine/collections.js?v=0.5.1";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -9,13 +9,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.5.0";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.5.0";
-import { getClubContext } from "./engine/world.js?v=0.5.0";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.5.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.5.0";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.5.0";
-import { escapeHtml } from "./ui/components.js?v=0.5.0";
+} from "./engine/poker.js?v=0.5.1";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.5.1";
+import { getClubContext } from "./engine/world.js?v=0.5.1";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.5.1";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.5.1";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.5.1";
+import { escapeHtml } from "./ui/components.js?v=0.5.1";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -45,14 +45,14 @@ export class PokerRoomStoryApp {
     const base = {
       content: this.content,
       player: createNewPlayer(),
-      career: createNewCareer(),
+      career: ensureActiveChallenges(this.content, createNewCareer()),
       knownNpcIds: [],
       clubNpcState: {},
       currentScreen: "club",
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · career MVP.`],
+      log: [`Patch v${APP_VERSION} · tasks board.`],
       settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };
@@ -67,7 +67,7 @@ export class PokerRoomStoryApp {
       ...savedPayload,
       content: this.content,
       player: normalizePlayer(savedPayload.player),
-      career: normalizeCareer(savedPayload.career),
+      career: ensureActiveChallenges(this.content, normalizeCareer(savedPayload.career)),
       settings: { ...createDefaultSettings(), ...(savedPayload.settings ?? {}) },
       tableState: loadedTable.tableState,
       system: {
@@ -86,7 +86,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.5.0");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.5.1");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -588,6 +588,7 @@ function navIcon(id) {
     club: "⌂",
     table: "♣",
     career: "♕",
+    tasks: "☑",
     npcs: "◉",
     glossary: "◇",
     collections: "✦",

@@ -459,7 +459,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 /* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
-/* v0.5.0 keeps clean UI; update safety and mini review live in engine. */
+/* v0.5.1 keeps clean UI; update safety and mini review live in engine. */
 .brand { min-width: 0; }
 .brand-card { overflow: hidden; }
 .brand h1 {
@@ -600,7 +600,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 .review-block { border-color: rgba(216,161,95,0.18); }
 .review-block span { color: var(--gold); }
 
-/* v0.5.0 folded seat clarity */
+/* v0.5.1 folded seat clarity */
 .seat.folded {
   opacity: 0.38;
   filter: grayscale(0.9);
@@ -624,7 +624,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* v0.5.0 mobile nav polish + pacing */
+/* v0.5.1 mobile nav polish + pacing */
 .app-nav {
   min-width: 0;
   overflow: hidden;
@@ -691,7 +691,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 
-/* v0.5.0 hand continuation fix */
+/* v0.5.1 hand continuation fix */
 .hero-player.folded {
   opacity: 0.42;
   filter: grayscale(0.9);
@@ -723,7 +723,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   background: rgba(7,7,9,0.7);
 }
 
-/* v0.5.0 hand summary and transcript */
+/* v0.5.1 hand summary and transcript */
 .hand-summary-block {
   border-color: rgba(216,161,95,0.28);
   background: rgba(216,161,95,0.045);
@@ -762,7 +762,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .transcript-list div { grid-template-columns: 62px minmax(0, 1fr); }
 }
 
-/* v0.5.0 career MVP */
+/* v0.5.1 tasks board */
 .career-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
@@ -884,4 +884,70 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .challenge-progress em,
   .challenge-progress small,
   .table-unlock-item em { text-align: left; }
+}
+
+/* v0.5.1 tasks board */
+.tasks-hero p,
+.panel-note {
+  margin: 0.5rem 0 0;
+  color: var(--soft);
+  line-height: 1.4;
+}
+.tasks-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+.task-preview-panel {
+  display: grid;
+  gap: 10px;
+}
+.task-preview-list {
+  display: grid;
+  gap: 8px;
+}
+.challenge-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.challenge-headline strong {
+  min-width: 0;
+}
+.challenge-headline em {
+  flex: 0 0 auto;
+  padding: 0.16rem 0.42rem;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 999px;
+  color: var(--gold);
+  background: rgba(216,161,95,0.055);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.challenge-item.difficulty-medium { border-color: rgba(66,215,125,0.16); }
+.challenge-item.difficulty-hard { border-color: rgba(216,161,95,0.26); }
+.challenge-item.difficulty-rare { border-color: rgba(255,69,75,0.34); }
+.completed-task-list .challenge-item {
+  opacity: 0.76;
+}
+.completed-task-list {
+  max-height: 660px;
+  overflow: auto;
+  padding-right: 2px;
+}
+.completed-task-list::-webkit-scrollbar { width: 0; height: 0; }
+.completed-task-list { scrollbar-width: none; }
+
+@media (max-width: 1080px) {
+  .tasks-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 740px) {
+  .challenge-headline { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .completed-task-list { max-height: none; }
 }

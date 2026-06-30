@@ -5,6 +5,8 @@ const RANKS = [
   { id: "club_shark", label: "Акула клуба", minRep: 40, minBankroll: 1200, color: "gold" },
 ];
 
+const ACTIVE_CHALLENGE_LIMIT = 6;
+
 export function createNewPlayer() {
   return {
     id: "PLAYER_001",
@@ -36,7 +38,9 @@ export function createNewCareer() {
     knownNpcIds: [],
     rivalries: [],
     achievements: [],
+    activeChallenges: [],
     completedChallenges: [],
+    completedChallengeLog: [],
     unlockedGlossary: ["TERM_POKER_BANKROLL"],
     unlockedCollections: [],
   };
@@ -54,9 +58,19 @@ export function normalizeCareer(career = {}) {
     knownNpcIds: safeArray(career.knownNpcIds),
     rivalries: safeArray(career.rivalries),
     achievements: safeArray(career.achievements),
+    activeChallenges: safeArray(career.activeChallenges),
     completedChallenges: safeArray(career.completedChallenges),
+    completedChallengeLog: safeArray(career.completedChallengeLog),
     unlockedGlossary: safeArray(career.unlockedGlossary, base.unlockedGlossary),
     unlockedCollections: safeArray(career.unlockedCollections),
+  };
+}
+
+export function ensureActiveChallenges(content, career, limit = ACTIVE_CHALLENGE_LIMIT) {
+  const normalized = normalizeCareer(career);
+  return {
+    ...normalized,
+    activeChallenges: getActiveChallengeIds(content, normalized, limit),
   };
 }
 
@@ -112,29 +126,51 @@ export function addPlayerRewards(player, rewards = {}) {
 }
 
 export function applyChallenges({ content, career, player, tableState, result, unlockConditions = [] }) {
-  const normalizedCareer = normalizeCareer(career);
+  const normalizedCareer = ensureActiveChallenges(content, career);
   const completed = new Set(normalizedCareer.completedChallenges);
+  const activeIds = new Set(getActiveChallengeIds(content, normalizedCareer));
   const messages = [];
   const completedNow = [];
+  const completedLog = [...normalizedCareer.completedChallengeLog];
   let xpReward = 0;
   let reputationReward = 0;
 
   for (const challenge of content.challenges ?? []) {
+    if (!activeIds.has(challenge.id)) continue;
     if (completed.has(challenge.id)) continue;
+
     const progress = getChallengeProgress(challenge, { player, tableState, result, unlockConditions });
     if (!progress.completed) continue;
 
     completed.add(challenge.id);
     completedNow.push(challenge.id);
-    xpReward += safeNumber(challenge.reward?.xp, 0);
-    reputationReward += safeNumber(challenge.reward?.reputation, 0);
-    messages.push(`Челлендж: ${challenge.name}`);
+
+    const xp = safeNumber(challenge.reward?.xp, 0);
+    const reputation = safeNumber(challenge.reward?.reputation, 0);
+    xpReward += xp;
+    reputationReward += reputation;
+
+    completedLog.push({
+      id: challenge.id,
+      completedAt: new Date().toISOString(),
+      xp,
+      reputation,
+      difficulty: challenge.difficulty ?? "easy",
+    });
+
+    messages.push(`Задание: ${challenge.name} · ${formatReward({ xp, reputation })}`);
   }
+
+  const nextCareer = {
+    ...normalizedCareer,
+    completedChallenges: [...completed],
+    completedChallengeLog: completedLog.slice(-80),
+  };
 
   return {
     career: {
-      ...normalizedCareer,
-      completedChallenges: [...completed],
+      ...nextCareer,
+      activeChallenges: getActiveChallengeIds(content, nextCareer),
     },
     messages,
     completedNow,
@@ -144,7 +180,7 @@ export function applyChallenges({ content, career, player, tableState, result, u
 }
 
 export function updateCareerUnlocks(player, career, content) {
-  const normalizedCareer = normalizeCareer(career);
+  const normalizedCareer = ensureActiveChallenges(content, career);
   const unlockedTables = new Set(normalizedCareer.unlockedTables);
 
   for (const table of content.tables) {
@@ -159,7 +195,7 @@ export function updateCareerUnlocks(player, career, content) {
     if (bankrollOk && reputationOk) unlockedTables.add(table.id);
   }
 
-  return { ...normalizedCareer, unlockedTables: [...unlockedTables] };
+  return ensureActiveChallenges(content, { ...normalizedCareer, unlockedTables: [...unlockedTables] });
 }
 
 export function getXpProgress(player) {
@@ -197,6 +233,27 @@ export function getRankProgress(player) {
   return { percent, current, next, missing };
 }
 
+export function getActiveChallenges(content, career, limit = ACTIVE_CHALLENGE_LIMIT) {
+  const ids = getActiveChallengeIds(content, career, limit);
+  return ids.map((id) => content.byId?.challenges?.[id] ?? (content.challenges ?? []).find((challenge) => challenge.id === id)).filter(Boolean);
+}
+
+export function getCompletedChallenges(content, career) {
+  const normalizedCareer = normalizeCareer(career);
+  const completed = new Set(normalizedCareer.completedChallenges);
+  return (content.challenges ?? []).filter((challenge) => completed.has(challenge.id));
+}
+
+export function getChallengeDifficultyLabel(difficulty) {
+  const labels = {
+    easy: "Лёгкое",
+    medium: "Среднее",
+    hard: "Сложное",
+    rare: "Редкое",
+  };
+  return labels[difficulty] ?? "Лёгкое";
+}
+
 export function getChallengeProgress(challenge, context = {}) {
   const { player = {}, tableState = {}, result = {}, unlockConditions = [] } = context;
   const goal = challenge.goal ?? {};
@@ -211,11 +268,50 @@ export function getChallengeProgress(challenge, context = {}) {
   return { current: Math.min(current, target), target, completed: current >= target };
 }
 
+function getActiveChallengeIds(content, career, limit = ACTIVE_CHALLENGE_LIMIT) {
+  const normalizedCareer = normalizeCareer(career);
+  const all = content.challenges ?? [];
+  const knownIds = new Set(all.map((challenge) => challenge.id));
+  const completed = new Set(normalizedCareer.completedChallenges);
+  const active = [];
+
+  for (const id of normalizedCareer.activeChallenges ?? []) {
+    if (active.length >= limit) break;
+    if (!knownIds.has(id) || completed.has(id) || active.includes(id)) continue;
+    active.push(id);
+  }
+
+  for (const challenge of all) {
+    if (active.length >= limit) break;
+    if (completed.has(challenge.id) || active.includes(challenge.id)) continue;
+    active.push(challenge.id);
+  }
+
+  return active.slice(0, limit);
+}
+
 function getGoalCurrentValue(goal, { player, result }) {
   if (goal.stat) return safeNumber(player?.[goal.stat], 0);
   if (goal.resultStat === "pot") return safeNumber(result?.pot, 0);
   if (goal.resultStat === "bankrollDeltaPositive") return Math.max(0, safeNumber(result?.bankrollDelta, 0));
+  if (goal.resultStat === "playerWinPot") return result?.winner === "player" ? safeNumber(result?.pot, 0) : 0;
+  if (goal.playerWon) return result?.winner === "player" ? 1 : 0;
+  if (goal.playerHandCategoryAtLeast) return safeNumber(result?.playerHand?.category, -1) >= safeNumber(goal.playerHandCategoryAtLeast, 99) ? 1 : 0;
+  if (goal.playerHandCategoryExact) return safeNumber(result?.playerHand?.category, -1) === safeNumber(goal.playerHandCategoryExact, 99) ? 1 : 0;
+  if (goal.playerWinCategoryAtLeast) return result?.winner === "player" && safeNumber(result?.playerHand?.category, -1) >= safeNumber(goal.playerWinCategoryAtLeast, 99) ? 1 : 0;
+  if (goal.playerStraight) {
+    const category = safeNumber(result?.playerHand?.category, -1);
+    return category === 4 || category === 8 ? 1 : 0;
+  }
+  if (goal.playerFlushSuit) return hasPlayerFlushSuit(result, goal.playerFlushSuit) ? 1 : 0;
   return 0;
+}
+
+function hasPlayerFlushSuit(result, suit) {
+  const hand = result?.playerHand;
+  if (!hand || !Array.isArray(hand.cards)) return false;
+  if (![5, 8].includes(hand.category)) return false;
+  return hand.cards.length >= 5 && hand.cards.every((card) => card.suit === suit);
 }
 
 function getRank(player) {
@@ -242,4 +338,11 @@ function clamp01(value) {
 
 function clampPercent(value) {
   return Math.round(Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0)));
+}
+
+function formatReward(reward = {}) {
+  const parts = [];
+  if (reward.xp) parts.push(`XP +${reward.xp}`);
+  if (reward.reputation) parts.push(`Rep +${reward.reputation}`);
+  return parts.length ? parts.join(" · ") : "без награды";
 }

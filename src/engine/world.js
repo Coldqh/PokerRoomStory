@@ -11,14 +11,18 @@ export function getClubContext(content, clubId) {
 }
 
 export function canEnterTable(player, table) {
+  const bankroll = Number(player?.bankroll ?? 0);
   const req = table.unlockRequirement;
-  if (!req) return { ok: true, reason: null };
 
-  if (req.bankroll && player.bankroll < req.bankroll) {
+  if (table.minBuyIn && bankroll < table.minBuyIn) {
+    return { ok: false, reason: `Нужен buy-in от $${table.minBuyIn}.` };
+  }
+
+  if (req?.bankroll && bankroll < req.bankroll) {
     return { ok: false, reason: `Нужно минимум $${req.bankroll} банкролла.` };
   }
 
-  if (req.reputation && player.reputation < req.reputation) {
+  if (req?.reputation && player.reputation < req.reputation) {
     return { ok: false, reason: `Нужно ${req.reputation} репутации.` };
   }
 

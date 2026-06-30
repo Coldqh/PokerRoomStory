@@ -1,16 +1,19 @@
-# Poker Room Story v0.8.0
+# Poker Room Story v0.8.1
 
-Patch: Better Table Experience.
+Patch: Real Table Entry / Buy-in / Balance.
 
 ## Changes
 
-- Added separate post-hand result window.
-- Result window shows winner, pot, player delta, board, transcript and short review.
-- Moved detailed hand summary/transcript out of the side panel.
-- Added safe close action for the result window.
-- New hand closes the result window automatically.
-- Fixed animation speed runtime lookup.
-- No table status system added.
+- Added buy-in modal before taking a seat.
+- Added table session stack: table hands now use the chosen stack.
+- Added leave-table action from the table info panel.
+- Balanced table buy-ins and bankroll requirements:
+  - Table 1: $1/$2, buy-in $100–300.
+  - Table 2: $2/$5, buy-in $300–800.
+  - Table 3: $5/$10, buy-in $800–2000.
+- Start hand now opens buy-in if the player is not seated.
+- Club lobby buttons now distinguish Buy-in / Play.
+- Hidden the bright desktop scrollbar in the club journal.
 - Save schema unchanged.
 
 ## Run

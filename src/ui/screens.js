@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.0";
-import { getClubRoomState } from "../engine/club.js?v=0.8.0";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.0";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.0";
-import { describeCards } from "../engine/cards.js?v=0.8.0";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.0";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.1";
+import { getClubRoomState } from "../engine/club.js?v=0.8.1";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.1";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.1";
+import { describeCards } from "../engine/cards.js?v=0.8.1";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.1";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -17,15 +17,17 @@ export const SCREENS = [
 ];
 
 export function renderScreen(state) {
-  if (state.currentScreen === "club") return renderClubScreen(state);
-  if (state.currentScreen === "table") return renderTableScreen(state);
-  if (state.currentScreen === "career") return renderCareerScreen(state);
-  if (state.currentScreen === "tasks") return renderTasksScreen(state);
-  if (state.currentScreen === "npcs") return renderNpcScreen(state);
-  if (state.currentScreen === "glossary") return renderGlossaryScreen(state);
-  if (state.currentScreen === "collections") return renderCollectionsScreen(state);
-  if (state.currentScreen === "settings") return renderSettingsScreen(state);
-  return renderClubScreen(state);
+  let screen = "";
+  if (state.currentScreen === "club") screen = renderClubScreen(state);
+  else if (state.currentScreen === "table") screen = renderTableScreen(state);
+  else if (state.currentScreen === "career") screen = renderCareerScreen(state);
+  else if (state.currentScreen === "tasks") screen = renderTasksScreen(state);
+  else if (state.currentScreen === "npcs") screen = renderNpcScreen(state);
+  else if (state.currentScreen === "glossary") screen = renderGlossaryScreen(state);
+  else if (state.currentScreen === "collections") screen = renderCollectionsScreen(state);
+  else if (state.currentScreen === "settings") screen = renderSettingsScreen(state);
+  else screen = renderClubScreen(state);
+  return `${screen}${renderBuyInModal(state)}`;
 }
 
 function renderClubScreen(state) {
@@ -71,17 +73,17 @@ function formatDateTime(value) {
 
 function renderTableListItem(state, table) {
   const access = canEnterTable(state.player, table);
-  const active = state.activeTableId === table.id;
+  const active = state.tableSession?.tableId === table.id;
   const occupied = Math.min(table.seats ?? 6, table.occupiedSeats ?? Math.max(1, (table.seats ?? 6) - 1));
   const seatsLabel = `${occupied}/${table.seats ?? 6}`;
   const buyIn = `$${table.minBuyIn}–$${table.maxBuyIn}`;
   const players = getLobbyTablePlayers(state, table).map((npc) => escapeHtml(npc.name)).join(" · ");
-  const status = access.ok ? (occupied >= (table.seats ?? 6) ? "Очередь" : "Свободно") : "Закрыт";
-  const buttonLabel = active ? "За столом" : access.ok ? "Сесть" : "Закрыт";
-  const statusClass = access.ok ? (occupied >= (table.seats ?? 6) ? "waiting" : "open") : "locked";
+  const status = active ? "Сидишь" : access.ok ? (occupied >= (table.seats ?? 6) ? "Очередь" : "Свободно") : "Закрыт";
+  const buttonLabel = active ? "Играть" : access.ok ? "Buy-in" : "Закрыт";
+  const statusClass = active ? "seated" : access.ok ? (occupied >= (table.seats ?? 6) ? "waiting" : "open") : "locked";
 
   return `
-    <article class="table-item room-table-row ${active ? "selected" : ""} ${access.ok ? "" : "locked"}">
+    <article class="table-item room-table-row ${active ? "selected" : ""} ${access.ok || active ? "" : "locked"}">
       <div class="room-table-number">${escapeHtml(String(table.tableNumber ?? ""))}</div>
       <div class="room-table-main">
         <div class="room-table-title">
@@ -95,11 +97,11 @@ function renderTableListItem(state, table) {
           <span>${Number(table.handsPerHour ?? 30)} hands/h</span>
         </div>
         <div class="room-table-players">${players || "Состав обновляется"}</div>
-        ${access.ok ? "" : `<div class="room-table-lock">${escapeHtml(access.reason)}</div>`}
+        ${access.ok || active ? "" : `<div class="room-table-lock">${escapeHtml(access.reason)}</div>`}
       </div>
       <div class="room-table-side">
         <span class="table-status ${statusClass}">${escapeHtml(status)}</span>
-        <button class="small-button ${active ? "primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${access.ok ? "" : "disabled"}>
+        <button class="small-button ${active ? "primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${access.ok || active ? "" : "disabled"}>
           ${escapeHtml(buttonLabel)}
         </button>
       </div>
@@ -126,6 +128,63 @@ function stableIndex(value, modulo) {
   let hash = 0;
   for (const char of String(value ?? "")) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return modulo ? hash % modulo : 0;
+}
+
+function renderBuyInModal(state) {
+  const modal = state.system?.buyInModal;
+  if (!modal?.tableId) return "";
+
+  const table = state.content.byId.tables[modal.tableId];
+  if (!table) return "";
+
+  const access = canEnterTable(state.player, table);
+  const bankroll = Number(state.player?.bankroll ?? 0);
+  const min = Number(table.minBuyIn ?? table.bigBlind * 50);
+  const max = Math.min(Number(table.maxBuyIn ?? table.bigBlind * 150), bankroll);
+  const recommended = Math.max(min, Math.min(max, Number(table.recommendedBuyIn ?? table.bigBlind * 100)));
+  const amount = Math.round(Number(modal.amount ?? recommended));
+  const invalid = !access.ok || amount < min || amount > max;
+  const seated = state.tableSession?.tableId === table.id;
+
+  const chips = [min, recommended, max]
+    .filter((value, index, arr) => Number.isFinite(value) && value > 0 && arr.indexOf(value) === index)
+    .map((value) => `<button class="small-button ${value === amount ? "primary" : ""}" data-action="set-buyin" data-id="${escapeHtml(String(value))}">$${escapeHtml(String(value))}</button>`)
+    .join("");
+
+  return `
+    <div class="buyin-modal-layer" role="dialog" aria-modal="true" aria-label="Buy-in">
+      <article class="buyin-modal panel-soft">
+        <header class="buyin-modal-head">
+          <div>
+            <span>Buy-in</span>
+            <strong>${escapeHtml(table.name)}</strong>
+            <p>${escapeHtml(table.gameLabel ?? `$${table.smallBlind}/$${table.bigBlind} NL Hold’em`)}</p>
+          </div>
+          <button class="drawer-close" data-action="close-buyin" aria-label="Закрыть">×</button>
+        </header>
+
+        <div class="buyin-range">
+          <span>Диапазон</span>
+          <strong>$${escapeHtml(String(min))}–$${escapeHtml(String(max))}</strong>
+          <small>Bankroll $${escapeHtml(String(bankroll))}</small>
+        </div>
+
+        <label class="buyin-input-row">
+          <span>Стек за столом</span>
+          <input data-action="buy-in-input" type="number" inputmode="numeric" min="${escapeHtml(String(min))}" max="${escapeHtml(String(max))}" value="${escapeHtml(String(amount))}" />
+        </label>
+
+        <div class="buyin-chip-row">${chips}</div>
+        ${access.ok ? "" : `<p class="buyin-warning">${escapeHtml(access.reason)}</p>`}
+        ${seated ? `<p class="buyin-warning">Ты уже сидишь за этим столом.</p>` : ""}
+
+        <footer class="buyin-actions">
+          <button class="primary" data-action="confirm-buyin" ${invalid ? "disabled" : ""}>Сесть</button>
+          <button data-action="close-buyin">Отмена</button>
+        </footer>
+      </article>
+    </div>
+  `;
 }
 
 function renderTableScreen(state) {
@@ -182,7 +241,7 @@ function renderTableScreen(state) {
         </main>
 
         <aside class="table-info panel-soft">
-          ${renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta, state.settings)}
+          ${renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta, state.settings, state, table)}
         </aside>
       </div>
 
@@ -275,13 +334,22 @@ function renderActionDock(actions, hand, actionMeta = {}) {
   `;
 }
 
-function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, settings = {}) {
+function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, settings = {}, state = {}, table = null) {
   const result = hand?.lastResult;
   const rows = hand?.animation?.recentEvents ?? [];
   const terminal = hand?.phase === "finished" || hand?.phase === "folded";
   const current = hand?.phase === "folded" ? "Fold" : hand?.awaitingPlayer ? "Ты" : terminal ? "—" : hand?.currentActorName ?? "—";
   const tablePrompt = terminal ? "Раздача закрыта" : actionMeta.toCall ? `Call $${actionMeta.toCall}` : hand?.currentBet ? `Bet $${hand.currentBet}` : "Check available";
+  const session = state?.tableSession?.tableId === table?.id ? state.tableSession : null;
   return `
+    ${session ? `
+      <div class="info-block table-session-block">
+        <span>Стек за столом</span>
+        <strong>$${escapeHtml(String(session.stack ?? 0))}</strong>
+        <p>${escapeHtml(table?.gameLabel ?? "NL Hold’em")} · Buy-in $${escapeHtml(String(session.buyIn ?? 0))}</p>
+        <button class="small-button ghost" data-action="leave-table">Выйти</button>
+      </div>
+    ` : ""}
     <div class="info-block table-state-block">
       <span>Ход</span>
       <strong>${escapeHtml(current)}</strong>
@@ -607,7 +675,7 @@ function formatChallengeReward(reward = {}) {
 
 function renderTableUnlockItem(state, table) {
   const access = canEnterTable(state.player, table);
-  const active = state.activeTableId === table.id;
+  const active = state.tableSession?.tableId === table.id;
   const req = table.unlockRequirement;
   const reqText = req ? [`$${req.bankroll ?? 0}`, `Rep ${req.reputation ?? 0}`].join(" · ") : "доступен сразу";
   return `
@@ -645,7 +713,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.0")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.1")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

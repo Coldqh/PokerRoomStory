@@ -1,4 +1,4 @@
-import { createNpcNameRoster } from "../namePools.js?v=0.8.0";
+import { createNpcNameRoster } from "../namePools.js?v=0.8.1";
 
 const RUSSIA_NPC_NAMES = createNpcNameRoster("COUNTRY_RUSSIA", 32);
 
@@ -6,7 +6,7 @@ export const coreV01 = {
   meta: {
     id: "PACK_CORE_V0_1",
     name: "Core v0.1 — First Local Room",
-    version: "0.8.0",
+    version: "0.8.1",
   },
 
   countries: [
@@ -93,11 +93,12 @@ export const coreV01 = {
       limitType: "No Limit Hold’em",
       smallBlind: 1,
       bigBlind: 2,
-      minBuyIn: 40,
-      maxBuyIn: 160,
+      minBuyIn: 100,
+      maxBuyIn: 300,
+      recommendedBuyIn: 200,
       seats: 6,
       occupiedSeats: 5,
-      avgPot: 34,
+      avgPot: 42,
       handsPerHour: 31,
       tableNumber: 1,
       difficulty: 1,
@@ -118,11 +119,12 @@ export const coreV01 = {
       limitType: "No Limit Hold’em",
       smallBlind: 2,
       bigBlind: 5,
-      minBuyIn: 120,
-      maxBuyIn: 400,
+      minBuyIn: 300,
+      maxBuyIn: 800,
+      recommendedBuyIn: 500,
       seats: 6,
       occupiedSeats: 5,
-      avgPot: 92,
+      avgPot: 118,
       handsPerHour: 29,
       tableNumber: 2,
       difficulty: 2,
@@ -133,8 +135,8 @@ export const coreV01 = {
       },
       specialRules: [],
       unlockRequirement: {
-        bankroll: 1200,
-        reputation: 6,
+        bankroll: 1500,
+        reputation: 5,
       },
     },
     {
@@ -146,11 +148,12 @@ export const coreV01 = {
       limitType: "No Limit Hold’em",
       smallBlind: 5,
       bigBlind: 10,
-      minBuyIn: 250,
-      maxBuyIn: 900,
+      minBuyIn: 800,
+      maxBuyIn: 2000,
+      recommendedBuyIn: 1000,
       seats: 6,
       occupiedSeats: 6,
-      avgPot: 210,
+      avgPot: 260,
       handsPerHour: 27,
       tableNumber: 3,
       difficulty: 3,
@@ -161,8 +164,8 @@ export const coreV01 = {
       },
       specialRules: [],
       unlockRequirement: {
-        bankroll: 3500,
-        reputation: 16,
+        bankroll: 5000,
+        reputation: 14,
       },
     },
   ],

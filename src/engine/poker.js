@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.8.0";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.8.0";
+} from "./cards.js?v=0.8.1";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.8.1";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -96,7 +96,7 @@ export function startNewHand({ content, table, club, player, previousTableState 
   const npcs = prepareTableNpcs(content, table, club, previousTableState, Math.max(2, table.seats - 1));
   const totalSeats = npcs.length + 1;
   const buttonSeatIndex = getNextButtonIndex(totalSeats, previousTableState?.buttonSeatIndex);
-  const heroStack = clampMoney(Math.min(player.bankroll, table.maxBuyIn));
+  const heroStack = clampMoney(player.tableStack ?? Math.min(player.bankroll, table.maxBuyIn));
 
   const heroSeat = buildHeroSeat({
     holeCards: draw(deck, 2),

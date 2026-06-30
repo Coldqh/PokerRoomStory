@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.8.0";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.8.0";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.8.0";
-import { applyUnlocks } from "./engine/collections.js?v=0.8.0";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.8.1";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.8.1";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.8.1";
+import { applyUnlocks } from "./engine/collections.js?v=0.8.1";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,13 +10,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.8.0";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.8.0";
-import { getClubContext } from "./engine/world.js?v=0.8.0";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.8.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.8.0";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.8.0";
-import { escapeHtml } from "./ui/components.js?v=0.8.0";
+} from "./engine/poker.js?v=0.8.1";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.8.1";
+import { getClubContext } from "./engine/world.js?v=0.8.1";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.8.1";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.8.1";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.8.1";
+import { escapeHtml } from "./ui/components.js?v=0.8.1";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -53,6 +53,7 @@ export class PokerRoomStoryApp {
       currentScreen: "club",
       activeClubId: "CLUB_RU_BASEMENT_RIVER_001",
       activeTableId: "TABLE_RU_BRR_LOW_001",
+      tableSession: null,
       tableState: createInitialTableState(),
       log: [`Patch v${APP_VERSION} · living club.`],
       settings: createDefaultSettings(),
@@ -72,6 +73,7 @@ export class PokerRoomStoryApp {
       career: ensureActiveChallenges(this.content, normalizeCareer(savedPayload.career)),
       clubNpcState: normalizeClubNpcState(this.content, savedPayload.clubNpcState, savedPayload.activeClubId ?? base.activeClubId),
       settings: { ...createDefaultSettings(), ...(savedPayload.settings ?? {}) },
+      tableSession: normalizeTableSession(savedPayload.tableSession, this.content, savedPayload.activeTableId ?? base.activeTableId),
       tableState: loadedTable.tableState,
       system: {
         ...base.system,
@@ -89,7 +91,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.8.0");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.8.1");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -181,11 +183,35 @@ export class PokerRoomStoryApp {
       return;
     }
 
-    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "check-update", "export-save", "import-save", "dismiss-notice", "dismiss-reward", "reset-save"].includes(action)) return;
+    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "check-update", "export-save", "import-save", "dismiss-notice", "dismiss-reward", "reset-save", "set-buyin", "confirm-buyin", "close-buyin"].includes(action)) return;
 
     if (action === "select-table") {
       this.menuOpen = false;
-      this.setState({ activeTableId: id, currentScreen: "table", tableState: createInitialTableState() });
+      if (this.state.tableSession?.tableId === id) {
+        this.setState({ activeTableId: id, currentScreen: "table" });
+      } else {
+        this.openBuyInModal(id);
+      }
+      return;
+    }
+
+    if (action === "set-buyin") {
+      this.setBuyInAmount(Number(id));
+      return;
+    }
+
+    if (action === "confirm-buyin") {
+      this.confirmBuyIn();
+      return;
+    }
+
+    if (action === "close-buyin") {
+      this.setSystem({ buyInModal: null });
+      return;
+    }
+
+    if (action === "leave-table") {
+      this.leaveTable();
       return;
     }
 
@@ -263,6 +289,11 @@ export class PokerRoomStoryApp {
 
   handleChange(event) {
     const input = event.target;
+    if (input.matches?.('[data-action="buy-in-input"]')) {
+      this.setBuyInAmount(Number(input.value));
+      return;
+    }
+
     if (!input.matches?.("#save-import-input")) return;
     const file = input.files?.[0];
     if (!file) return;
@@ -278,6 +309,93 @@ export class PokerRoomStoryApp {
       .finally(() => {
         input.value = "";
       });
+  }
+
+  openBuyInModal(tableId) {
+    const table = this.content.byId.tables[tableId];
+    if (!table) return;
+
+    if (isTableHandInProgress(this.state.tableState)) {
+      this.setSystem({ notice: "Сначала заверши текущую раздачу." });
+      return;
+    }
+
+    const amount = getRecommendedBuyIn(this.state.player, table);
+    this.setSystem({
+      buyInModal: {
+        tableId,
+        amount,
+      },
+    });
+  }
+
+  setBuyInAmount(amount) {
+    const modal = this.state.system?.buyInModal;
+    if (!modal) return;
+    const table = this.content.byId.tables[modal.tableId];
+    if (!table) return;
+
+    const cleanAmount = clampMoney(Math.round(Number(amount) || table.minBuyIn));
+    this.setSystem({
+      buyInModal: {
+        ...modal,
+        amount: cleanAmount,
+      },
+    });
+  }
+
+  confirmBuyIn() {
+    const modal = this.state.system?.buyInModal;
+    if (!modal) return;
+
+    const table = this.content.byId.tables[modal.tableId];
+    if (!table) return;
+
+    const amount = clampMoney(Math.round(Number(modal.amount) || table.minBuyIn));
+    const min = Number(table.minBuyIn ?? table.bigBlind * 50);
+    const max = Math.min(Number(table.maxBuyIn ?? table.bigBlind * 150), Number(this.state.player.bankroll ?? 0));
+
+    if (amount < min || amount > max) {
+      this.setSystem({ notice: `Buy-in должен быть от $${min} до $${max}.` });
+      return;
+    }
+
+    this.setState({
+      activeTableId: table.id,
+      currentScreen: "table",
+      tableSession: {
+        tableId: table.id,
+        buyIn: amount,
+        stack: amount,
+        handsPlayed: 0,
+        seatedAt: Date.now(),
+      },
+      tableState: createInitialTableState(),
+      system: {
+        ...this.state.system,
+        buyInModal: null,
+        resultModalOpen: false,
+      },
+    });
+  }
+
+  leaveTable() {
+    if (isTableHandInProgress(this.state.tableState)) {
+      this.setSystem({ notice: "Сначала заверши текущую раздачу." });
+      return;
+    }
+
+    const table = this.content.byId.tables[this.state.tableSession?.tableId ?? this.state.activeTableId];
+    this.setState({
+      tableSession: null,
+      tableState: createInitialTableState(),
+      currentScreen: "club",
+      system: {
+        ...this.state.system,
+        resultModalOpen: false,
+        notice: table ? `Ты вышел из ${table.name}.` : "Ты вышел из-за стола.",
+      },
+    });
   }
 
   exportSave() {
@@ -309,17 +427,29 @@ export class PokerRoomStoryApp {
   startHand() {
     const context = getClubContext(this.content, this.state.activeClubId);
     const table = this.content.byId.tables[this.state.activeTableId];
+    const session = this.state.tableSession?.tableId === table.id ? this.state.tableSession : null;
 
-    if (this.state.player.bankroll < table.bigBlind * 2) {
-      this.pushLog("Банкролл слишком низкий даже для блайнда. Нужен будущий режим восстановления.");
+    if (!session) {
+      this.openBuyInModal(table.id);
       return;
     }
+
+    if ((session.stack ?? 0) < table.bigBlind * 2) {
+      this.setSystem({ notice: "Стек за столом слишком низкий. Выйди и сделай новый buy-in." });
+      return;
+    }
+
+    const seatedPlayer = {
+      ...this.state.player,
+      bankroll: session.stack,
+      tableStack: session.stack,
+    };
 
     const initialTableState = startNewHand({
       content: this.content,
       table,
       club: context.club,
-      player: this.state.player,
+      player: seatedPlayer,
       previousTableState: this.state.tableState,
       clubSnapshot: getClubSnapshotForTable(this.content, this.state.clubNpcState, this.state.activeClubId, this.state.activeTableId),
     });
@@ -404,6 +534,13 @@ export class PokerRoomStoryApp {
     const totalRep = (result.reputationGain ?? 0) + challengeResult.reputationReward;
     const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...challengeResult.messages, ...clubPatch.clubMessages] });
     const rewardToast = buildRewardToast(this.content, challengeResult);
+    const nextTableSession = this.state.tableSession?.tableId === this.state.activeTableId
+      ? {
+        ...this.state.tableSession,
+        stack: Math.max(0, Math.round((this.state.tableSession.stack ?? 0) + (result.bankrollDelta ?? 0))),
+        handsPlayed: (this.state.tableSession.handsPlayed ?? 0) + 1,
+      }
+      : this.state.tableSession;
     const log = [
       ...this.state.log,
       ...tableState.actionLog.slice(-5),
@@ -418,6 +555,7 @@ export class PokerRoomStoryApp {
     this.setState({
       player: playerAfterHand,
       career: careerAfterUnlocks,
+      tableSession: nextTableSession,
       clubNpcState: clubPatch.clubNpcState,
       tableState: {
         ...animatedTableState,
@@ -656,6 +794,38 @@ function isVersionBefore(version, target) {
     if (left[i] > right[i]) return false;
   }
   return false;
+}
+
+function normalizeTableSession(session, content, activeTableId = null) {
+  if (!session?.tableId) return null;
+  const table = content?.byId?.tables?.[session.tableId];
+  if (!table) return null;
+  const stack = clampMoney(Number(session.stack ?? session.buyIn ?? table.minBuyIn));
+  if (stack <= 0) return null;
+  return {
+    tableId: table.id,
+    buyIn: clampMoney(Number(session.buyIn ?? stack)),
+    stack,
+    handsPlayed: Number(session.handsPlayed ?? 0),
+    seatedAt: Number(session.seatedAt ?? Date.now()),
+  };
+}
+
+function getRecommendedBuyIn(player, table) {
+  const bankroll = Number(player?.bankroll ?? 0);
+  const min = Number(table?.minBuyIn ?? table?.bigBlind * 50 ?? 0);
+  const max = Math.min(Number(table?.maxBuyIn ?? table?.bigBlind * 150 ?? min), bankroll);
+  const target = Number(table?.recommendedBuyIn ?? table?.bigBlind * 100 ?? min);
+  return clampMoney(Math.max(min, Math.min(max, target)));
+}
+
+function isTableHandInProgress(tableState) {
+  if (!tableState) return false;
+  return !["idle", "finished", "folded"].includes(tableState.phase ?? "idle") || Boolean(tableState.animation?.isPlaying);
+}
+
+function clampMoney(value) {
+  return Math.max(0, Math.round(Number(value) || 0));
 }
 
 function createDefaultSettings() {

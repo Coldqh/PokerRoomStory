@@ -1,12 +1,13 @@
 {
-  "appVersion": "0.8.0",
+  "appVersion": "0.8.1",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.8.0",
-  "buildId": "prs-0.8.0-20260629-poker-room-lobby",
+  "contentVersion": "core-v0.8.1",
+  "buildId": "prs-0.8.1-20260630-real-table-entry",
   "buildDate": "2026-06-30",
   "notes": [
-    "Poker room lobby table rows",
-    "Realistic table metadata",
-    "Moved table pot/action overlays away from board"
+    "Buy-in modal before taking a seat",
+    "Table session stack",
+    "Balanced table buy-ins and limits",
+    "Hidden desktop scrollbar in club journal"
   ]
 }

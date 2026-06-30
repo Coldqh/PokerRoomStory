@@ -1,5 +1,5 @@
-import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.8.0";
-import { hydrateNpc } from "./npc.js?v=0.8.0";
+import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.8.1";
+import { hydrateNpc } from "./npc.js?v=0.8.1";
 
 const CURRENT_SAVE_KEY = "prs.save.current";
 const BACKUP_SAVE_KEY = "prs.save.backup";
@@ -221,6 +221,7 @@ function migrateLegacyFlatSave(flat) {
     currentScreen: flat.currentScreen ?? "club",
     activeClubId: flat.activeClubId ?? "CLUB_RU_BASEMENT_RIVER_001",
     activeTableId: flat.activeTableId ?? "TABLE_RU_BRR_LOW_001",
+    tableSession: flat.tableSession ?? null,
     log: Array.isArray(flat.log) ? flat.log.slice(-MAX_LOG_LINES) : [],
     settings: flat.settings ?? {},
   };
@@ -236,6 +237,7 @@ function makePayload(state) {
     currentScreen: state.currentScreen,
     activeClubId: state.activeClubId,
     activeTableId: state.activeTableId,
+    tableSession: state.tableSession ?? null,
     log: (state.log ?? []).slice(-MAX_LOG_LINES),
     settings: state.settings ?? {},
   };

@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.4.8";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.4.8";
+} from "./cards.js?v=0.5.0";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.5.0";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -405,9 +405,14 @@ export function getCurrentHandInfo(tableState) {
 
 export function getUnlockConditionsFromHand(tableState, result) {
   const conditions = ["first_hand", "first_hand_completed", "start_game"];
+  const heroFolded = Boolean(tableState?.heroSeat?.folded || tableState?.lastPlayerAction === "fold" || tableState?.phase === "folded");
+
   conditions.push(...detectStartingHandUnlocks(tableState.playerHoleCards));
   conditions.push(...getArchetypeUnlockConditions((tableState.npcSeats ?? []).map((seat) => seat.npc)));
 
+  if (heroFolded) conditions.push("player_fold");
+  if (result?.showdown) conditions.push("showdown_seen");
+  if ((result?.pot ?? 0) >= 100) conditions.push("pot_100");
   if (result?.bankrollDelta < 0 && Math.abs(result.bankrollDelta) >= 30) conditions.push("big_loss");
   if (result?.winner === "player") {
     conditions.push("win_hand");
@@ -415,7 +420,7 @@ export function getUnlockConditionsFromHand(tableState, result) {
   }
   if (result?.playerHand?.category >= 4 && result?.winner !== "player") conditions.push("lose_strong_hand");
 
-  return conditions;
+  return [...new Set(conditions)];
 }
 
 function autoAdvance(initialState, table, forcedActorId = null) {

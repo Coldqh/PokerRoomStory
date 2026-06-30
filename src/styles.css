@@ -459,7 +459,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 /* v0.3.1 UI polish: safe header, bounded action progress, premium cards */
-/* v0.4.8 keeps clean UI; update safety and mini review live in engine. */
+/* v0.5.0 keeps clean UI; update safety and mini review live in engine. */
 .brand { min-width: 0; }
 .brand-card { overflow: hidden; }
 .brand h1 {
@@ -600,7 +600,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 .review-block { border-color: rgba(216,161,95,0.18); }
 .review-block span { color: var(--gold); }
 
-/* v0.4.8 folded seat clarity */
+/* v0.5.0 folded seat clarity */
 .seat.folded {
   opacity: 0.38;
   filter: grayscale(0.9);
@@ -624,7 +624,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* v0.4.8 mobile nav polish + pacing */
+/* v0.5.0 mobile nav polish + pacing */
 .app-nav {
   min-width: 0;
   overflow: hidden;
@@ -691,7 +691,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 }
 
 
-/* v0.4.8 hand continuation fix */
+/* v0.5.0 hand continuation fix */
 .hero-player.folded {
   opacity: 0.42;
   filter: grayscale(0.9);
@@ -723,7 +723,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   background: rgba(7,7,9,0.7);
 }
 
-/* v0.4.8 hand summary and transcript */
+/* v0.5.0 hand summary and transcript */
 .hand-summary-block {
   border-color: rgba(216,161,95,0.28);
   background: rgba(216,161,95,0.045);
@@ -760,4 +760,128 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
 
 @media (max-width: 740px) {
   .transcript-list div { grid-template-columns: 62px minmax(0, 1fr); }
+}
+
+/* v0.5.0 career MVP */
+.career-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+  align-items: stretch;
+  padding: clamp(18px, 3vw, 28px);
+}
+.career-hero h2 {
+  margin: 0.35rem 0 0.5rem;
+  color: #ff454b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.96;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.career-hero p { margin: 0; color: var(--soft); }
+.career-rank-card {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(216,161,95,0.22);
+  border-radius: 18px;
+  background: rgba(216,161,95,0.055);
+}
+.career-rank-card span,
+.career-rank-card small {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+.career-rank-card strong {
+  color: var(--gold);
+  font-size: 2rem;
+  line-height: 1;
+}
+.career-stats-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.career-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+.career-panel { padding: 14px; }
+.challenge-list,
+.table-unlock-list {
+  display: grid;
+  gap: 8px;
+}
+.challenge-item,
+.table-unlock-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, auto);
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.025);
+}
+.challenge-item.completed,
+.table-unlock-item.open {
+  border-color: rgba(216,161,95,0.22);
+  background: rgba(216,161,95,0.045);
+}
+.table-unlock-item.locked { opacity: 0.62; }
+.table-unlock-item.active { border-color: rgba(255,69,75,0.36); }
+.challenge-item strong,
+.challenge-item span,
+.table-unlock-item strong,
+.table-unlock-item span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.challenge-item span,
+.table-unlock-item span {
+  margin-top: 0.12rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.challenge-progress {
+  display: grid;
+  gap: 5px;
+  min-width: 112px;
+}
+.challenge-progress em,
+.table-unlock-item em {
+  color: var(--gold);
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.challenge-progress small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+.challenge-progress .progressbar { height: 6px; }
+
+@media (max-width: 1080px) {
+  .career-hero,
+  .career-grid { grid-template-columns: 1fr; }
+  .career-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 740px) {
+  .career-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .challenge-item,
+  .table-unlock-item { grid-template-columns: 1fr; }
+  .challenge-progress em,
+  .challenge-progress small,
+  .table-unlock-item em { text-align: left; }
 }

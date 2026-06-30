@@ -1,13 +1,14 @@
 {
-  "appVersion": "0.4.8",
+  "appVersion": "0.5.0",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.4.8",
-  "buildId": "prs-0.4.8-20260629-table-feel-summary-balance",
+  "contentVersion": "core-v0.5.0",
+  "buildId": "prs-0.5.0-20260629-career-mvp",
   "buildDate": "2026-06-29",
   "notes": [
-    "Compact hand summary after every finished hand",
-    "Street-grouped hand transcript",
-    "Low-stakes preflop balance pass",
-    "Hand event history stored safely on tableState"
+    "Career MVP profile screen",
+    "Challenge completion and rewards",
+    "Rank progress display",
+    "New table unlock ladder",
+    "Extra collection and glossary unlocks"
   ]
 }

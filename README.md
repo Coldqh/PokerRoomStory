@@ -1,44 +1,40 @@
-# Poker Room Story v0.4.8
+# Poker Room Story v0.5.0
 
-## Patch v0.4.8 — Table Feel / Summary / Balance
+Patch v0.5.0 — Career MVP.
 
-Аккуратный патч после стабилизации Fold и продолжения руки.
-Новых больших систем нет. Патч делает завершённые раздачи понятнее.
+## Что внутри
 
-### Изменения
+- улучшенный экран карьеры;
+- ранги и прогресс до следующего ранга;
+- 8 первых челленджей;
+- награды за челленджи: XP и репутация;
+- новые коллекционные открытия;
+- новые термины: Showdown и Good Fold;
+- третий стол Deep River с требованиями по банкроллу и репутации;
+- безопасная нормализация старых сейвов без смены schema;
+- сохранён стабильный flow раздач из v0.4.8.
 
-- Добавлен короткий итог руки в правой панели:
-  - победитель;
-  - банк;
-  - результат игрока;
-  - board;
-  - отдельная строка, если игрок сфолдил, а NPC доиграли.
-- Добавлен компактный ход руки по улицам:
-  - Preflop;
-  - Flop;
-  - Turn;
-  - River.
-- В `tableState` добавлен безопасный `handEvents` для истории текущей руки.
-- Старые сейвы не ломаются: если `handEvents` нет, используется пустой массив.
-- Чуть смягчён preflop fold у NPC на низком давлении, чтобы локальный стол чаще видел флоп.
-- Обновлены version/cache до `0.4.8`.
+## Запуск локально
 
-### Проверка
-
-Прогнано 1000 тестовых раздач:
-
-```text
-preHeroWalkover: 0
-guardStop: 0
-heroFoldFailures: 0
-transcriptMissing: 0
-heroShowdownAfterFold: 0
-noActionsOnFolded: 0
+```powershell
+cd C:\PokerRoomStory
+python -m http.server 8080
 ```
 
-### Установка
+Открыть:
 
-Распакуй файлы в корень `C:\PokerRoomStory` с заменой.
+```text
+http://localhost:8080
+```
+
+## Пуш
+
+```powershell
+cd C:\PokerRoomStory
+git add .
+git commit -m "Patch v0.5.0 career MVP"
+git push
+```
 
 После GitHub Pages:
 

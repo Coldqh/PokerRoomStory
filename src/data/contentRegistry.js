@@ -1,4 +1,4 @@
-import { coreV01 } from "./packs/coreV01.js?v=0.4.8";
+import { coreV01 } from "./packs/coreV01.js?v=0.5.0";
 
 const packs = [coreV01];
 
@@ -19,6 +19,7 @@ export function buildContentRegistry() {
     collections: flattenContent("collections"),
     learningObjects: flattenContent("learningObjects"),
     eventTemplates: flattenContent("eventTemplates"),
+    challenges: flattenContent("challenges"),
   };
 
   registry.byId = {
@@ -32,6 +33,7 @@ export function buildContentRegistry() {
     collections: indexById(registry.collections),
     learningObjects: indexById(registry.learningObjects),
     eventTemplates: indexById(registry.eventTemplates),
+    challenges: indexById(registry.challenges),
   };
 
   return registry;

@@ -1,8 +1,8 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.4.8";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.4.8";
-import { getXpProgress } from "../engine/career.js?v=0.4.8";
-import { describeCards } from "../engine/cards.js?v=0.4.8";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.4.8";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.5.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.5.0";
+import { getChallengeProgress, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.5.0";
+import { describeCards } from "../engine/cards.js?v=0.5.0";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.5.0";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -75,7 +75,7 @@ function renderSystemPanel(state) {
 
   return `
     <section class="content-section system-panel">
-      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.4.8")}</span></div>
+      <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.5.0")}</span></div>
       <div class="system-grid">
         <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
         <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>
@@ -418,22 +418,55 @@ function streetLabel(street) {
 
 function renderCareerScreen(state) {
   const player = state.player;
+  const rankProgress = getRankProgress(player);
+  const rankInfo = getRankInfo(player);
+  const completedChallenges = new Set(state.career?.completedChallenges ?? []);
+  const challengeContext = { player, tableState: state.tableState, result: state.tableState?.lastResult, unlockConditions: [] };
+
   return `
-    <section class="page-card panel-soft">
-      <div class="kicker">Профиль</div>
-      <h2>Карьера</h2>
-      <div class="rank-line"><strong>${escapeHtml(player.rank)}</strong>${progressBar(getXpProgress(player))}</div>
+    <section class="career-hero panel-soft">
+      <div>
+        <div class="kicker">Профиль</div>
+        <h2>${escapeHtml(getRankLabel(player.rank))}</h2>
+        <p>${rankInfo.next ? `Следующий ранг: ${escapeHtml(rankInfo.next.label)}` : "В этом клубе ты уже наверху."}</p>
+      </div>
+      <div class="career-rank-card">
+        <span>Rank progress</span>
+        <strong>${rankProgress.percent}%</strong>
+        ${progressBar(rankProgress.percent)}
+        <small>${rankProgress.next ? escapeHtml(rankProgress.missing.length ? rankProgress.missing.join(" · ") : "готово") : "max"}</small>
+      </div>
     </section>
 
-    <section class="stats-grid">
+    <section class="stats-grid career-stats-grid">
       ${metric("Bankroll", `$${player.bankroll}`)}
       ${metric("Rep", player.reputation)}
       ${metric("Poker", `Lv.${player.pokerLevel}`)}
       ${metric("Knowledge", `Lv.${player.knowledgeLevel}`)}
-      ${metric("Рук", player.handsPlayed)}
-      ${metric("Побед", player.handsWon)}
+      ${metric("Hands", player.handsPlayed)}
+      ${metric("Winrate", `${winRate(player)}%`)}
+      ${metric("Showdown", player.showdownsSeen ?? 0)}
+      ${metric("Folds", player.foldsMade ?? 0)}
       ${metric("Best pot", `$${player.biggestPotWon}`)}
+      ${metric("Biggest seen", `$${player.biggestPotSeen ?? 0}`)}
       ${metric("Worst loss", `$${player.biggestPotLost}`)}
+      ${metric("XP", player.xp)}
+    </section>
+
+    <section class="career-grid">
+      <article class="panel-soft career-panel">
+        <div class="section-title"><h3>Челленджи</h3><span>${completedChallenges.size}/${state.content.challenges?.length ?? 0}</span></div>
+        <div class="challenge-list">
+          ${(state.content.challenges ?? []).map((challenge) => renderChallengeItem(challenge, completedChallenges.has(challenge.id), challengeContext)).join("")}
+        </div>
+      </article>
+
+      <article class="panel-soft career-panel">
+        <div class="section-title"><h3>Столы</h3><span>доступ</span></div>
+        <div class="table-unlock-list">
+          ${state.content.tables.filter((table) => table.clubId === state.activeClubId).map((table) => renderTableUnlockItem(state, table)).join("")}
+        </div>
+      </article>
     </section>
 
     <section class="page-card panel-soft save-card">
@@ -441,6 +474,44 @@ function renderCareerScreen(state) {
       <span>localStorage</span>
       <button class="danger small-button" data-action="reset-save">Сбросить</button>
     </section>
+  `;
+}
+
+function renderChallengeItem(challenge, completed, context) {
+  const progress = completed ? { current: 1, target: 1, completed: true } : getChallengeProgress(challenge, context);
+  const percent = completed ? 100 : Math.round((progress.current / Math.max(progress.target, 1)) * 100);
+  const reward = [];
+  if (challenge.reward?.xp) reward.push(`XP +${challenge.reward.xp}`);
+  if (challenge.reward?.reputation) reward.push(`Rep +${challenge.reward.reputation}`);
+
+  return `
+    <div class="challenge-item ${completed ? "completed" : ""}">
+      <div>
+        <strong>${escapeHtml(challenge.name)}</strong>
+        <span>${escapeHtml(challenge.description)}</span>
+      </div>
+      <div class="challenge-progress">
+        <em>${completed ? "Done" : `${progress.current}/${progress.target}`}</em>
+        ${progressBar(percent)}
+        <small>${escapeHtml(reward.join(" · "))}</small>
+      </div>
+    </div>
+  `;
+}
+
+function renderTableUnlockItem(state, table) {
+  const access = canEnterTable(state.player, table);
+  const active = state.activeTableId === table.id;
+  const req = table.unlockRequirement;
+  const reqText = req ? [`$${req.bankroll ?? 0}`, `Rep ${req.reputation ?? 0}`].join(" · ") : "доступен сразу";
+  return `
+    <div class="table-unlock-item ${access.ok ? "open" : "locked"} ${active ? "active" : ""}">
+      <div>
+        <strong>${escapeHtml(table.name)}</strong>
+        <span>$${table.smallBlind}/$${table.bigBlind} · ${escapeHtml(table.tableMood)} · ${escapeHtml(reqText)}</span>
+      </div>
+      <em>${active ? "active" : access.ok ? "open" : "locked"}</em>
+    </div>
   `;
 }
 
@@ -516,6 +587,11 @@ function renderCollectionItem(item, unlocked) {
       ${badges([item.category, item.rarity], unlocked ? "gold" : "")}
     </article>
   `;
+}
+
+function winRate(player) {
+  if (!player?.handsPlayed) return 0;
+  return Math.round(((player.handsWon ?? 0) / Math.max(player.handsPlayed, 1)) * 100);
 }
 
 function speedLabel(value) {

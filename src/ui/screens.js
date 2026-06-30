@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.6.6";
-import { getClubRoomState } from "../engine/club.js?v=0.6.6";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.6.6";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.6.6";
-import { describeCards } from "../engine/cards.js?v=0.6.6";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.6.6";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.7.0";
+import { getClubRoomState } from "../engine/club.js?v=0.7.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.7.0";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.7.0";
+import { describeCards } from "../engine/cards.js?v=0.7.0";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.7.0";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -149,6 +149,7 @@ function renderTableScreen(state) {
       </div>
 
       ${renderActionDock(actions, hand, actionMeta)}
+      ${renderHandResultModal(state)}
     </section>
   `;
 }
@@ -259,8 +260,6 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
         <strong>${escapeHtml(result.winnerName ?? "—")}</strong>
         <p>${result.bankrollDelta >= 0 ? "+" : "-"}$${Math.abs(result.bankrollDelta)} · банк $${result.pot}</p>
       </div>
-      ${renderHandSummary(hand)}
-      ${renderHandTranscript(hand)}
       ${result.review ? `
         <div class="info-block review-block">
           <span>${escapeHtml(result.review.title ?? "Разбор")}</span>
@@ -275,6 +274,56 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
   `;
 }
 
+
+
+function renderHandResultModal(state) {
+  const hand = state?.tableState;
+  const result = hand?.lastResult;
+  const open = Boolean(state?.system?.resultModalOpen && result && (hand?.phase === "finished" || hand?.phase === "folded"));
+  if (!open) return "";
+
+  const heroFolded = Boolean(hand?.heroSeat?.folded || hand?.lastPlayerAction === "fold" || hand?.phase === "folded");
+  const delta = Number(result.bankrollDelta ?? 0);
+  const playerLine = heroFolded
+    ? `Fold · -$${Math.abs(hand?.playerInvested ?? 0)}`
+    : `${delta >= 0 ? "+" : "-"}$${Math.abs(delta)}`;
+  const title = result.winner === "player"
+    ? "Ты забрал банк"
+    : `${result.winnerName ?? "Победитель"} забрал банк`;
+  const winningHand = result.winningHand?.categoryName ?? (result.showdown ? "Showdown" : "Без вскрытия");
+  const board = hand?.communityCards?.length ? describeCards(hand.communityCards) : "—";
+  const foldNote = heroFolded && result.showdown ? "Ты сбросил. Остальные доиграли банк." : heroFolded ? "Ты сбросил карты." : "";
+
+  return `
+    <div class="result-modal-layer" role="dialog" aria-modal="true" aria-label="Итог раздачи">
+      <article class="result-modal panel-soft">
+        <header class="result-modal-head">
+          <div>
+            <span>Итог раздачи</span>
+            <strong>${escapeHtml(title)}</strong>
+          </div>
+          <button class="drawer-close" data-action="dismiss-result" aria-label="Закрыть">×</button>
+        </header>
+
+        <section class="result-modal-grid">
+          <div><span>Банк</span><strong>$${escapeHtml(String(result.pot ?? hand?.pot ?? 0))}</strong></div>
+          <div><span>Ты</span><strong>${escapeHtml(playerLine)}</strong></div>
+          <div><span>Победная рука</span><strong>${escapeHtml(winningHand)}</strong></div>
+          <div><span>Board</span><strong>${escapeHtml(board)}</strong></div>
+        </section>
+
+        ${foldNote ? `<p class="result-modal-note">${escapeHtml(foldNote)}</p>` : ""}
+        ${renderHandTranscript(hand)}
+        ${result.review ? `<div class="result-modal-review"><span>${escapeHtml(result.review.title ?? "Разбор")}</span><p>${escapeHtml(result.review.text ?? "")}</p></div>` : ""}
+
+        <footer class="result-modal-actions">
+          <button class="primary" data-action="start-hand">Новая раздача</button>
+          <button data-action="dismiss-result">Закрыть</button>
+        </footer>
+      </article>
+    </div>
+  `;
+}
 
 function renderHandSummary(hand) {
   const result = hand?.lastResult;
@@ -558,7 +607,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.6.6")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.7.0")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

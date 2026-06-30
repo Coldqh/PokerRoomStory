@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.6.6";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.6.6";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.6.6";
-import { applyUnlocks } from "./engine/collections.js?v=0.6.6";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.7.0";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.7.0";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.7.0";
+import { applyUnlocks } from "./engine/collections.js?v=0.7.0";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,13 +10,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.6.6";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.6.6";
-import { getClubContext } from "./engine/world.js?v=0.6.6";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.6.6";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.6.6";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.6.6";
-import { escapeHtml } from "./ui/components.js?v=0.6.6";
+} from "./engine/poker.js?v=0.7.0";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.7.0";
+import { getClubContext } from "./engine/world.js?v=0.7.0";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.7.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.7.0";
+import { renderScreen, SCREENS } from "./ui/screens.js?v=0.7.0";
+import { escapeHtml } from "./ui/components.js?v=0.7.0";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -89,7 +89,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.6.6");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.7.0");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -247,6 +247,11 @@ export class PokerRoomStoryApp {
       return;
     }
 
+    if (action === "dismiss-result") {
+      this.setSystem({ resultModalOpen: false });
+      return;
+    }
+
     if (action === "reset-save") {
       const confirmed = confirm("Сбросить прогресс? Backup тоже будет удалён.");
       if (!confirmed) return;
@@ -321,7 +326,13 @@ export class PokerRoomStoryApp {
 
     const auto = advanceUntilPlayerOrEnd({ tableState: initialTableState, table });
     const timeline = [...buildStartHandTimeline(initialTableState, table), ...auto.timeline];
-    this.setState({ currentScreen: "table" }, { skipSave: true });
+    this.setState({
+      currentScreen: "table",
+      system: {
+        ...this.state.system,
+        resultModalOpen: false,
+      },
+    }, { skipSave: true });
 
     if (auto.result) {
       this.playTimeline(auto.tableState, timeline, (animatedTableState) => {
@@ -416,6 +427,7 @@ export class PokerRoomStoryApp {
       system: {
         ...this.state.system,
         rewardToast,
+        resultModalOpen: true,
       },
     });
   }
@@ -496,6 +508,7 @@ export class PokerRoomStoryApp {
 
   getEventDuration(event) {
     const base = eventDuration(event);
+    const speed = this.state.settings?.animationSpeed ?? "normal";
     if (speed === "fast") return Math.max(260, Math.round(base * 0.58));
     if (speed === "instant") return Math.max(90, Math.round(base * 0.16));
     return base;

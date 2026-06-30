@@ -1,12 +1,13 @@
 {
-  "appVersion": "0.6.6",
+  "appVersion": "0.7.0",
   "saveSchemaVersion": 2,
-  "contentVersion": "core-v0.6.6",
-  "buildId": "prs-0.6.6-20260630-club-clean-view",
+  "contentVersion": "core-v0.7.0",
+  "buildId": "prs-0.7.0-20260630-better-table-result-modal",
   "buildDate": "2026-06-30",
   "notes": [
-    "Removed club hero/action cards",
-    "Club tab now shows only tables and journal",
-    "Settings remain in separate tab"
+    "Added separate post-hand result window",
+    "Moved hand summary and transcript into result modal",
+    "Fixed animation speed runtime lookup",
+    "No new table status system"
   ]
 }

@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.8.3";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.8.3";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.8.3";
-import { applyUnlocks } from "./engine/collections.js?v=0.8.3";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.8.4";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.8.4";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.8.4";
+import { applyUnlocks } from "./engine/collections.js?v=0.8.4";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,13 +10,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.8.3";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.8.3";
-import { getClubContext } from "./engine/world.js?v=0.8.3";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.8.3";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.8.3";
-import { renderScreen, SCREENS } from "./ui/screens.js?v=0.8.3";
-import { escapeHtml } from "./ui/components.js?v=0.8.3";
+} from "./engine/poker.js?v=0.8.4";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.8.4";
+import { getClubContext } from "./engine/world.js?v=0.8.4";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.8.4";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.8.4";
+import { renderScreen, getVisibleScreens } from "./ui/screens.js?v=0.8.4";
+import { escapeHtml } from "./ui/components.js?v=0.8.4";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -91,7 +91,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.8.3");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.8.4");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -158,6 +158,19 @@ export class PokerRoomStoryApp {
     this.render();
   }
 
+  resolveScreen(screenId) {
+    const seated = Boolean(this.state.tableSession?.tableId);
+    if (seated && screenId === "club") return "table";
+    if (!seated && screenId === "table") return "club";
+    return screenId;
+  }
+
+  getDisplayState() {
+    const currentScreen = this.resolveScreen(this.state.currentScreen);
+    if (currentScreen === this.state.currentScreen) return this.state;
+    return { ...this.state, currentScreen };
+  }
+
   handleClick(event) {
     const target = event.target.closest("[data-action]");
     if (!target) return;
@@ -179,7 +192,7 @@ export class PokerRoomStoryApp {
 
     if (action === "screen") {
       this.menuOpen = false;
-      this.setState({ currentScreen: id });
+      this.setState({ currentScreen: this.resolveScreen(id) });
       return;
     }
 
@@ -657,20 +670,21 @@ export class PokerRoomStoryApp {
   }
 
   render() {
+    const displayState = this.getDisplayState();
     this.root.innerHTML = `
-      <main class="app-shell ${this.state.currentScreen === "table" ? "table-mode" : ""} ${this.menuOpen ? "menu-open" : ""}">
+      <main class="app-shell ${displayState.currentScreen === "table" ? "table-mode" : ""} ${this.menuOpen ? "menu-open" : ""}">
         <input id="save-import-input" type="file" accept="application/json,.json" hidden />
-        ${this.renderTopbar()}
-        ${this.renderSideDrawer()}
+        ${this.renderTopbar(displayState)}
+        ${this.renderSideDrawer(displayState)}
         ${this.renderUpdateBanner()}
         ${this.renderRewardToast()}
-        ${renderScreen(this.state)}
+        ${renderScreen(displayState)}
       </main>
     `;
   }
 
-  renderTopbar() {
-    const player = this.state.player;
+  renderTopbar(displayState = this.state) {
+    const player = displayState.player;
     return `
       <header class="topbar club-topbar drawer-topbar">
         <button class="menu-button" data-action="open-menu" aria-label="Открыть меню"><span>☰</span></button>
@@ -687,14 +701,15 @@ export class PokerRoomStoryApp {
           ${topStat("Rank", rankLabel(player.rank))}
           ${topStat("Hands", player.handsPlayed)}
           ${topStat("Win", `${winRate(player)}%`)}
-          ${topStat("Version", `v${this.state.system?.appVersion ?? APP_VERSION}`)}
+          ${topStat("Version", `v${displayState.system?.appVersion ?? APP_VERSION}`)}
         </div>
       </header>
     `;
   }
 
-  renderSideDrawer() {
-    const player = this.state.player;
+  renderSideDrawer(displayState = this.state) {
+    const player = displayState.player;
+    const screens = getVisibleScreens(displayState);
     return `
       <button class="drawer-backdrop" data-action="close-menu" aria-label="Закрыть меню"></button>
       <aside class="side-drawer panel-soft" aria-label="Главное меню">
@@ -713,9 +728,9 @@ export class PokerRoomStoryApp {
         </div>
 
         <nav class="drawer-nav">
-          ${SCREENS.map(
+          ${screens.map(
             (screen) => `
-              <button data-action="screen" data-id="${escapeHtml(screen.id)}" class="${this.state.currentScreen === screen.id ? "active" : ""}">
+              <button data-action="screen" data-id="${escapeHtml(screen.id)}" class="${displayState.currentScreen === screen.id ? "active" : ""}">
                 <span>${navIcon(screen.id)}</span><b>${escapeHtml(screen.label)}</b>
               </button>
             `,
@@ -723,7 +738,7 @@ export class PokerRoomStoryApp {
         </nav>
 
         <div class="drawer-version">
-          <span>v${escapeHtml(this.state.system?.appVersion ?? APP_VERSION)}</span>
+          <span>v${escapeHtml(displayState.system?.appVersion ?? APP_VERSION)}</span>
           <button class="small-button ghost" data-action="screen" data-id="settings">Настройки</button>
         </div>
       </aside>

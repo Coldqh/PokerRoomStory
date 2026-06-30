@@ -34,7 +34,7 @@ export function createNewCareer() {
     unlockedCountries: ["COUNTRY_RUSSIA"],
     unlockedCities: ["CITY_RU_NORTH_DISTRICT"],
     unlockedClubs: ["CLUB_RU_BASEMENT_RIVER_001"],
-    unlockedTables: ["TABLE_RU_BRR_LOW_001"],
+    unlockedTables: ["TABLE_RU_BRR_LOW_001", "TABLE_RU_BRR_LOW_002", "TABLE_RU_BRR_MID_001", "TABLE_RU_BRR_LOW_003", "TABLE_RU_BRR_LOW_004"],
     knownNpcIds: [],
     rivalries: [],
     achievements: [],

@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.3";
-import { getClubRoomState } from "../engine/club.js?v=0.8.3";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.3";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.3";
-import { describeCards } from "../engine/cards.js?v=0.8.3";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.3";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.4";
+import { getClubRoomState } from "../engine/club.js?v=0.8.4";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.4";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.4";
+import { describeCards } from "../engine/cards.js?v=0.8.4";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.4";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -16,16 +16,27 @@ export const SCREENS = [
   { id: "settings", label: "Настройки" },
 ];
 
+export function getVisibleScreens(state = {}) {
+  const seated = Boolean(state.tableSession?.tableId);
+  return SCREENS.filter((screen) => {
+    if (screen.id === "table") return seated;
+    if (screen.id === "club") return !seated;
+    return true;
+  });
+}
+
 export function renderScreen(state) {
+  const seated = Boolean(state.tableSession?.tableId);
+  const currentScreen = seated && state.currentScreen === "club" ? "table" : !seated && state.currentScreen === "table" ? "club" : state.currentScreen;
   let screen = "";
-  if (state.currentScreen === "club") screen = renderClubScreen(state);
-  else if (state.currentScreen === "table") screen = renderTableScreen(state);
-  else if (state.currentScreen === "career") screen = renderCareerScreen(state);
-  else if (state.currentScreen === "tasks") screen = renderTasksScreen(state);
-  else if (state.currentScreen === "npcs") screen = renderNpcScreen(state);
-  else if (state.currentScreen === "glossary") screen = renderGlossaryScreen(state);
-  else if (state.currentScreen === "collections") screen = renderCollectionsScreen(state);
-  else if (state.currentScreen === "settings") screen = renderSettingsScreen(state);
+  if (currentScreen === "club") screen = renderClubScreen(state);
+  else if (currentScreen === "table") screen = renderTableScreen(state);
+  else if (currentScreen === "career") screen = renderCareerScreen(state);
+  else if (currentScreen === "tasks") screen = renderTasksScreen(state);
+  else if (currentScreen === "npcs") screen = renderNpcScreen(state);
+  else if (currentScreen === "glossary") screen = renderGlossaryScreen(state);
+  else if (currentScreen === "collections") screen = renderCollectionsScreen(state);
+  else if (currentScreen === "settings") screen = renderSettingsScreen(state);
   else screen = renderClubScreen(state);
   return `${screen}${renderBuyInModal(state)}`;
 }
@@ -78,9 +89,11 @@ function renderTableListItem(state, table) {
   const seatsLabel = `${occupied}/${table.seats ?? 6}`;
   const buyIn = `$${table.minBuyIn}–$${table.maxBuyIn}`;
   const players = getLobbyTablePlayers(state, table).map((npc) => escapeHtml(npc.name)).join(" · ");
-  const status = active ? "Сидишь" : access.ok ? (occupied >= (table.seats ?? 6) ? "Очередь" : "Свободно") : "Закрыт";
-  const buttonLabel = active ? "Играть" : access.ok ? "Buy-in" : "Закрыт";
-  const statusClass = active ? "seated" : access.ok ? (occupied >= (table.seats ?? 6) ? "waiting" : "open") : "locked";
+  const full = occupied >= (table.seats ?? 6);
+  const status = active ? "Сидишь" : access.ok ? (full ? "Очередь" : "Свободно") : "Закрыт";
+  const buttonLabel = active ? "Играть" : access.ok ? (full ? "Очередь" : "Buy-in") : "Закрыт";
+  const statusClass = active ? "seated" : access.ok ? (full ? "waiting" : "open") : "locked";
+  const canUseTable = active || (access.ok && !full);
 
   return `
     <article class="table-item room-table-row ${active ? "selected" : ""} ${access.ok || active ? "" : "locked"}">
@@ -101,7 +114,7 @@ function renderTableListItem(state, table) {
       </div>
       <div class="room-table-side">
         <span class="table-status ${statusClass}">${escapeHtml(status)}</span>
-        <button class="small-button ${active ? "primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${access.ok || active ? "" : "disabled"}>
+        <button class="small-button ${active ? "primary" : ""}" data-action="select-table" data-id="${escapeHtml(table.id)}" ${canUseTable ? "" : "disabled"}>
           ${escapeHtml(buttonLabel)}
         </button>
       </div>
@@ -353,15 +366,17 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
         <button class="small-button ghost" data-action="leave-table">Выйти</button>
       </div>
     ` : ""}
-    <div class="info-block table-state-block">
-      <span>Ход</span>
-      <strong>${escapeHtml(current)}</strong>
-      <p>${escapeHtml(tablePrompt)}</p>
-    </div>
-    <div class="info-block">
-      <span>Рука</span>
-      <strong>${escapeHtml(result?.winningHand?.categoryName ?? handInfo.title)}</strong>
-      <p>${escapeHtml(result?.winningHand?.summary ?? handInfo.detail)}</p>
+    <div class="info-block table-hand-row">
+      <div>
+        <span>Ход</span>
+        <strong>${escapeHtml(current)}</strong>
+        <p>${escapeHtml(tablePrompt)}</p>
+      </div>
+      <div>
+        <span>Рука</span>
+        <strong>${escapeHtml(result?.winningHand?.categoryName ?? handInfo.title)}</strong>
+        <p>${escapeHtml(result?.winningHand?.summary ?? handInfo.detail)}</p>
+      </div>
     </div>
     ${result ? `
       <div class="info-block winner-block">
@@ -765,7 +780,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.3")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.4")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

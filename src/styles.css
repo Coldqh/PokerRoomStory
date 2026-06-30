@@ -2992,7 +2992,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .felt-stage .action-bubble { top: 61% !important; }
 }
 
-/* v0.8.3 — hand clarity / tutor lite */
+/* v0.8.4 — hand clarity / tutor lite */
 .result-modal-clarity {
   display: grid;
   gap: 7px;
@@ -3105,4 +3105,109 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
   .hand-rank-item strong { font-size: 0.76rem; }
   .hand-rank-item span { font-size: 0.63rem; }
+}
+
+/* v0.8.4 — table route flow + readable revealed cards */
+.table-hand-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.table-hand-row > div + div {
+  padding-left: 10px;
+  border-left: 1px solid rgba(255,255,255,0.07);
+}
+.table-hand-row p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.playing-cards.seat-reveal {
+  gap: 3px;
+}
+.playing-cards.seat-reveal .playing-card {
+  width: 38px;
+  height: 54px;
+  min-width: 38px;
+  border-radius: 9px;
+}
+.playing-cards.seat-reveal .card-corner {
+  display: grid;
+}
+.playing-cards.seat-reveal .card-corner-top {
+  top: 4px;
+  left: 4px;
+}
+.playing-cards.seat-reveal .card-corner-bottom {
+  display: none;
+}
+.playing-cards.seat-reveal .card-corner b {
+  font-size: 0.62rem;
+}
+.playing-cards.seat-reveal .card-corner i {
+  font-size: 0.46rem;
+}
+.playing-cards.seat-reveal .card-center-suit {
+  font-size: 1.08rem;
+  transform: translateY(5px);
+}
+.seat-cards .playing-cards.seat-reveal {
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.42));
+}
+.room-table-row .table-status.waiting + button {
+  opacity: 0.45;
+}
+
+@media (max-width: 740px) {
+  .table-hand-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+  .table-hand-row > div + div {
+    padding-left: 7px !important;
+  }
+  .table-hand-row p {
+    font-size: 0.58rem !important;
+  }
+  .seat-cards .playing-cards.seat-reveal {
+    gap: 2px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .playing-card {
+    width: 26px !important;
+    height: 37px !important;
+    min-width: 26px !important;
+    border-radius: 6px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner {
+    display: grid !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner-top {
+    top: 3px !important;
+    left: 3px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner-bottom {
+    display: none !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner b {
+    font-size: 0.46rem !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner i {
+    font-size: 0.34rem !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-center-suit {
+    font-size: 0.78rem !important;
+    transform: translateY(5px) !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .seat-cards .playing-cards.seat-reveal .playing-card {
+    width: 24px !important;
+    height: 34px !important;
+    min-width: 24px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-center-suit {
+    font-size: 0.72rem !important;
+  }
 }

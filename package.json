@@ -1,0 +1,10 @@
+{
+  "name": "poker-room-story",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/smokeTest.js",
+    "smoke": "node scripts/smokeTest.js"
+  }
+}

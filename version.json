@@ -1,6 +1,6 @@
 {
-  "version": "0.9.9",
-  "appVersion": "0.9.9",
-  "buildId": "prs-0.9.9-20260701-content-pack-deep-split",
-  "message": "v0.9.9 — Content Pack Deep Split"
+  "version": "1.0.0",
+  "appVersion": "1.0.0",
+  "buildId": "prs-1.0.0-20260701-stable-demo",
+  "message": "v1.0.0 — Test Harness + Stable Demo"
 }

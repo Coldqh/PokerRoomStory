@@ -1,4 +1,4 @@
-import { badges, escapeHtml } from "../components.js?v=0.9.9";
+import { badges, escapeHtml } from "../components.js?v=1.0.0";
 
 export function renderCollectionsScreen(state) {
   const unlocked = new Set(state.career.unlockedCollections);

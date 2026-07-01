@@ -1,5 +1,5 @@
-import { decideNpcAction } from "../npc.js?v=0.9.9";
-import { canRaise, getToCall } from "./betting.js?v=0.9.9";
+import { decideNpcAction } from "../npc.js?v=1.0.0";
+import { canRaise, getToCall } from "./betting.js?v=1.0.0";
 
 export function decideNpcForState(state, seat, table) {
   const toCall = getToCall(state, seat);

@@ -262,7 +262,7 @@
   }
 }
 
-/* v0.9.9 — leave button red reinforcement */
+/* v1.0.0 — leave button red reinforcement */
 .table-leave-bottom,
 .table-leave-bottom:hover:not(:disabled) {
   color: #fff1f1 !important;
@@ -271,7 +271,7 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 28px rgba(227,41,47,0.18) !important;
 }
 
-/* v0.9.9 — custom raise amount modal */
+/* v1.0.0 — custom raise amount modal */
 .bet-modal-layer {
   position: fixed;
   inset: 0;
@@ -382,7 +382,7 @@
 }
 
 
-/* v0.9.9 — action dock start-only cleanup */
+/* v1.0.0 — action dock start-only cleanup */
 .action-dock.in-hand {
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
 }

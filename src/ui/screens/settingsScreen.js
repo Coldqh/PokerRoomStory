@@ -1,5 +1,5 @@
-import { escapeHtml } from "../components.js?v=0.9.9";
-import { formatDateTime, speedLabel } from "./common.js?v=0.9.9";
+import { escapeHtml } from "../components.js?v=1.0.0";
+import { formatDateTime, speedLabel } from "./common.js?v=1.0.0";
 
 export function renderSettingsScreen(state) {
   const system = state.system ?? {};
@@ -25,7 +25,7 @@ export function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.9.9")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "1.0.0")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

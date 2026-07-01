@@ -1,4 +1,4 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=0.9.9";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.0.0";
 
 const CLUB_EVENT_POOL = [
   {

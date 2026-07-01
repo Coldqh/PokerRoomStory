@@ -1,4 +1,4 @@
-import { clampMoney } from "./seats.js?v=0.9.9";
+import { clampMoney } from "./seats.js?v=1.0.0";
 
 export function getToCall(tableState, seat) {
   return Math.max(0, (tableState.currentBet ?? 0) - (seat?.currentBet ?? 0));

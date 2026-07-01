@@ -1,13 +1,55 @@
-# Poker Room Story v0.9.9
+# Poker Room Story v1.0.0
 
-Static web MVP.
+Static web stable demo.
 
-## v0.9.9 — Poker Engine Safety Split
+## v1.0.0 — Test Harness + Stable Demo
 
-- Split safe poker-engine helpers into focused modules under `src/engine/poker/`.
-- Kept the public engine facade at `src/engine/poker.js`, so existing UI/app imports stay stable.
-- Moved phase labels/constants into `poker/constants.js`.
-- Moved initial table/animation state and reveal-count helper into `poker/state.js`.
-- Moved seat helpers, stack contribution, actor selection, and sync helpers into `poker/seats.js`.
-- Moved call/raise legality and custom raise target normalization into `poker/betting.js`.
-- Did not change poker behavior, fold logic, winner logic, UI, save schema, or buy-in economy.
+This version locks the first playable demo before expanding content.
+
+### Included
+
+- River Room starter poker room.
+- 5 local cash tables.
+- Texas Hold’em hand flow.
+- Fold / check / call / custom raise modal.
+- Result modal with hand clarity.
+- Career, tasks, glossary, collections, settings.
+- Offline PWA cache.
+- Automated smoke test harness.
+
+### New test harness
+
+Run from the project root:
+
+```powershell
+npm test
+```
+
+The smoke test checks:
+
+- content registry build;
+- content validation;
+- default start location;
+- UI route visibility before/after seating;
+- empty table action dock;
+- start hand timeline;
+- fold invariant;
+- custom raise action;
+- 100 completed poker hands.
+
+### Stable demo checklist
+
+See:
+
+```text
+docs/STABLE_DEMO_CHECKLIST.md
+```
+
+### Not included yet
+
+- blackjack;
+- multiple countries;
+- true buy-in cashout economy;
+- side pots;
+- tournaments;
+- advanced NPC reads.

@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.1.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges } from "../src/engine/career.js?v=1.1.0";
-import { createClubRoomState } from "../src/engine/club.js?v=1.1.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.1.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.1.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.1.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.1.1";
+import { createClubRoomState } from "../src/engine/club.js?v=1.1.1";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.1.1";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.1.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -11,9 +11,9 @@ import {
   getActionMeta,
   getAvailableActions,
   startNewHand,
-} from "../src/engine/poker.js?v=1.1.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.1.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.1.0";
+} from "../src/engine/poker.js?v=1.1.1";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.1.1";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.1.1";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -46,7 +46,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.1.0",
+      appVersion: "1.1.1",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -231,6 +231,58 @@ function countNpcActions(factory, action, attempts) {
   return count;
 }
 
+
+function assertNpcDecisionMetadata(content, table, club) {
+  let previousTableState = null;
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    let tableState = startTestHand(content, table, club, previousTableState);
+    const auto = advanceUntilPlayerOrEnd({ tableState, table });
+    tableState = auto.tableState;
+    previousTableState = tableState;
+
+    const npcDecisionEvent = (tableState.handEvents ?? []).find((event) => event.source === "npc" && event.reason);
+    if (npcDecisionEvent) {
+      assert(typeof npcDecisionEvent.reason === "string", "npc decision event must store reason string");
+      assert("confidence" in npcDecisionEvent, "npc decision event must store confidence field");
+      assert("toCall" in npcDecisionEvent, "npc decision event must store toCall field");
+      assert("potOdds" in npcDecisionEvent, "npc decision event must store potOdds field");
+      return;
+    }
+
+    if (tableState.awaitingPlayer) {
+      const decision = pickSafePlayerAction(tableState, table);
+      const applied = applyPlayerAction({ tableState, player: createNewPlayer(), table, ...decision });
+      tableState = applied.tableState;
+      const laterNpcEvent = (tableState.handEvents ?? []).find((event) => event.source === "npc" && event.reason);
+      if (laterNpcEvent) return;
+    }
+  }
+
+  throw new Error("could not observe npc decision metadata in 24 attempts");
+}
+
+function assertClubProgressPersistsThroughUnlockRefresh(content, table, club, career, progressionProbe) {
+  const progressResult = applyClubProgression({
+    content,
+    career,
+    clubId: club.id,
+    tableState: progressionProbe.tableState,
+    result: progressionProbe.result,
+    challengeResult: { completedNow: [] },
+  });
+  const refreshedCareer = updateCareerUnlocks(createNewPlayer(), progressResult.career, content);
+  const clubInfo = getClubLevelInfo(content, refreshedCareer, club.id);
+  assert(progressResult.gain.xp > 0, "club progression must award Club XP");
+  assert(clubInfo.xp >= progressResult.gain.xp, "club progression must survive career unlock refresh");
+
+  const clubHtml = renderScreen(makeBaseState(content, createInitialTableState(), {
+    career: refreshedCareer,
+    activeClubId: club.id,
+    currentScreen: "club",
+  }));
+  assert(clubHtml.includes(String(clubInfo.xp)), "club screen must display stored Room Mastery XP");
+}
+
 function assertUiSmoke(content, table) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -238,6 +290,7 @@ function assertUiSmoke(content, table) {
   });
   const emptyTableHtml = renderScreen(emptyState);
   assert(emptyTableHtml.includes("Начать новую раздачу"), "empty table must show start hand button");
+  assert(emptyTableHtml.includes("Hand Inspector") || emptyTableHtml.includes("История руки"), "table screen must render hand inspector/readability panel");
   assertNotIncludes(emptyTableHtml, "Нажми", "empty table must not show old gray hint");
   assertNotIncludes(emptyTableHtml, "data-id=\"fold\"", "empty table must not show fold button before hand starts");
 
@@ -273,19 +326,10 @@ function main() {
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);
   assertNpcPreflopDecisionTuning(content, table);
+  assertNpcDecisionMetadata(content, table, club);
 
   const progressionProbe = playHandToResult(content, table, club);
-  const progressResult = applyClubProgression({
-    content,
-    career,
-    clubId: club.id,
-    tableState: progressionProbe.tableState,
-    result: progressionProbe.result,
-    challengeResult: { completedNow: [] },
-  });
-  const clubInfo = getClubLevelInfo(content, progressResult.career, club.id);
-  assert(progressResult.gain.xp > 0, "club progression must award Club XP");
-  assert(clubInfo.xp >= progressResult.gain.xp, "club progression state must store Club XP");
+  assertClubProgressPersistsThroughUnlockRefresh(content, table, club, career, progressionProbe);
 
   let previousTableState = null;
   let finished = 0;

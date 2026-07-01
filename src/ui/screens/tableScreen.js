@@ -1,8 +1,8 @@
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.1.0";
-import { describeCards } from "../../engine/cards.js?v=1.1.0";
-import { getClubLevelInfo } from "../../engine/progression.js?v=1.1.0";
-import { escapeHtml, playingCards } from "../components.js?v=1.1.0";
-import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.1.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.1.1";
+import { describeCards } from "../../engine/cards.js?v=1.1.1";
+import { getClubLevelInfo } from "../../engine/progression.js?v=1.1.1";
+import { escapeHtml, playingCards } from "../components.js?v=1.1.1";
+import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.1.1";
 
 export function renderTableScreen(state) {
   const table = state.content.byId.tables[state.activeTableId];
@@ -205,6 +205,7 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
         </div>
       ` : ""}
     ` : ""}
+    ${renderHandInspector(hand, actionMeta)}
     <div class="mini-feed">
       ${rows.length ? rows.slice(-5).reverse().map((event) => `<div><b>${escapeHtml(actionTitle(event.action))}</b><span>${escapeHtml(event.actorName)}</span></div>`).join("") : ""}
     </div>
@@ -212,6 +213,40 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
       <button class="small-button table-leave-bottom" data-action="leave-table">Выйти из стола</button>
     ` : ""}
   `;
+}
+
+function renderHandInspector(hand, actionMeta = {}) {
+  const allSeats = [hand?.heroSeat, ...(hand?.npcSeats ?? [])].filter(Boolean);
+  const eligibleActors = allSeats.filter((seat) => !seat.folded && !seat.allIn).map((seat) => seat.id === "player" ? "You" : shortName(seat.name));
+  const folded = allSeats.filter((seat) => seat.folded).map((seat) => seat.id === "player" ? "You" : shortName(seat.name));
+  const allIn = allSeats.filter((seat) => seat.allIn && !seat.folded).map((seat) => seat.id === "player" ? "You" : shortName(seat.name));
+  const decisions = (hand.handEvents ?? [])
+    .filter((event) => ["fold", "call", "check", "bet", "raise"].includes(event.action))
+    .slice(-5)
+    .reverse();
+
+  return `
+    <div class="info-block hand-inspector-block">
+      <span>Hand Inspector</span>
+      <div class="transcript-list">
+        <div><b>State</b><span>${escapeHtml(getPhaseLabel(hand.phase ?? "idle"))} · pot $${escapeHtml(String(hand.pot ?? 0))} · bet $${escapeHtml(String(hand.currentBet ?? 0))}</span></div>
+        <div><b>Actor</b><span>${escapeHtml(hand.awaitingPlayer ? "You" : hand.currentActorName ?? "—")} · to call $${escapeHtml(String(actionMeta.toCall ?? 0))}</span></div>
+        <div><b>Can act</b><span>${escapeHtml(eligibleActors.join(" / ") || "—")}</span></div>
+        <div><b>Folded</b><span>${escapeHtml(folded.join(" / ") || "—")}</span></div>
+        <div><b>All-in</b><span>${escapeHtml(allIn.join(" / ") || "—")}</span></div>
+        ${decisions.map(renderInspectorDecision).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderInspectorDecision(event) {
+  const name = event.actorId === "player" ? "You" : shortName(event.actorName ?? "?");
+  const amount = event.amount ? ` $${event.amount}` : "";
+  const reason = event.reason ? ` · ${event.reason}` : "";
+  const confidence = Number.isFinite(event.confidence) ? ` · ${Math.round(event.confidence * 100)}%` : "";
+  const price = Number.isFinite(event.potOdds) && event.potOdds > 0 ? ` · odds ${Math.round(event.potOdds * 100)}%` : "";
+  return `<div><b>${escapeHtml(transcriptActionLabel(event.action))}</b><span>${escapeHtml(`${name}${amount}${reason}${confidence}${price}`)}</span></div>`;
 }
 
 function renderHandResultModal(state) {
@@ -275,6 +310,7 @@ function renderHandClarity(hand, result, heroFolded) {
   const winningCards = result.winningHand.cards ?? [];
   const highlightedIds = new Set(result.winningHand.cardIds ?? winningCards.map((card) => card.id));
   const cardsLine = winningCards.length ? playingCards(winningCards, { highlightedIds, size: "small" }) : "";
+  const cardsText = winningCards.length ? describeCards(winningCards) : "";
   const why = explainWinningHand(result, heroFolded);
   const summary = result.winningHand.summary ?? result.winningHand.categoryName ?? "Showdown";
 
@@ -282,6 +318,7 @@ function renderHandClarity(hand, result, heroFolded) {
     <div class="result-modal-clarity">
       <span>Победные 5 карт</span>
       ${cardsLine ? `<div class="winning-card-row">${cardsLine}</div>` : ""}
+      ${cardsText ? `<p class="winning-card-text">${escapeHtml(cardsText)}</p>` : ""}
       <strong>${escapeHtml(summary)}</strong>
       <p>${escapeHtml(why)}</p>
     </div>
@@ -313,34 +350,6 @@ function explainWinningHand(result, heroFolded) {
     straight_flush: "Пять карт подряд одной масти — сильнейшая редкая рука.",
   };
   return reasons[winning?.categoryKey] ?? "Победила самая сильная пятёрка карт.";
-}
-
-function renderHandSummary(hand) {
-  const result = hand?.lastResult;
-  if (!result) return "";
-
-  const heroFolded = Boolean(hand?.heroSeat?.folded || hand?.lastPlayerAction === "fold" || hand?.phase === "folded");
-  const delta = Number(result.bankrollDelta ?? 0);
-  const board = hand?.communityCards?.length ? describeCards(hand.communityCards) : "—";
-  const resultLine = heroFolded
-    ? `You: Fold · -$${Math.abs(hand?.playerInvested ?? delta)}`
-    : `You: ${delta >= 0 ? "+" : "-"}$${Math.abs(delta)}`;
-  const winLine = result.showdown && result.winningHand
-    ? `${result.winnerName ?? "Winner"}: ${result.winningHand.categoryName}`
-    : result.winner === "player"
-      ? "Банк забран без вскрытия"
-      : "Банк без вскрытия";
-  const foldLine = heroFolded && result.showdown ? "Ты сбросил. Остальные доиграли банк." : null;
-
-  return `
-    <div class="info-block hand-summary-block">
-      <span>Итог</span>
-      <strong>${escapeHtml(winLine)}</strong>
-      <p>${escapeHtml(resultLine)}</p>
-      <p>Board: ${escapeHtml(board)}</p>
-      ${foldLine ? `<p>${escapeHtml(foldLine)}</p>` : ""}
-    </div>
-  `;
 }
 
 function renderHandTranscript(hand) {
@@ -384,7 +393,8 @@ function formatTranscriptEvent(event) {
   const name = event.actorId === "player" ? "You" : shortName(event.actorName ?? "?");
   const amount = event.amount ? ` $${event.amount}` : "";
   const action = transcriptActionLabel(event.action);
-  return `${name} ${action}${amount}`;
+  const reason = event.reason ? ` · ${event.reason}` : "";
+  return `${name} ${action}${amount}${reason}`;
 }
 
 function transcriptActionLabel(action) {
@@ -411,8 +421,6 @@ function streetLabel(street) {
   };
   return labels[street] ?? street;
 }
-
-
 
 function renderClubProgressResult(info, gain = 0, reward = null) {
   if (!info?.club || !gain) return "";

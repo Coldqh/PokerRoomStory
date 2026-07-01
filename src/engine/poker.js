@@ -1,6 +1,6 @@
-import { createDeck, draw } from "./cards.js?v=1.1.0";
-import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=1.1.0";
-import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=1.1.0";
+import { createDeck, draw } from "./cards.js?v=1.1.1";
+import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=1.1.1";
+import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=1.1.1";
 import {
   applyContribution,
   buildHeroSeat,
@@ -15,9 +15,9 @@ import {
   setCurrentActor,
   setSeat,
   syncTableState,
-} from "./poker/seats.js?v=1.1.0";
-import { assignPositions, postBlinds } from "./poker/setup.js?v=1.1.0";
-import { getNextButtonIndex, prepareTableNpcs } from "./poker/tableNpcs.js?v=1.1.0";
+} from "./poker/seats.js?v=1.1.1";
+import { assignPositions, postBlinds } from "./poker/setup.js?v=1.1.1";
+import { getNextButtonIndex, prepareTableNpcs } from "./poker/tableNpcs.js?v=1.1.1";
 import {
   beginBettingRound,
   getFirstActorForCurrentRound,
@@ -26,7 +26,7 @@ import {
   isBettingRoundComplete,
   movePastInactiveActor,
   shouldKeepNpcInHandBeforeHeroDecision,
-} from "./poker/rounds.js?v=1.1.0";
+} from "./poker/rounds.js?v=1.1.1";
 import {
   appendHandEvent,
   buildActionHandEvent,
@@ -36,16 +36,15 @@ import {
   buildWinnerEvent,
   event,
   eventWithSnapshot,
-} from "./poker/events.js?v=1.1.0";
-import { advanceStreet } from "./poker/streets.js?v=1.1.0";
-import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=1.1.0";
-import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=1.1.0";
+} from "./poker/events.js?v=1.1.1";
+import { advanceStreet } from "./poker/streets.js?v=1.1.1";
+import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=1.1.1";
+import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=1.1.1";
 
 export { createInitialTableState, createAnimationState };
-export { getBetSizeOptions } from "./poker/betting.js?v=1.1.0";
-export { buildStartHandTimeline } from "./poker/events.js?v=1.1.0";
-export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=1.1.0";
-
+export { getBetSizeOptions } from "./poker/betting.js?v=1.1.1";
+export { buildStartHandTimeline } from "./poker/events.js?v=1.1.1";
+export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=1.1.1";
 
 export function startNewHand({ content, table, club, player, previousTableState = null, clubSnapshot = null }) {
   const deck = createDeck();
@@ -303,7 +302,11 @@ function autoAdvance(initialState, table, forcedActorId = null) {
 
     let decision = decideNpcForState(state, actor, table);
     if (shouldKeepNpcInHandBeforeHeroDecision(state, actor, decision)) {
-      decision = { action: getToCall(state, actor) > 0 ? "call" : "check", reason: "protect_first_player_decision" };
+      decision = {
+        ...decision,
+        action: getToCall(state, actor) > 0 ? "call" : "check",
+        reason: "protect_first_player_decision",
+      };
     }
     decision = applyClubDecisionBias(state, actor, decision, table);
 
@@ -345,6 +348,7 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
   const requestedAction = typeof decision === "string" ? decision : decision?.action;
   const requestedRaiseTarget = typeof decision === "object" ? decision?.raiseTarget : null;
   const normalized = normalizeAction(requestedAction, state, seat, table);
+  const decisionMeta = getDecisionMeta(decision, options, state, seat, toCall);
   let nextSeat = { ...seat };
   let nextPot = state.pot;
   let nextCurrentBet = state.currentBet;
@@ -399,6 +403,11 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
     state = setAllSeats(state, allSeats);
   }
 
+  const handEvent = buildActionHandEvent(state, nextSeat, action, amount, nextPot);
+  const enrichedHandEvent = decisionMeta.source === "npc"
+    ? { ...handEvent, ...decisionMeta }
+    : handEvent;
+
   state = syncTableState({
     ...state,
     pot: nextPot,
@@ -406,7 +415,7 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
     minRaise: nextMinRaise,
     streetRaises: nextStreetRaises,
     actionLog: [...state.actionLog, `${nextSeat.name}: ${message}.`],
-    handEvents: appendHandEvent(state, buildActionHandEvent(state, nextSeat, action, amount, nextPot)),
+    handEvents: appendHandEvent(state, enrichedHandEvent),
   });
 
   return {
@@ -422,3 +431,22 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
   };
 }
 
+function getDecisionMeta(decision, options, state, seat, toCall) {
+  const raw = typeof decision === "object" ? decision : {};
+  const pressure = Math.max(0, Number(raw.toCall ?? toCall ?? 0));
+  const pot = Math.max(0, Number(state?.pot ?? 0));
+  return {
+    source: options.source,
+    reason: raw.reason ?? null,
+    previousReason: raw.previousReason ?? null,
+    confidence: normalizeMetaNumber(raw.confidence),
+    toCall: pressure,
+    potOdds: raw.potOdds ?? (pressure > 0 ? normalizeMetaNumber(pressure / Math.max(pot + pressure, 1)) : 0),
+    actorStack: Number(seat?.stack ?? 0),
+  };
+}
+
+function normalizeMetaNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 1000) / 1000 : null;
+}

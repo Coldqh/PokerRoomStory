@@ -1,14 +1,15 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.1.0";
-import { getClubRoomState } from "../../engine/club.js?v=1.1.0";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.1.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.1.0";
-import { stableIndex } from "./common.js?v=1.1.0";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.1.1";
+import { getClubRoomState } from "../../engine/club.js?v=1.1.1";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.1.1";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.1.1";
+import { stableIndex } from "./common.js?v=1.1.1";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
   const { club, tables } = context;
   const room = getClubRoomState(state.content, state.clubNpcState, state.activeClubId);
   const journal = room.journal ?? [];
+  const visibleJournal = journal.slice(-12).reverse();
   const levelInfo = getClubLevelInfo(state.content, state.career, state.activeClubId);
 
   return `
@@ -28,9 +29,9 @@ export function renderClubScreen(state) {
       </article>
 
       <article class="panel-soft club-journal-panel room-journal-panel">
-        <div class="section-title"><h3>Журнал</h3><span>последнее</span></div>
+        <div class="section-title"><h3>Журнал</h3><span>${visibleJournal.length ? `${visibleJournal.length} последних` : "последнее"}</span></div>
         <div class="feed-list club-journal-list">
-          ${journal.length ? journal.slice(-6).reverse().map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
+          ${visibleJournal.length ? visibleJournal.map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
         </div>
       </article>
     </section>
@@ -91,8 +92,6 @@ function getLobbyTablePlayers(state, table) {
   const start = stableIndex(table.id, Math.max(1, source.length));
   return Array.from({ length: Math.min(4, source.length) }, (_, offset) => source[(start + offset) % source.length]).filter(Boolean);
 }
-
-
 
 function renderClubProgress(info) {
   if (!info?.club) return "";

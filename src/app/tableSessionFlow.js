@@ -1,4 +1,4 @@
-import { createInitialTableState } from "../engine/poker.js?v=1.1.0";
+import { createInitialTableState } from "../engine/poker.js?v=1.1.1";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -12,6 +12,7 @@ export const tableSessionFlow = {
 
     const amount = getRecommendedBuyIn(this.state.player, table);
     this.setSystem({
+      notice: null,
       buyInModal: {
         tableId,
         amount,
@@ -67,6 +68,7 @@ export const tableSessionFlow = {
         resultModalOpen: false,
         selectedBetTarget: null,
         betAmountModal: null,
+        notice: null,
       },
     });
   },
@@ -77,7 +79,6 @@ export const tableSessionFlow = {
       return;
     }
 
-    const table = this.content.byId.tables[this.state.tableSession?.tableId ?? this.state.activeTableId];
     this.setState({
       tableSession: null,
       tableState: createInitialTableState(),
@@ -86,7 +87,7 @@ export const tableSessionFlow = {
         ...this.state.system,
         resultModalOpen: false,
         betAmountModal: null,
-        notice: table ? `Ты вышел из ${table.name}.` : "Ты вышел из-за стола.",
+        notice: null,
       },
     });
   }

@@ -1,0 +1,142 @@
+/* v1.1.1 — UI readability hotfix */
+.felt-stage {
+  isolation: isolate;
+}
+.table-ring {
+  z-index: 0;
+}
+.board-zone,
+.pot-chip,
+.action-bubble,
+.empty-seat-note {
+  z-index: 2;
+}
+.seat,
+.hero-player {
+  z-index: 3;
+  opacity: 1 !important;
+  filter: none !important;
+}
+.seat.folded,
+.hero-player.folded {
+  opacity: 1 !important;
+  filter: none !important;
+  border-color: rgba(255,255,255,0.11) !important;
+}
+.seat.folded.acting,
+.hero-player.folded.acting {
+  box-shadow: none !important;
+}
+.seat-cards,
+.hero-cards {
+  position: relative;
+  z-index: 4;
+}
+.seat-cards .playing-cards,
+.hero-cards .playing-cards,
+.board-cards,
+.winning-card-row .playing-cards {
+  position: relative;
+  z-index: 4;
+}
+.playing-card,
+.playing-cards {
+  opacity: 1 !important;
+  filter: none !important;
+}
+.fold-marker {
+  opacity: 0.86;
+}
+.result-modal-clarity .winning-card-row {
+  margin-top: 7px;
+}
+.result-modal-clarity .playing-cards.small .card-corner {
+  display: grid !important;
+}
+.result-modal-clarity .playing-cards.small .playing-card,
+.result-modal-clarity .playing-card {
+  width: 42px !important;
+  height: 58px !important;
+  min-width: 42px !important;
+  border-radius: 9px !important;
+}
+.result-modal-clarity .playing-cards.small .card-corner-top {
+  top: 4px !important;
+  left: 4px !important;
+}
+.result-modal-clarity .playing-cards.small .card-corner-bottom {
+  right: 4px !important;
+  bottom: 4px !important;
+}
+.result-modal-clarity .playing-cards.small .card-corner b,
+.result-modal-clarity .card-corner b {
+  font-size: 0.66rem !important;
+}
+.result-modal-clarity .playing-cards.small .card-corner i,
+.result-modal-clarity .card-corner i {
+  font-size: 0.48rem !important;
+}
+.result-modal-clarity .playing-cards.small .card-center-suit,
+.result-modal-clarity .card-center-suit {
+  font-size: 1.22rem !important;
+}
+.winning-card-text {
+  margin: 5px 0 0 !important;
+  color: #ffd39a !important;
+  font-size: 0.82rem !important;
+  font-weight: 850;
+  letter-spacing: 0.03em;
+}
+.room-lobby-layout,
+.room-lobby-panel,
+.room-journal-panel {
+  min-width: 0;
+  min-height: 0;
+}
+.room-journal-panel {
+  overflow: hidden;
+  max-height: min(72vh, 640px);
+}
+.club-journal-list {
+  min-height: 0;
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+.club-journal-list::-webkit-scrollbar {
+  width: 6px;
+}
+.club-journal-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255,255,255,0.16);
+}
+.feed-line {
+  overflow-wrap: anywhere;
+}
+.table-leave-bottom {
+  color: var(--soft) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  background: rgba(255,255,255,0.035) !important;
+  box-shadow: none !important;
+}
+.table-leave-bottom:hover:not(:disabled) {
+  color: #fff1f1 !important;
+  border-color: rgba(255,69,75,0.42) !important;
+  background: rgba(255,69,75,0.09) !important;
+  box-shadow: none !important;
+}
+@media (max-width: 740px) {
+  .room-journal-panel {
+    max-height: none;
+  }
+  .club-journal-list {
+    max-height: 360px;
+  }
+  .result-modal-clarity .playing-cards.small .playing-card,
+  .result-modal-clarity .playing-card {
+    width: 36px !important;
+    height: 50px !important;
+    min-width: 36px !important;
+  }
+}

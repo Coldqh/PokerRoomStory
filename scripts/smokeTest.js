@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.1.1";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.1.1";
-import { createClubRoomState } from "../src/engine/club.js?v=1.1.1";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.1.1";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.1.1";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.1.2";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.1.2";
+import { createClubRoomState } from "../src/engine/club.js?v=1.1.2";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.1.2";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.1.2";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -11,9 +11,9 @@ import {
   getActionMeta,
   getAvailableActions,
   startNewHand,
-} from "../src/engine/poker.js?v=1.1.1";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.1.1";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.1.1";
+} from "../src/engine/poker.js?v=1.1.2";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.1.2";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.1.2";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -46,7 +46,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.1.1",
+      appVersion: "1.1.2",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -290,7 +290,7 @@ function assertUiSmoke(content, table) {
   });
   const emptyTableHtml = renderScreen(emptyState);
   assert(emptyTableHtml.includes("Начать новую раздачу"), "empty table must show start hand button");
-  assert(emptyTableHtml.includes("Hand Inspector") || emptyTableHtml.includes("История руки"), "table screen must render hand inspector/readability panel");
+  assertNotIncludes(emptyTableHtml, "Hand Inspector", "table screen must not render removed hand inspector block");
   assertNotIncludes(emptyTableHtml, "Нажми", "empty table must not show old gray hint");
   assertNotIncludes(emptyTableHtml, "data-id=\"fold\"", "empty table must not show fold button before hand starts");
 

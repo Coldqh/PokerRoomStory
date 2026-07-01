@@ -1,4 +1,4 @@
-import { createInitialTableState } from "../engine/poker.js?v=1.1.1";
+import { createInitialTableState } from "../engine/poker.js?v=1.1.2";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {

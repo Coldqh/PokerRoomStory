@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.3.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.3.0";
-import { createClubRoomState } from "../src/engine/club.js?v=1.3.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.3.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.3.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.3.3";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.3.3";
+import { createClubRoomState } from "../src/engine/club.js?v=1.3.3";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.3.3";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.3.3";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -10,10 +10,11 @@ import {
   createInitialTableState,
   getActionMeta,
   getAvailableActions,
+  settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.3.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.3.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.3.0";
+} from "../src/engine/poker.js?v=1.3.3";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.3.3";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.3.3";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -46,7 +47,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.3.0",
+      appVersion: "1.3.3",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -103,6 +104,8 @@ function playHandToResult(content, table, club, previousTableState = null) {
   assert(result, "hand did not finish inside smoke-test guard");
   assert(["finished", "folded"].includes(tableState.phase), `terminal hand phase expected, got ${tableState.phase}`);
   assert(tableState.lastResult, "terminal hand must have lastResult");
+  tableState = settleTableStacks(tableState, result);
+  assert(tableState.tableEconomy?.settled, "terminal hand must settle table economy");
   return { tableState, result };
 }
 
@@ -323,6 +326,63 @@ function assertHeadsUpBlinds(content, table, club) {
   assert(hand.currentBet === headsUpTable.bigBlind, "heads-up current bet must equal big blind");
 }
 
+
+function assertPersistentTableEconomy(content, table, club) {
+  let previousTableState = null;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const played = playHandToResult(content, table, club, previousTableState);
+    const settled = played.tableState;
+    const nextHand = startTestHand(content, table, club, settled);
+
+    assert(settled.tableEconomy?.settled, "persistent economy must mark terminal state as settled");
+    assert(settled.heroSeat?.stack >= 0, "settled hero stack must be non-negative");
+
+    const carried = (nextHand.npcSeats ?? [])
+      .map((seat) => {
+        const previousSeat = (settled.npcSeats ?? []).find((entry) => entry.id === seat.id);
+        return previousSeat ? { next: seat, previous: previousSeat } : null;
+      })
+      .filter(Boolean);
+
+    if (carried.length) {
+      const bustedCarried = carried.filter(({ previous }) => Number(previous.stack ?? 0) <= 0);
+      assert(bustedCarried.length === 0, "busted NPC must leave before the next hand");
+
+      const persisted = carried.find(({ next, previous }) => {
+        const posted = Number(next.currentBet ?? 0);
+        return Number(next.stack ?? 0) + posted === Number(previous.stack ?? 0);
+      });
+
+      assert(Boolean(persisted), "reused NPC stack must persist before next-hand blinds");
+      assert(Number(persisted.next.invested ?? 0) === Number(persisted.next.currentBet ?? 0), "reused NPC must start next hand with only posted blind invested");
+      assert(!persisted.next.folded, "reused NPC must start next hand not folded");
+      return;
+    }
+
+    previousTableState = settled;
+  }
+
+  throw new Error("could not observe carried NPC stack in persistent economy smoke test");
+}
+
+function assertBustedNpcReplacement(content, table, club) {
+  const hand = startTestHand(content, table, club, null);
+  const firstNpc = hand.npcSeats?.[0];
+  assert(firstNpc, "busted npc smoke expected npc seat");
+
+  const bustedState = {
+    ...hand,
+    phase: "finished",
+    lastResult: { winner: "player", winnerId: "player", pot: 0 },
+    npcSeats: hand.npcSeats.map((seat, index) => index === 0 ? { ...seat, stack: 0 } : seat),
+  };
+
+  const nextHand = startTestHand(content, table, club, bustedState);
+  assert(!nextHand.npcSeats.some((seat) => seat.id === firstNpc.id), "busted NPC must leave before next hand");
+  assert(nextHand.npcSeats.length >= 1, "busted NPC replacement must keep table playable");
+}
+
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -383,6 +443,8 @@ function main() {
 
   assertDynamicTableSeats(content, table, club);
   assertHeadsUpBlinds(content, table, club);
+  assertPersistentTableEconomy(content, table, club);
+  assertBustedNpcReplacement(content, table, club);
   assertUiSmoke(content, table, club);
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);

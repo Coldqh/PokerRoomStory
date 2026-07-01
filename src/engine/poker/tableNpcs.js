@@ -1,4 +1,4 @@
-import { hydrateNpc, selectTableNpcs } from "../npc.js?v=1.3.0";
+import { hydrateNpc, selectTableNpcs } from "../npc.js?v=1.3.3";
 
 const MIN_NPCS = 1;
 const MAX_NPCS = 5;
@@ -54,8 +54,8 @@ export function prepareDynamicTableNpcs(content, table, club, previousTableState
       previousNpcCount: previousIds.length || null,
       maxNpcCount: getMaxNpcCount(table),
       direction,
-      departedNpcIds: finalDepartedNpcIds.slice(0, MAX_TURNOVER_PER_HAND),
-      joinedNpcIds: joinedNpcIds.slice(0, MAX_TURNOVER_PER_HAND),
+      departedNpcIds: finalDepartedNpcIds,
+      joinedNpcIds: joinedNpcIds,
     },
   };
 }
@@ -166,17 +166,22 @@ function chooseDepartingNpcIds(previousSeats = [], result = null, targetNpcCount
   if (!previousSeats.length) return [];
 
   const previousCount = previousSeats.length;
-  const forcedDepartures = Math.max(0, previousCount - targetNpcCount);
-  const softTurnover = forcedDepartures === 0 && previousCount >= targetNpcCount && handsAtTable > 1 && handsAtTable % 3 === 1 ? 1 : 0;
-  const maxDepartures = Math.min(MAX_TURNOVER_PER_HAND, forcedDepartures + softTurnover, Math.max(0, previousCount - MIN_NPCS));
-  if (maxDepartures <= 0) return [];
+  const bustedIds = previousSeats
+    .filter((seat) => seat?.id && seat.id !== "player" && Number(seat.stack ?? 0) <= 0)
+    .map((seat) => seat.id);
+  const bustedSet = new Set(bustedIds);
+  const remainingAfterBusted = Math.max(0, previousCount - bustedIds.length);
+  const forcedVoluntaryDepartures = Math.max(0, remainingAfterBusted - targetNpcCount);
+  const softTurnover = forcedVoluntaryDepartures === 0 && remainingAfterBusted >= targetNpcCount && handsAtTable > 1 && handsAtTable % 3 === 1 ? 1 : 0;
+  const voluntaryLimit = Math.min(MAX_TURNOVER_PER_HAND, Math.max(0, forcedVoluntaryDepartures + softTurnover));
 
   const ranked = [...previousSeats]
-    .filter((seat) => seat?.id && seat.id !== "player")
+    .filter((seat) => seat?.id && seat.id !== "player" && !bustedSet.has(seat.id))
     .map((seat) => ({ seat, score: getLeaveScore(seat, result) }))
     .sort((a, b) => b.score - a.score);
 
-  return ranked.slice(0, maxDepartures).map((entry) => entry.seat.id);
+  const voluntary = ranked.slice(0, voluntaryLimit).map((entry) => entry.seat.id);
+  return [...bustedIds, ...voluntary];
 }
 
 function getLeaveScore(seat, result) {

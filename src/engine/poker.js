@@ -1,6 +1,6 @@
-import { createDeck, draw } from "./cards.js?v=1.3.0";
-import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=1.3.0";
-import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=1.3.0";
+import { createDeck, draw } from "./cards.js?v=1.3.3";
+import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=1.3.3";
+import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=1.3.3";
 import {
   applyContribution,
   buildHeroSeat,
@@ -15,9 +15,9 @@ import {
   setCurrentActor,
   setSeat,
   syncTableState,
-} from "./poker/seats.js?v=1.3.0";
-import { assignPositions, postBlinds } from "./poker/setup.js?v=1.3.0";
-import { getNextButtonIndex, prepareDynamicTableNpcs } from "./poker/tableNpcs.js?v=1.3.0";
+} from "./poker/seats.js?v=1.3.3";
+import { assignPositions, postBlinds } from "./poker/setup.js?v=1.3.3";
+import { getNextButtonIndex, prepareDynamicTableNpcs } from "./poker/tableNpcs.js?v=1.3.3";
 import {
   beginBettingRound,
   getFirstActorForCurrentRound,
@@ -26,7 +26,7 @@ import {
   isBettingRoundComplete,
   movePastInactiveActor,
   shouldKeepNpcInHandBeforeHeroDecision,
-} from "./poker/rounds.js?v=1.3.0";
+} from "./poker/rounds.js?v=1.3.3";
 import {
   appendHandEvent,
   buildActionHandEvent,
@@ -36,15 +36,15 @@ import {
   buildWinnerEvent,
   event,
   eventWithSnapshot,
-} from "./poker/events.js?v=1.3.0";
-import { advanceStreet } from "./poker/streets.js?v=1.3.0";
-import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=1.3.0";
-import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=1.3.0";
+} from "./poker/events.js?v=1.3.3";
+import { advanceStreet } from "./poker/streets.js?v=1.3.3";
+import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=1.3.3";
+import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=1.3.3";
 
 export { createInitialTableState, createAnimationState };
-export { getBetSizeOptions } from "./poker/betting.js?v=1.3.0";
-export { buildStartHandTimeline } from "./poker/events.js?v=1.3.0";
-export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=1.3.0";
+export { getBetSizeOptions } from "./poker/betting.js?v=1.3.3";
+export { buildStartHandTimeline } from "./poker/events.js?v=1.3.3";
+export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=1.3.3";
 
 export function startNewHand({ content, table, club, player, previousTableState = null, clubSnapshot = null }) {
   const deck = createDeck();
@@ -52,6 +52,7 @@ export function startNewHand({ content, table, club, player, previousTableState 
   const npcs = tableNpcSetup.npcs;
   const totalSeats = npcs.length + 1;
   const buttonSeatIndex = getNextButtonIndex(totalSeats, previousTableState?.buttonSeatIndex);
+  const previousNpcStacks = buildPreviousNpcStackMap(previousTableState);
   const heroStack = clampMoney(player.tableStack ?? Math.min(player.bankroll, table.maxBuyIn));
 
   const heroSeat = buildHeroSeat({
@@ -64,7 +65,7 @@ export function startNewHand({ content, table, club, player, previousTableState 
     buildNpcSeat({
       npc,
       holeCards: draw(deck, 2),
-      stack: clampMoney(Math.min(npc.bankroll ?? table.maxBuyIn, table.maxBuyIn)),
+      stack: getNpcStartingStack(npc, table, previousNpcStacks),
       seatIndex: index + 1,
       mood: clubSnapshot?.npcMoods?.[npc.id] ?? "calm",
     }),
@@ -222,6 +223,67 @@ export function getActionMeta(tableState, table = null) {
       raise: (tableState.currentBet ?? 0) > 0 ? `Raise $${target}` : `Bet $${target}`,
     },
   };
+}
+
+export function settleTableStacks(tableState, result) {
+  const state = syncTableState(tableState);
+  if (!result || state.tableEconomy?.settled) return state;
+
+  const winnerIds = String(result.winnerId ?? result.winner ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (!winnerIds.length) return state;
+
+  const pot = clampMoney(result.pot ?? state.pot ?? 0);
+  const splitAmount = result.split ? clampMoney(result.splitAmount ?? Math.floor(pot / Math.max(1, winnerIds.length))) : pot;
+  const payouts = {};
+  for (const id of winnerIds) payouts[id] = splitAmount;
+
+  const seats = getAllSeats(state).map((seat) => {
+    const payout = clampMoney(payouts[seat.id] ?? 0);
+    return {
+      ...seat,
+      stack: clampMoney((seat.stack ?? 0) + payout),
+      payout,
+    };
+  });
+
+  const payoutLines = seats
+    .filter((seat) => seat.payout > 0)
+    .map((seat) => `${seat.name}: payout $${seat.payout}.`);
+
+  return syncTableState({
+    ...setAllSeats(state, seats),
+    tableEconomy: {
+      ...(state.tableEconomy ?? {}),
+      settled: true,
+      pot,
+      winnerIds,
+      payouts,
+    },
+    actionLog: payoutLines.length ? [...state.actionLog, ...payoutLines] : state.actionLog,
+  });
+}
+
+
+function buildPreviousNpcStackMap(previousTableState = null) {
+  const stacks = new Map();
+  for (const seat of previousTableState?.npcSeats ?? []) {
+    const id = seat?.npc?.id ?? seat?.npcId ?? seat?.id;
+    if (!id) continue;
+    const stack = clampMoney(seat.stack ?? 0);
+    if (stack > 0) stacks.set(id, stack);
+  }
+  return stacks;
+}
+
+function getNpcStartingStack(npc, table, previousNpcStacks) {
+  const carriedStack = previousNpcStacks.get(npc.id);
+  if (carriedStack > 0) return carriedStack;
+
+  const fallbackBuyIn = table.recommendedBuyIn ?? table.maxBuyIn ?? table.bigBlind * 100;
+  return clampMoney(Math.min(npc.bankroll ?? fallbackBuyIn, table.maxBuyIn ?? fallbackBuyIn));
 }
 
 function autoAdvance(initialState, table, forcedActorId = null) {

@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.3.3";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.3.3";
-import { createClubRoomState } from "../src/engine/club.js?v=1.3.3";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.3.3";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.3.3";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.4.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.4.0";
+import { createClubRoomState } from "../src/engine/club.js?v=1.4.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.4.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.4.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,9 +12,10 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.3.3";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.3.3";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.3.3";
+} from "../src/engine/poker.js?v=1.4.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.4.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.4.0";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.4.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -25,6 +26,11 @@ function assert(condition, message) {
 
 function assertNotIncludes(value, needle, message) {
   assert(!String(value).includes(needle), message);
+}
+
+function testCard(rank, suit) {
+  const values = { "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, T: 10, J: 11, Q: 12, K: 13, A: 14 };
+  return { rank, suit, value: values[rank], id: `${rank}${suit}` };
 }
 
 function makeBaseState(content, tableState = createInitialTableState(), patch = {}) {
@@ -47,7 +53,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.3.3",
+      appVersion: "1.4.0",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -327,6 +333,90 @@ function assertHeadsUpBlinds(content, table, club) {
 }
 
 
+
+function assertSidePots(content, table, club) {
+  let hand = null;
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const candidate = startTestHand(content, { ...table, seats: 6 }, club, hand);
+    if ((candidate.npcSeats?.length ?? 0) >= 2) {
+      hand = candidate;
+      break;
+    }
+    hand = candidate;
+  }
+
+  assert(hand && hand.npcSeats.length >= 2, "side pot smoke expected at least two NPC seats");
+  const [npcA, npcB] = hand.npcSeats;
+  const communityCards = [testCard("2", "♣"), testCard("7", "♦"), testCard("9", "♣"), testCard("J", "♦"), testCard("3", "♠")];
+  const sidePotState = {
+    ...hand,
+    phase: "river",
+    communityCards,
+    pot: 220,
+    currentBet: 100,
+    heroSeat: {
+      ...hand.heroSeat,
+      holeCards: [testCard("A", "♠"), testCard("A", "♥")],
+      invested: 20,
+      currentBet: 20,
+      stack: 0,
+      allIn: true,
+      folded: false,
+    },
+    npcSeats: [
+      {
+        ...npcA,
+        holeCards: [testCard("K", "♠"), testCard("K", "♥")],
+        invested: 100,
+        currentBet: 100,
+        stack: 0,
+        allIn: true,
+        folded: false,
+      },
+      {
+        ...npcB,
+        holeCards: [testCard("Q", "♠"), testCard("Q", "♥")],
+        invested: 100,
+        currentBet: 100,
+        stack: 50,
+        allIn: false,
+        folded: false,
+      },
+    ],
+  };
+
+  const pots = buildPotsFromContributions([sidePotState.heroSeat, ...sidePotState.npcSeats]);
+  assert(pots.length === 2, `side pot builder must create main + side pot, got ${pots.length}`);
+  assert(pots[0].amount === 60, `main pot must be $60, got ${pots[0].amount}`);
+  assert(pots[1].amount === 160, `side pot must be $160, got ${pots[1].amount}`);
+  assert(pots[0].eligibleSeatIds.includes("player"), "short all-in player must be eligible for main pot");
+  assert(!pots[1].eligibleSeatIds.includes("player"), "short all-in player must not be eligible for side pot");
+
+  const result = resolveShowdown(sidePotState, table);
+  assert(Array.isArray(result.potAwards) && result.potAwards.length === 2, "showdown result must include two pot awards");
+  assert(result.potAwards[0].payouts.player === 60, "hero must win only the eligible main pot");
+  assert(result.potAwards[1].payouts[npcA.id] === 160, "deeper better hand must win side pot");
+  assert(result.bankrollDelta === 40, `hero bankroll delta must be +40, got ${result.bankrollDelta}`);
+
+  const settled = settleTableStacks(sidePotState, result);
+  assert(settled.heroSeat.stack === 60, "settled hero stack must receive main pot only");
+  const settledNpcA = settled.npcSeats.find((seat) => seat.id === npcA.id);
+  const settledNpcB = settled.npcSeats.find((seat) => seat.id === npcB.id);
+  assert(settledNpcA.stack === 160, "settled side-pot winner must receive side pot");
+  assert(settledNpcB.stack === 50, "settled losing deep stack must keep remaining stack only");
+
+  const foldedState = {
+    ...sidePotState,
+    npcSeats: [
+      { ...sidePotState.npcSeats[0], holeCards: [testCard("4", "♠"), testCard("4", "♥")], folded: false },
+      { ...sidePotState.npcSeats[1], holeCards: [testCard("A", "♦"), testCard("A", "♣")], folded: true },
+    ],
+  };
+  const foldedResult = resolveShowdown(foldedState, table);
+  const foldedWinnerIds = foldedResult.potAwards.flatMap((award) => award.winnerIds);
+  assert(!foldedWinnerIds.includes(npcB.id), "folded player must not win any side pot award");
+}
+
 function assertPersistentTableEconomy(content, table, club) {
   let previousTableState = null;
 
@@ -443,6 +533,7 @@ function main() {
 
   assertDynamicTableSeats(content, table, club);
   assertHeadsUpBlinds(content, table, club);
+  assertSidePots(content, table, club);
   assertPersistentTableEconomy(content, table, club);
   assertBustedNpcReplacement(content, table, club);
   assertUiSmoke(content, table, club);

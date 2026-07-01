@@ -1,4 +1,4 @@
-/* v1.3.3 — opponent reads */
+/* v1.4.0 — opponent reads */
 .opponent-seat {
   cursor: pointer;
 }
@@ -159,7 +159,7 @@
   .opponent-read-snapshot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* v1.3.3 — compact table opponent blocks */
+/* v1.4.0 — compact table opponent blocks */
 .seat.opponent-seat {
   min-height: 58px;
   padding: 5px 6px;

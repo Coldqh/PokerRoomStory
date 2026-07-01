@@ -1,6 +1,6 @@
-import { createDeck, draw } from "./cards.js?v=1.3.3";
-import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=1.3.3";
-import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=1.3.3";
+import { createDeck, draw } from "./cards.js?v=1.4.0";
+import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=1.4.0";
+import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=1.4.0";
 import {
   applyContribution,
   buildHeroSeat,
@@ -15,9 +15,9 @@ import {
   setCurrentActor,
   setSeat,
   syncTableState,
-} from "./poker/seats.js?v=1.3.3";
-import { assignPositions, postBlinds } from "./poker/setup.js?v=1.3.3";
-import { getNextButtonIndex, prepareDynamicTableNpcs } from "./poker/tableNpcs.js?v=1.3.3";
+} from "./poker/seats.js?v=1.4.0";
+import { assignPositions, postBlinds } from "./poker/setup.js?v=1.4.0";
+import { getNextButtonIndex, prepareDynamicTableNpcs } from "./poker/tableNpcs.js?v=1.4.0";
 import {
   beginBettingRound,
   getFirstActorForCurrentRound,
@@ -26,7 +26,7 @@ import {
   isBettingRoundComplete,
   movePastInactiveActor,
   shouldKeepNpcInHandBeforeHeroDecision,
-} from "./poker/rounds.js?v=1.3.3";
+} from "./poker/rounds.js?v=1.4.0";
 import {
   appendHandEvent,
   buildActionHandEvent,
@@ -36,15 +36,15 @@ import {
   buildWinnerEvent,
   event,
   eventWithSnapshot,
-} from "./poker/events.js?v=1.3.3";
-import { advanceStreet } from "./poker/streets.js?v=1.3.3";
-import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=1.3.3";
-import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=1.3.3";
+} from "./poker/events.js?v=1.4.0";
+import { advanceStreet } from "./poker/streets.js?v=1.4.0";
+import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=1.4.0";
+import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=1.4.0";
 
 export { createInitialTableState, createAnimationState };
-export { getBetSizeOptions } from "./poker/betting.js?v=1.3.3";
-export { buildStartHandTimeline } from "./poker/events.js?v=1.3.3";
-export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=1.3.3";
+export { getBetSizeOptions } from "./poker/betting.js?v=1.4.0";
+export { buildStartHandTimeline } from "./poker/events.js?v=1.4.0";
+export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=1.4.0";
 
 export function startNewHand({ content, table, club, player, previousTableState = null, clubSnapshot = null }) {
   const deck = createDeck();
@@ -229,16 +229,12 @@ export function settleTableStacks(tableState, result) {
   const state = syncTableState(tableState);
   if (!result || state.tableEconomy?.settled) return state;
 
-  const winnerIds = String(result.winnerId ?? result.winner ?? "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-  if (!winnerIds.length) return state;
-
   const pot = clampMoney(result.pot ?? state.pot ?? 0);
-  const splitAmount = result.split ? clampMoney(result.splitAmount ?? Math.floor(pot / Math.max(1, winnerIds.length))) : pot;
-  const payouts = {};
-  for (const id of winnerIds) payouts[id] = splitAmount;
+  const payouts = getResultPayouts(result, pot);
+  const winnerIds = Object.entries(payouts)
+    .filter(([, amount]) => amount > 0)
+    .map(([id]) => id);
+  if (!winnerIds.length) return state;
 
   const seats = getAllSeats(state).map((seat) => {
     const payout = clampMoney(payouts[seat.id] ?? 0);
@@ -261,9 +257,32 @@ export function settleTableStacks(tableState, result) {
       pot,
       winnerIds,
       payouts,
+      potAwards: result.potAwards ?? null,
     },
     actionLog: payoutLines.length ? [...state.actionLog, ...payoutLines] : state.actionLog,
   });
+}
+
+function getResultPayouts(result, pot) {
+  const payouts = {};
+  if (Array.isArray(result?.potAwards) && result.potAwards.length) {
+    for (const award of result.potAwards) {
+      for (const [id, amount] of Object.entries(award.payouts ?? {})) {
+        payouts[id] = clampMoney((payouts[id] ?? 0) + amount);
+      }
+    }
+    return payouts;
+  }
+
+  const winnerIds = String(result?.winnerId ?? result?.winner ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (!winnerIds.length) return payouts;
+
+  const splitAmount = result.split ? clampMoney(result.splitAmount ?? Math.floor(pot / Math.max(1, winnerIds.length))) : pot;
+  for (const id of winnerIds) payouts[id] = splitAmount;
+  return payouts;
 }
 
 

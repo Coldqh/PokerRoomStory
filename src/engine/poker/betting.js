@@ -1,4 +1,4 @@
-import { clampMoney } from "./seats.js?v=0.9.6";
+import { clampMoney } from "./seats.js?v=0.9.8";
 
 export function getToCall(tableState, seat) {
   return Math.max(0, (tableState.currentBet ?? 0) - (seat?.currentBet ?? 0));
@@ -42,4 +42,37 @@ export function normalizeAction(action, state, seat, table) {
   if (action === "fold") return "fold";
   if (toCall > 0) return "call";
   return "check";
+}
+export function getBetSizeOptions(tableState, table = null) {
+  const hero = tableState?.heroSeat;
+  if (!hero || hero.folded || hero.allIn || ["idle", "finished", "folded"].includes(tableState?.phase)) return [];
+  if (!canRaise(tableState, hero)) return [];
+
+  const safeTable = table ?? { bigBlind: tableState.bigBlind || tableState.minRaise || 20 };
+  const bigBlind = Math.max(1, Number(safeTable.bigBlind ?? tableState.bigBlind ?? 2));
+  const toCall = getToCall(tableState, hero);
+  const pot = Math.max(0, Number(tableState.pot ?? 0));
+  const baseBet = hero.currentBet ?? 0;
+
+  const raw = [
+    { id: "min", label: "Min", target: getMinRaiseTarget(tableState, safeTable, hero) },
+    { id: "bb25", label: "2.5 BB", target: Math.round(bigBlind * 2.5) },
+    { id: "half", label: "1/2 Pot", target: baseBet + toCall + Math.ceil(Math.max(pot, bigBlind) / 2) },
+    { id: "pot", label: "Pot", target: baseBet + toCall + Math.max(pot, bigBlind) },
+  ];
+
+  const seen = new Set();
+  return raw
+    .map((option) => ({ ...option, target: getLegalRaiseTarget(tableState, safeTable, hero, option.target) }))
+    .filter((option) => {
+      if (!Number.isFinite(option.target) || option.target <= (hero.currentBet ?? 0)) return false;
+      if (seen.has(option.target)) return false;
+      seen.add(option.target);
+      return true;
+    })
+    .map((option) => ({
+      ...option,
+      cost: Math.max(0, option.target - (hero.currentBet ?? 0)),
+      actionLabel: (tableState.currentBet ?? 0) > 0 ? `Raise $${option.target}` : `Bet $${option.target}`,
+    }));
 }

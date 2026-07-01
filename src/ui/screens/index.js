@@ -1,12 +1,12 @@
-import { renderClubScreen } from "./clubScreen.js?v=0.9.6";
-import { renderTableScreen } from "./tableScreen.js?v=0.9.6";
-import { renderCareerScreen } from "./careerScreen.js?v=0.9.6";
-import { renderTasksScreen } from "./tasksScreen.js?v=0.9.6";
-import { renderNpcScreen } from "./npcScreen.js?v=0.9.6";
-import { renderGlossaryScreen } from "./glossaryScreen.js?v=0.9.6";
-import { renderCollectionsScreen } from "./collectionsScreen.js?v=0.9.6";
-import { renderSettingsScreen } from "./settingsScreen.js?v=0.9.6";
-import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=0.9.6";
+import { renderClubScreen } from "./clubScreen.js?v=0.9.8";
+import { renderTableScreen } from "./tableScreen.js?v=0.9.8";
+import { renderCareerScreen } from "./careerScreen.js?v=0.9.8";
+import { renderTasksScreen } from "./tasksScreen.js?v=0.9.8";
+import { renderNpcScreen } from "./npcScreen.js?v=0.9.8";
+import { renderGlossaryScreen } from "./glossaryScreen.js?v=0.9.8";
+import { renderCollectionsScreen } from "./collectionsScreen.js?v=0.9.8";
+import { renderSettingsScreen } from "./settingsScreen.js?v=0.9.8";
+import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=0.9.8";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },

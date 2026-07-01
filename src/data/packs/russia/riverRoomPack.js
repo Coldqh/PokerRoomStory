@@ -1,4 +1,4 @@
-import { createNpcNameRoster } from "../../namePools/index.js?v=0.9.6";
+import { createNpcNameRoster } from "../../namePools/index.js?v=0.9.8";
 
 const RUSSIA_NPC_NAMES = createNpcNameRoster("COUNTRY_RUSSIA", 32);
 
@@ -6,7 +6,7 @@ export const russiaRiverRoomPack = {
   meta: {
     id: "PACK_CORE_V0_1",
     name: "Core v0.1 — First Local Room",
-    version: "0.9.6",
+    version: "0.9.8",
   },
 
   countries: [

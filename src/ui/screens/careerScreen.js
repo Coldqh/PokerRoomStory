@@ -1,7 +1,7 @@
-import { canEnterTable } from "../../engine/world.js?v=0.9.5";
-import { getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../../engine/career.js?v=0.9.5";
-import { escapeHtml, metric, progressBar } from "../components.js?v=0.9.5";
-import { winRate } from "./common.js?v=0.9.5";
+import { canEnterTable } from "../../engine/world.js?v=0.9.6";
+import { getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../../engine/career.js?v=0.9.6";
+import { escapeHtml, metric, progressBar } from "../components.js?v=0.9.6";
+import { winRate } from "./common.js?v=0.9.6";
 
 export function renderCareerScreen(state) {
   const player = state.player;

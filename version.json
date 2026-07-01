@@ -1,5 +1,6 @@
 {
-  "version": "0.9.5",
-  "buildId": "prs-0.9.5-20260701-ui-file-split",
-  "message": "v0.9.5 — UI File Split"
+  "version": "0.9.6",
+  "appVersion": "0.9.6",
+  "buildId": "prs-0.9.6-20260701-poker-engine-safety-split",
+  "message": "v0.9.6 — Poker Engine Safety Split"
 }

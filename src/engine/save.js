@@ -1,6 +1,6 @@
-import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.9.5";
-import { hydrateNpc } from "./npc.js?v=0.9.5";
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=0.9.5";
+import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.9.6";
+import { hydrateNpc } from "./npc.js?v=0.9.6";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=0.9.6";
 
 const CURRENT_SAVE_KEY = "prs.save.current";
 const BACKUP_SAVE_KEY = "prs.save.backup";

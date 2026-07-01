@@ -6,68 +6,31 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.9.5";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.9.5";
+} from "./cards.js?v=0.9.6";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.9.6";
+import { PHASES, STREET_LABELS, PHASE_LABELS } from "./poker/constants.js?v=0.9.6";
+import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=0.9.6";
+import { canRaise, getDefaultRaiseTarget, getLegalRaiseTarget, getMinRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=0.9.6";
+import {
+  applyContribution,
+  buildHeroSeat,
+  buildNpcSeat,
+  clampMoney,
+  findBlindSeat,
+  getActiveNpcSeats,
+  getAllSeats,
+  getNextActiveSeatAfter,
+  getNextSeatId,
+  getOnlyActiveSeat,
+  getSeatById,
+  getSeatByRelativePosition,
+  setAllSeats,
+  setCurrentActor,
+  setSeat,
+  syncTableState,
+} from "./poker/seats.js?v=0.9.6";
 
-const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
-const STREET_LABELS = {
-  preflop: "Префлоп",
-  flop: "Флоп",
-  turn: "Тёрн",
-  river: "Ривер",
-};
-const PHASE_LABELS = {
-  idle: "Стол свободен",
-  preflop: "Префлоп",
-  flop: "Флоп",
-  turn: "Тёрн",
-  river: "Ривер",
-  showdown: "Шоудаун",
-  finished: "Раздача завершена",
-  folded: "Пас",
-};
-
-export function createInitialTableState() {
-  return {
-    phase: "idle",
-    handNumber: 0,
-    deck: [],
-    communityCards: [],
-    playerHoleCards: [],
-    heroSeat: null,
-    npcSeats: [],
-    activeNpcSeats: [],
-    pot: 0,
-    smallBlind: 0,
-    bigBlind: 0,
-    currentBet: 0,
-    minRaise: 0,
-    streetRaises: 0,
-    currentActorId: null,
-    currentActorName: null,
-    buttonSeatIndex: null,
-    playerInvested: 0,
-    lastPlayerAction: null,
-    lastResult: null,
-    actionLog: [],
-    handEvents: [],
-    awaitingPlayer: false,
-    animation: createAnimationState(),
-  };
-}
-
-export function createAnimationState(patch = {}) {
-  return {
-    isPlaying: false,
-    index: 0,
-    total: 0,
-    currentEvent: null,
-    recentEvents: [],
-    revealedCommunityCount: 0,
-    showWinner: false,
-    ...patch,
-  };
-}
+export { createInitialTableState, createAnimationState };
 
 function eventWithSnapshot(tableState, actionEvent) {
   if (!actionEvent) return actionEvent;
@@ -1033,14 +996,7 @@ function isBettingRoundComplete(tableState) {
   return active.every((seat) => seat.acted && getToCall(tableState, seat) === 0);
 }
 
-function getOnlyActiveSeat(tableState) {
-  const active = getAllSeats(tableState).filter((seat) => !seat.folded);
-  return active.length === 1 ? active[0] : null;
-}
 
-function getActiveNpcSeats(tableState) {
-  return (tableState.npcSeats ?? []).filter((seat) => !seat.folded);
-}
 
 function shouldKeepNpcInHandBeforeHeroDecision(tableState, actor, decision) {
   const requestedAction = typeof decision === "string" ? decision : decision?.action;
@@ -1062,75 +1018,7 @@ function getNextPhase(phase) {
   return PHASES[index + 1] ?? "showdown";
 }
 
-function getToCall(tableState, seat) {
-  return Math.max(0, (tableState.currentBet ?? 0) - (seat?.currentBet ?? 0));
-}
 
-function canRaise(tableState, seat) {
-  if (!seat || seat.folded || seat.allIn) return false;
-  if ((tableState.streetRaises ?? 0) >= 2) return false;
-  const target = getDefaultRaiseTarget(tableState, { bigBlind: tableState.bigBlind || tableState.minRaise || 20 }, seat);
-  return seat.stack >= Math.max(1, target - seat.currentBet);
-}
-
-function getDefaultRaiseTarget(tableState, table, seat) {
-  const bigBlind = table.bigBlind || tableState.minRaise || 20;
-  const currentBet = tableState.currentBet ?? 0;
-  if (currentBet <= 0) return getLegalRaiseTarget(tableState, table, seat, bigBlind * 2);
-  return getMinRaiseTarget(tableState, table, seat);
-}
-
-function getMinRaiseTarget(tableState, table, seat) {
-  const bigBlind = table.bigBlind || tableState.minRaise || 20;
-  const currentBet = tableState.currentBet ?? 0;
-  const minRaise = tableState.minRaise || bigBlind;
-  const minTarget = currentBet <= 0 ? bigBlind : currentBet + minRaise;
-  return Math.min(seat.currentBet + seat.stack, minTarget);
-}
-
-function getLegalRaiseTarget(tableState, table, seat, requestedTarget) {
-  const minTarget = getMinRaiseTarget(tableState, table, seat);
-  const maxTarget = seat.currentBet + seat.stack;
-  const requested = Math.round(Number(requestedTarget));
-  if (!Number.isFinite(requested)) return minTarget;
-  return clampMoney(Math.max(Math.min(requested, maxTarget), minTarget));
-}
-
-function normalizeAction(action, state, seat, table) {
-  const toCall = getToCall(state, seat);
-  if (action === "raise") return "raise";
-  if (action === "call" && toCall > 0) return "call";
-  if (action === "check" && toCall <= 0) return "check";
-  if (action === "fold") return "fold";
-  if (toCall > 0) return "call";
-  return "check";
-}
-
-function applyContribution(seat, amount) {
-  const contribution = clampMoney(Math.min(amount, seat.stack));
-  const nextStack = clampMoney(seat.stack - contribution);
-  return {
-    ...seat,
-    stack: nextStack,
-    currentBet: clampMoney((seat.currentBet ?? 0) + contribution),
-    invested: clampMoney((seat.invested ?? 0) + contribution),
-    allIn: nextStack <= 0,
-  };
-}
-
-function getSeatById(tableState, seatId) {
-  return getAllSeats(tableState).find((seat) => seat.id === seatId) ?? null;
-}
-
-function getSeatByRelativePosition(tableState, relativePosition) {
-  const total = getAllSeats(tableState).length;
-  const targetIndex = normalizeIndex((tableState.buttonSeatIndex ?? 0) + relativePosition, total);
-  return getAllSeats(tableState).find((seat) => seat.seatIndex === targetIndex) ?? null;
-}
-
-function getNextSeatId(tableState, fromSeatIndex) {
-  return getNextActiveSeatAfter(tableState, fromSeatIndex)?.id ?? null;
-}
 
 function movePastInactiveActor(tableState, actor) {
   const nextId = getNextSeatId(tableState, actor.seatIndex) ?? getFirstActorForCurrentRound(tableState);
@@ -1144,110 +1032,6 @@ function movePastInactiveActor(tableState, actor) {
   return setCurrentActor(tableState, nextId);
 }
 
-function getNextActiveSeatAfter(tableState, fromSeatIndex) {
-  const seats = getAllSeats(tableState);
-  if (!seats.length) return null;
-  const total = seats.length;
-  for (let offset = 1; offset <= total; offset += 1) {
-    const index = normalizeIndex(fromSeatIndex + offset, total);
-    const seat = seats.find((entry) => entry.seatIndex === index);
-    if (seat && !seat.folded && !seat.allIn) return seat;
-  }
-  return null;
-}
-
-function setCurrentActor(tableState, seatId) {
-  const seat = getSeatById(tableState, seatId);
-  const canAct = seat && !seat.folded && !seat.allIn;
-  return syncTableState({
-    ...tableState,
-    currentActorId: canAct ? seat.id : null,
-    currentActorName: canAct ? seat.name : null,
-  });
-}
-
-function setSeat(tableState, seat) {
-  if (seat.id === "player") return syncTableState({ ...tableState, heroSeat: seat });
-  const npcSeats = (tableState.npcSeats ?? []).map((entry) => (entry.id === seat.id ? seat : entry));
-  return syncTableState({ ...tableState, npcSeats });
-}
-
-function setAllSeats(tableState, seats) {
-  const heroSeat = seats.find((seat) => seat.id === "player") ?? tableState.heroSeat;
-  const npcSeats = seats.filter((seat) => seat.id !== "player");
-  return syncTableState({ ...tableState, heroSeat, npcSeats });
-}
-
-function getAllSeats(tableState) {
-  return [tableState.heroSeat, ...(tableState.npcSeats ?? [])].filter(Boolean).sort((a, b) => a.seatIndex - b.seatIndex);
-}
-
-function syncTableState(tableState) {
-  const heroSeat = tableState.heroSeat ? { ...tableState.heroSeat } : null;
-  const npcSeats = (tableState.npcSeats ?? []).map((seat) => ({ ...seat, npc: seat.npc }));
-  const allSeats = [heroSeat, ...npcSeats].filter(Boolean);
-  const currentActor = allSeats.find((seat) => seat.id === tableState.currentActorId) ?? null;
-  const currentActorCanAct = Boolean(currentActor && !currentActor.folded && !currentActor.allIn);
-
-  return {
-    ...tableState,
-    heroSeat,
-    npcSeats,
-    currentActorId: currentActorCanAct ? tableState.currentActorId : null,
-    currentActorName: currentActorCanAct ? tableState.currentActorName : null,
-    playerHoleCards: heroSeat?.holeCards ?? tableState.playerHoleCards ?? [],
-    activeNpcSeats: npcSeats.filter((seat) => !seat.folded).map((seat) => seat.id),
-    playerInvested: heroSeat?.invested ?? tableState.playerInvested ?? 0,
-    handEvents: Array.isArray(tableState.handEvents) ? tableState.handEvents : [],
-  };
-}
-
-function buildHeroSeat({ holeCards, stack, seatIndex }) {
-  return {
-    id: "player",
-    type: "player",
-    name: "Ты",
-    npc: null,
-    holeCards,
-    folded: false,
-    allIn: false,
-    acted: false,
-    invested: 0,
-    currentBet: 0,
-    stack,
-    seatIndex,
-    position: "—",
-    lastAction: "ready",
-    lastAmount: 0,
-    isDealer: false,
-    isSmallBlind: false,
-    isBigBlind: false,
-  };
-}
-
-function buildNpcSeat({ npc, holeCards, stack, seatIndex, mood = "calm" }) {
-  return {
-    id: npc.id,
-    type: "npc",
-    name: npc.name,
-    npc,
-    holeCards,
-    folded: false,
-    allIn: false,
-    acted: false,
-    invested: 0,
-    currentBet: 0,
-    stack,
-    seatIndex,
-    position: "—",
-    lastAction: "ready",
-    lastAmount: 0,
-    isDealer: false,
-    isSmallBlind: false,
-    isBigBlind: false,
-    mood,
-  };
-}
 
 function applyClubDecisionBias(state, actor, decision, table) {
   const action = typeof decision === "string" ? decision : decision?.action;
@@ -1280,9 +1064,6 @@ function getMoodDecisionModifier(mood = "calm") {
   return mods[mood] ?? { callBias: 0, raiseBias: 0, foldBias: 0 };
 }
 
-function findBlindSeat(tableState, type) {
-  return getAllSeats(tableState).find((seat) => (type === "small" ? seat.isSmallBlind : seat.isBigBlind)) ?? null;
-}
 
 function prepareTableNpcs(content, table, club, previousTableState, count) {
   const previousIds = (previousTableState?.npcSeats ?? [])
@@ -1333,16 +1114,7 @@ function normalizeIndex(index, total) {
   return ((index % total) + total) % total;
 }
 
-function getRevealCountForPhase(phase, tableState = null) {
-  if (phase === "flop") return 3;
-  if (phase === "turn") return 4;
-  if (phase === "river" || phase === "showdown" || phase === "finished") return 5;
-  return tableState?.communityCards?.length ?? 0;
-}
 
-function clampMoney(value) {
-  return Math.max(0, Math.round(Number(value) || 0));
-}
 
 function formatDelta(value) {
   return value >= 0 ? `+$${value}` : `-$${Math.abs(value)}`;

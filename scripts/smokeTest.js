@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.2.1";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.2.1";
-import { createClubRoomState } from "../src/engine/club.js?v=1.2.1";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.2.1";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.2.1";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.3.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.3.0";
+import { createClubRoomState } from "../src/engine/club.js?v=1.3.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.3.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.3.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -11,9 +11,9 @@ import {
   getActionMeta,
   getAvailableActions,
   startNewHand,
-} from "../src/engine/poker.js?v=1.2.1";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.2.1";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.2.1";
+} from "../src/engine/poker.js?v=1.3.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.3.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.3.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -46,7 +46,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.2.1",
+      appVersion: "1.3.0",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -283,6 +283,46 @@ function assertClubProgressPersistsThroughUnlockRefresh(content, table, club, ca
   assert(clubHtml.includes(String(clubInfo.xp)), "club screen must display stored Room Mastery XP");
 }
 
+
+function assertDynamicTableSeats(content, table, club) {
+  const seatCounts = new Set();
+  let previousTableState = null;
+
+  for (let index = 0; index < 14; index += 1) {
+    const hand = startTestHand(content, table, club, previousTableState);
+    const totalPlayers = 1 + (hand.npcSeats?.length ?? 0);
+    const npcIds = (hand.npcSeats ?? []).map((seat) => seat.id);
+    const uniqueNpcIds = new Set(npcIds);
+    const smallBlind = [hand.heroSeat, ...(hand.npcSeats ?? [])].filter((seat) => seat?.isSmallBlind);
+    const bigBlind = [hand.heroSeat, ...(hand.npcSeats ?? [])].filter((seat) => seat?.isBigBlind);
+
+    assert(totalPlayers >= 2 && totalPlayers <= Math.min(6, table.seats ?? 6), `dynamic table player count must stay 2-6, got ${totalPlayers}`);
+    assert(uniqueNpcIds.size === npcIds.length, "dynamic table must not duplicate NPC seats");
+    assert(smallBlind.length === 1, "dynamic table must assign exactly one small blind");
+    assert(bigBlind.length === 1, "dynamic table must assign exactly one big blind");
+    assert(hand.tableDynamics?.targetNpcCount === hand.npcSeats.length, "table dynamics must track target npc count");
+    seatCounts.add(totalPlayers);
+    previousTableState = hand;
+  }
+
+  assert(seatCounts.size >= 2, "dynamic table should change player count across hands");
+}
+
+function assertHeadsUpBlinds(content, table, club) {
+  const headsUpTable = { ...table, seats: 2 };
+  const hand = startTestHand(content, headsUpTable, club, null);
+  const seats = [hand.heroSeat, ...(hand.npcSeats ?? [])];
+  const sb = seats.find((seat) => seat.isSmallBlind);
+  const bb = seats.find((seat) => seat.isBigBlind);
+
+  assert(seats.length === 2, `heads-up table must have exactly 2 players, got ${seats.length}`);
+  assert(sb && bb, "heads-up table must post both blinds");
+  assert(sb.id !== bb.id, "heads-up blinds must be on different seats");
+  assert(sb.isDealer, "heads-up button must also be small blind");
+  assert(hand.pot === headsUpTable.smallBlind + headsUpTable.bigBlind, "heads-up blinds must build correct starting pot");
+  assert(hand.currentBet === headsUpTable.bigBlind, "heads-up current bet must equal big blind");
+}
+
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -341,6 +381,8 @@ function main() {
   const startTimeline = buildStartHandTimeline(firstHand, table);
   assert(Array.isArray(startTimeline) && startTimeline.length > 0, "start hand timeline expected");
 
+  assertDynamicTableSeats(content, table, club);
+  assertHeadsUpBlinds(content, table, club);
   assertUiSmoke(content, table, club);
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);

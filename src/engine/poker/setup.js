@@ -1,6 +1,6 @@
-import { buildActionHandEvent } from "./events.js?v=1.1.0";
-import { applyContribution, findBlindSeat, getAllSeats, setAllSeats, setSeat, syncTableState } from "./seats.js?v=1.1.0";
-import { normalizeIndex } from "./tableNpcs.js?v=1.1.0";
+import { buildActionHandEvent } from "./events.js?v=1.3.0";
+import { applyContribution, findBlindSeat, getAllSeats, setAllSeats, setSeat, syncTableState } from "./seats.js?v=1.3.0";
+import { normalizeIndex } from "./tableNpcs.js?v=1.3.0";
 
 export function postBlinds(tableState, table) {
   let state = syncTableState(tableState);
@@ -46,8 +46,8 @@ export function assignPositions(tableState) {
       ...seat,
       position,
       isDealer: relative === 0,
-      isSmallBlind: relative === 1,
-      isBigBlind: relative === 2,
+      isSmallBlind: total <= 2 ? relative === 0 : relative === 1,
+      isBigBlind: total <= 2 ? relative === 1 : relative === 2,
     };
   });
   return setAllSeats(tableState, seats);

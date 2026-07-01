@@ -1,6 +1,67 @@
-import { hydrateNpc, selectTableNpcs } from "../npc.js?v=1.1.0";
+import { hydrateNpc, selectTableNpcs } from "../npc.js?v=1.3.0";
+
+const MIN_NPCS = 1;
+const MAX_NPCS = 5;
+const MAX_TURNOVER_PER_HAND = 2;
+
+export function prepareDynamicTableNpcs(content, table, club, previousTableState = null, clubSnapshot = null) {
+  const targetNpcCount = getTargetNpcCountForHand({ table, previousTableState, clubSnapshot });
+  const previousSeats = Array.isArray(previousTableState?.npcSeats) ? previousTableState.npcSeats : [];
+  const previousIds = previousSeats
+    .map((seat) => seat?.npc?.id ?? seat?.npcId ?? seat?.id)
+    .filter(Boolean);
+  const handsAtTable = Number(previousTableState?.tableDynamics?.handsAtTable ?? 0) + 1;
+  const direction = getNextSeatCountDirection(table, previousTableState, clubSnapshot);
+  const departingIds = chooseDepartingNpcIds(previousSeats, previousTableState?.lastResult, targetNpcCount, handsAtTable);
+  const departing = new Set(departingIds);
+
+  const reused = previousIds
+    .filter((id) => !departing.has(id))
+    .map((id) => content.byId.npcs[id])
+    .filter(Boolean)
+    .filter((npc) => canNpcSitAtTable(npc, table))
+    .map((npc) => hydrateNpc(content, npc));
+
+  const unique = [];
+  const used = new Set();
+
+  for (const npc of reused) {
+    if (used.has(npc.id)) continue;
+    unique.push(npc);
+    used.add(npc.id);
+    if (unique.length >= targetNpcCount) break;
+  }
+
+  const replacements = selectTableNpcs(content, table, club, Math.max(targetNpcCount * 3, 8))
+    .filter((npc) => !used.has(npc.id) && !departing.has(npc.id));
+
+  for (const npc of replacements) {
+    unique.push(npc);
+    used.add(npc.id);
+    if (unique.length >= targetNpcCount) break;
+  }
+
+  const npcs = unique.slice(0, targetNpcCount);
+  const nextIds = new Set(npcs.map((npc) => npc.id));
+  const joinedNpcIds = npcs.map((npc) => npc.id).filter((id) => !previousIds.includes(id));
+  const finalDepartedNpcIds = previousIds.filter((id) => !nextIds.has(id));
+
+  return {
+    npcs,
+    dynamics: {
+      handsAtTable,
+      targetNpcCount: npcs.length,
+      previousNpcCount: previousIds.length || null,
+      maxNpcCount: getMaxNpcCount(table),
+      direction,
+      departedNpcIds: finalDepartedNpcIds.slice(0, MAX_TURNOVER_PER_HAND),
+      joinedNpcIds: joinedNpcIds.slice(0, MAX_TURNOVER_PER_HAND),
+    },
+  };
+}
 
 export function prepareTableNpcs(content, table, club, previousTableState, count) {
+  const target = clampNpcCount(count, table);
   const previousIds = (previousTableState?.npcSeats ?? [])
     .map((seat) => seat?.npc?.id ?? seat?.npcId ?? seat?.id)
     .filter(Boolean);
@@ -18,19 +79,42 @@ export function prepareTableNpcs(content, table, club, previousTableState, count
     if (used.has(npc.id)) continue;
     unique.push(npc);
     used.add(npc.id);
-    if (unique.length >= count) return unique;
+    if (unique.length >= target) return unique;
   }
 
-  const replacements = selectTableNpcs(content, table, club, count * 2)
+  const replacements = selectTableNpcs(content, table, club, Math.max(target * 2, 6))
     .filter((npc) => !used.has(npc.id));
 
   for (const npc of replacements) {
     unique.push(npc);
     used.add(npc.id);
-    if (unique.length >= count) break;
+    if (unique.length >= target) break;
   }
 
-  return unique.slice(0, count);
+  return unique.slice(0, target);
+}
+
+export function getTargetNpcCountForHand({ table, previousTableState = null, clubSnapshot = null } = {}) {
+  const maxNpcCount = getMaxNpcCount(table);
+  const previousNpcCount = Array.isArray(previousTableState?.npcSeats) ? previousTableState.npcSeats.length : null;
+
+  if (!previousNpcCount) {
+    return getInitialNpcCount(table, clubSnapshot);
+  }
+
+  const handsAtTable = Number(previousTableState?.tableDynamics?.handsAtTable ?? 0) + 1;
+  const direction = getNextSeatCountDirection(table, previousTableState, clubSnapshot);
+  const tone = clubSnapshot?.activeEvent?.tone ?? previousTableState?.clubEvent?.tone ?? "normal";
+  let next = previousNpcCount;
+
+  const shouldMove = handsAtTable % 3 === 0 || (tone === "loose" && handsAtTable % 2 === 0) || (tone === "tight" && handsAtTable % 4 === 0);
+  if (shouldMove) next += direction;
+
+  if (next < MIN_NPCS || next > maxNpcCount) {
+    next = previousNpcCount - direction;
+  }
+
+  return clampNpcCount(next, table);
 }
 
 export function canNpcSitAtTable(npc, table) {
@@ -47,4 +131,88 @@ export function getNextButtonIndex(totalSeats, previousButtonIndex = null) {
 
 export function normalizeIndex(index, total) {
   return ((index % total) + total) % total;
+}
+
+function getInitialNpcCount(table, clubSnapshot = null) {
+  const maxNpcCount = getMaxNpcCount(table);
+  const tone = clubSnapshot?.activeEvent?.tone ?? "normal";
+  const hash = stableHash(`${table?.id ?? "table"}:${clubSnapshot?.day ?? 1}:${tone}`);
+
+  if (tone === "loose" || tone === "hot") return clampNpcCount(maxNpcCount - (hash % 2), table);
+  if (tone === "tight" || tone === "focused") return clampNpcCount(1 + (hash % Math.min(3, maxNpcCount)), table);
+
+  const spread = Math.max(1, maxNpcCount - MIN_NPCS + 1);
+  return clampNpcCount(MIN_NPCS + (hash % spread), table);
+}
+
+function getNextSeatCountDirection(table, previousTableState = null, clubSnapshot = null) {
+  const previousDirection = Number(previousTableState?.tableDynamics?.direction ?? 0);
+  const previousNpcCount = Array.isArray(previousTableState?.npcSeats) ? previousTableState.npcSeats.length : null;
+  const maxNpcCount = getMaxNpcCount(table);
+
+  if (previousNpcCount && previousDirection) {
+    if (previousNpcCount <= MIN_NPCS && previousDirection < 0) return 1;
+    if (previousNpcCount >= maxNpcCount && previousDirection > 0) return -1;
+    return previousDirection;
+  }
+
+  const tone = clubSnapshot?.activeEvent?.tone ?? previousTableState?.clubEvent?.tone ?? "normal";
+  if (tone === "loose" || tone === "hot") return 1;
+  if (tone === "tight") return -1;
+  return stableHash(`${table?.id ?? "table"}:${clubSnapshot?.day ?? 1}`) % 2 === 0 ? 1 : -1;
+}
+
+function chooseDepartingNpcIds(previousSeats = [], result = null, targetNpcCount = MIN_NPCS, handsAtTable = 1) {
+  if (!previousSeats.length) return [];
+
+  const previousCount = previousSeats.length;
+  const forcedDepartures = Math.max(0, previousCount - targetNpcCount);
+  const softTurnover = forcedDepartures === 0 && previousCount >= targetNpcCount && handsAtTable > 1 && handsAtTable % 3 === 1 ? 1 : 0;
+  const maxDepartures = Math.min(MAX_TURNOVER_PER_HAND, forcedDepartures + softTurnover, Math.max(0, previousCount - MIN_NPCS));
+  if (maxDepartures <= 0) return [];
+
+  const ranked = [...previousSeats]
+    .filter((seat) => seat?.id && seat.id !== "player")
+    .map((seat) => ({ seat, score: getLeaveScore(seat, result) }))
+    .sort((a, b) => b.score - a.score);
+
+  return ranked.slice(0, maxDepartures).map((entry) => entry.seat.id);
+}
+
+function getLeaveScore(seat, result) {
+  const winnerIds = new Set(String(result?.winnerId ?? result?.winner ?? "").split(",").filter(Boolean));
+  const archetypeId = seat?.npc?.archetypeId ?? seat?.archetypeId ?? "";
+  let score = 10;
+
+  if (seat.folded) score += 12;
+  if (seat.stack <= 0) score += 28;
+  else if (seat.stack < 20) score += 15;
+  if (winnerIds.has(seat.id)) score -= 18;
+  if (archetypeId === "ARCH_TOURIST_GAMBLER") score += 10;
+  if (archetypeId === "ARCH_CALLING_STATION") score -= 4;
+  if (archetypeId === "ARCH_OLD_SCHOOL_REG" || archetypeId === "ARCH_MATH_GRINDER") score -= 8;
+  if (seat.mood === "tilted") score += 8;
+  if (seat.mood === "locked") score -= 6;
+
+  return score;
+}
+
+function getMaxNpcCount(table) {
+  return clamp(Number(table?.seats ?? 6) - 1, MIN_NPCS, MAX_NPCS);
+}
+
+function clampNpcCount(value, table) {
+  return clamp(Math.round(Number(value) || MIN_NPCS), MIN_NPCS, getMaxNpcCount(table));
+}
+
+function stableHash(value) {
+  let hash = 0;
+  for (const char of String(value)) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }

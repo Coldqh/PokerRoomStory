@@ -1,6 +1,7 @@
-import { coreV01 } from "./packs/coreV01.js?v=0.9.3";
+import { DATA_PACKS } from "./packs/index.js?v=0.9.4";
+import { validateContentRegistry } from "./validateContent.js?v=0.9.4";
 
-const packs = [coreV01];
+const packs = DATA_PACKS;
 
 function flattenContent(collectionName) {
   return packs.flatMap((pack) => pack[collectionName] ?? []);
@@ -35,6 +36,8 @@ export function buildContentRegistry() {
     eventTemplates: indexById(registry.eventTemplates),
     challenges: indexById(registry.challenges),
   };
+
+  registry.validation = validateContentRegistry(registry);
 
   return registry;
 }

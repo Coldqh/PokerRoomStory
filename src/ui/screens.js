@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.9.3";
-import { getClubRoomState } from "../engine/club.js?v=0.9.3";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.9.3";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.9.3";
-import { describeCards } from "../engine/cards.js?v=0.9.3";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.9.3";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.9.4";
+import { getClubRoomState } from "../engine/club.js?v=0.9.4";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.9.4";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.9.4";
+import { describeCards } from "../engine/cards.js?v=0.9.4";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.9.4";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -848,7 +848,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.9.3")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.9.4")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

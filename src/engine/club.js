@@ -1,3 +1,5 @@
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=0.9.4";
+
 const CLUB_EVENT_POOL = [
   {
     id: "CLUB_EVENT_LOOSE_TABLES",
@@ -59,14 +61,14 @@ export function createClubRoomState(content, clubId) {
   };
 }
 
-export function normalizeClubNpcState(content, clubNpcState = {}, activeClubId = "CLUB_RU_BASEMENT_RIVER_001") {
+export function normalizeClubNpcState(content, clubNpcState = {}, activeClubId = FALLBACK_START_LOCATION.clubId) {
   const source = isPlainObject(clubNpcState) ? clubNpcState : {};
   const next = { ...source };
   next[activeClubId] = normalizeClubRoomState(content, activeClubId, source[activeClubId]);
   return next;
 }
 
-export function getClubRoomState(content, clubNpcState = {}, clubId = "CLUB_RU_BASEMENT_RIVER_001") {
+export function getClubRoomState(content, clubNpcState = {}, clubId = FALLBACK_START_LOCATION.clubId) {
   return normalizeClubRoomState(content, clubId, clubNpcState?.[clubId]);
 }
 

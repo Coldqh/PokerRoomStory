@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.9.3";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.9.3";
+} from "./cards.js?v=0.9.4";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.9.4";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {

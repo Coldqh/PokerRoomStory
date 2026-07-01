@@ -1,5 +1,6 @@
-import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.9.3";
-import { hydrateNpc } from "./npc.js?v=0.9.3";
+import { APP_VERSION, CONTENT_VERSION, SAVE_SCHEMA_VERSION } from "../config/appMeta.js?v=0.9.4";
+import { hydrateNpc } from "./npc.js?v=0.9.4";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=0.9.4";
 
 const CURRENT_SAVE_KEY = "prs.save.current";
 const BACKUP_SAVE_KEY = "prs.save.backup";
@@ -219,8 +220,8 @@ function migrateLegacyFlatSave(flat) {
     clubNpcState: flat.clubNpcState ?? {},
     tableState: flat.tableState ?? null,
     currentScreen: flat.currentScreen ?? "club",
-    activeClubId: flat.activeClubId ?? "CLUB_RU_BASEMENT_RIVER_001",
-    activeTableId: flat.activeTableId ?? "TABLE_RU_BRR_LOW_001",
+    activeClubId: flat.activeClubId ?? FALLBACK_START_LOCATION.clubId,
+    activeTableId: flat.activeTableId ?? FALLBACK_START_LOCATION.tableId,
     tableSession: flat.tableSession ?? null,
     log: Array.isArray(flat.log) ? flat.log.slice(-MAX_LOG_LINES) : [],
     settings: flat.settings ?? {},

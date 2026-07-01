@@ -1,3 +1,5 @@
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=0.9.4";
+
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },
   { id: "local_regular", label: "Местный игрок", minRep: 6, minBankroll: 0, color: "green" },
@@ -31,10 +33,10 @@ export function createNewPlayer() {
 
 export function createNewCareer() {
   return {
-    unlockedCountries: ["COUNTRY_RUSSIA"],
-    unlockedCities: ["CITY_RU_NORTH_DISTRICT"],
-    unlockedClubs: ["CLUB_RU_BASEMENT_RIVER_001"],
-    unlockedTables: ["TABLE_RU_BRR_LOW_001", "TABLE_RU_BRR_LOW_002", "TABLE_RU_BRR_MID_001", "TABLE_RU_BRR_LOW_003", "TABLE_RU_BRR_LOW_004"],
+    unlockedCountries: [FALLBACK_START_LOCATION.countryId],
+    unlockedCities: [FALLBACK_START_LOCATION.cityId],
+    unlockedClubs: [FALLBACK_START_LOCATION.clubId],
+    unlockedTables: [...FALLBACK_START_LOCATION.starterTableIds],
     knownNpcIds: [],
     rivalries: [],
     achievements: [],

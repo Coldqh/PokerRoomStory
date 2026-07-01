@@ -1,11 +1,13 @@
+import { getClubNpcs, getClubTables } from "./selectors.js?v=0.9.4";
+
 export function getClubContext(content, clubId) {
   const club = content.byId.clubs[clubId];
   if (!club) throw new Error(`Club not found: ${clubId}`);
 
   const city = content.byId.cities[club.cityId];
   const country = content.byId.countries[city.countryId];
-  const tables = club.tables.map((id) => content.byId.tables[id]).filter(Boolean);
-  const npcs = club.npcPool.map((id) => content.byId.npcs[id]).filter(Boolean);
+  const tables = getClubTables(content, clubId);
+  const npcs = getClubNpcs(content, clubId);
 
   return { club, city, country, tables, npcs };
 }

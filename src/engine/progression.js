@@ -207,8 +207,9 @@ function normalizeSingleClubProgress(club, progress = {}) {
 }
 
 function getClubProgression(club = {}) {
-  const levels = Array.isArray(club.progression?.levels) ? club.progression.levels : [];
-  const maxLevel = Math.max(1, Number(club.progression?.maxLevel ?? Math.max(1, ...levels.map((entry) => Number(entry.level ?? 1)))) || 10);
+  const safeClub = club ?? {};
+  const levels = Array.isArray(safeClub.progression?.levels) ? safeClub.progression.levels : [];
+  const maxLevel = Math.max(1, Number(safeClub.progression?.maxLevel ?? Math.max(1, ...levels.map((entry) => Number(entry.level ?? 1)))) || 10);
   return {
     maxLevel,
     levels: levels

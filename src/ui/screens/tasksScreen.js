@@ -1,5 +1,5 @@
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=0.9.8";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=0.9.8";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=0.9.9";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=0.9.9";
 
 export function renderTasksScreen(state) {
   const player = state.player;

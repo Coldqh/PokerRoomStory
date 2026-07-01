@@ -1,6 +1,6 @@
-import { PHASES } from "./constants.js?v=0.9.8";
-import { getToCall } from "./betting.js?v=0.9.8";
-import { getAllSeats, getNextActiveSeatAfter, getNextSeatId, getSeatByRelativePosition, setAllSeats, setCurrentActor, syncTableState } from "./seats.js?v=0.9.8";
+import { PHASES } from "./constants.js?v=0.9.9";
+import { getToCall } from "./betting.js?v=0.9.9";
+import { getAllSeats, getNextActiveSeatAfter, getNextSeatId, getSeatByRelativePosition, setAllSeats, setCurrentActor, syncTableState } from "./seats.js?v=0.9.9";
 
 export function beginBettingRound(tableState, firstActorId) {
   const seats = getAllSeats(tableState).map((seat) => ({

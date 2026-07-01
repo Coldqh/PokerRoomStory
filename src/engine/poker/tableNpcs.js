@@ -1,4 +1,4 @@
-import { hydrateNpc, selectTableNpcs } from "../npc.js?v=0.9.8";
+import { hydrateNpc, selectTableNpcs } from "../npc.js?v=0.9.9";
 
 export function prepareTableNpcs(content, table, club, previousTableState, count) {
   const previousIds = (previousTableState?.npcSeats ?? [])

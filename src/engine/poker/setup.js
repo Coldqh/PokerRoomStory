@@ -1,6 +1,6 @@
-import { buildActionHandEvent } from "./events.js?v=0.9.8";
-import { applyContribution, findBlindSeat, getAllSeats, setAllSeats, setSeat, syncTableState } from "./seats.js?v=0.9.8";
-import { normalizeIndex } from "./tableNpcs.js?v=0.9.8";
+import { buildActionHandEvent } from "./events.js?v=0.9.9";
+import { applyContribution, findBlindSeat, getAllSeats, setAllSeats, setSeat, syncTableState } from "./seats.js?v=0.9.9";
+import { normalizeIndex } from "./tableNpcs.js?v=0.9.9";
 
 export function postBlinds(tableState, table) {
   let state = syncTableState(tableState);

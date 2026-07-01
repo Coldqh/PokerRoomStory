@@ -1,4 +1,4 @@
-import { RUSSIA_NAME_POOL } from "./russia.js?v=0.9.8";
+import { RUSSIA_NAME_POOL } from "./russia.js?v=0.9.9";
 
 export const DEFAULT_NAME_COUNTRY = "COUNTRY_RUSSIA";
 

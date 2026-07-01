@@ -1,6 +1,6 @@
-import { canEnterTable } from "../../engine/world.js?v=0.9.8";
-import { getActionMeta } from "../../engine/poker.js?v=0.9.8";
-import { escapeHtml } from "../components.js?v=0.9.8";
+import { canEnterTable } from "../../engine/world.js?v=0.9.9";
+import { getActionMeta } from "../../engine/poker.js?v=0.9.9";
+import { escapeHtml } from "../components.js?v=0.9.9";
 
 export function renderBuyInModal(state) {
   const modal = state.system?.buyInModal;

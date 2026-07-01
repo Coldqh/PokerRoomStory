@@ -1,8 +1,8 @@
-# Poker Room Story v0.9.8
+# Poker Room Story v0.9.9
 
 Static web MVP.
 
-## v0.9.8 — Poker Engine Safety Split
+## v0.9.9 — Poker Engine Safety Split
 
 - Split safe poker-engine helpers into focused modules under `src/engine/poker/`.
 - Kept the public engine facade at `src/engine/poker.js`, so existing UI/app imports stay stable.

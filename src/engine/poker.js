@@ -1,6 +1,6 @@
-import { createDeck, draw } from "./cards.js?v=0.9.8";
-import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=0.9.8";
-import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=0.9.8";
+import { createDeck, draw } from "./cards.js?v=0.9.9";
+import { createInitialTableState, createAnimationState, getRevealCountForPhase } from "./poker/state.js?v=0.9.9";
+import { canRaise, getBetSizeOptions, getDefaultRaiseTarget, getLegalRaiseTarget, getToCall, normalizeAction } from "./poker/betting.js?v=0.9.9";
 import {
   applyContribution,
   buildHeroSeat,
@@ -15,9 +15,9 @@ import {
   setCurrentActor,
   setSeat,
   syncTableState,
-} from "./poker/seats.js?v=0.9.8";
-import { assignPositions, postBlinds } from "./poker/setup.js?v=0.9.8";
-import { getNextButtonIndex, prepareTableNpcs } from "./poker/tableNpcs.js?v=0.9.8";
+} from "./poker/seats.js?v=0.9.9";
+import { assignPositions, postBlinds } from "./poker/setup.js?v=0.9.9";
+import { getNextButtonIndex, prepareTableNpcs } from "./poker/tableNpcs.js?v=0.9.9";
 import {
   beginBettingRound,
   getFirstActorForCurrentRound,
@@ -26,7 +26,7 @@ import {
   isBettingRoundComplete,
   movePastInactiveActor,
   shouldKeepNpcInHandBeforeHeroDecision,
-} from "./poker/rounds.js?v=0.9.8";
+} from "./poker/rounds.js?v=0.9.9";
 import {
   appendHandEvent,
   buildActionHandEvent,
@@ -36,15 +36,15 @@ import {
   buildWinnerEvent,
   event,
   eventWithSnapshot,
-} from "./poker/events.js?v=0.9.8";
-import { advanceStreet } from "./poker/streets.js?v=0.9.8";
-import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=0.9.8";
-import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=0.9.8";
+} from "./poker/events.js?v=0.9.9";
+import { advanceStreet } from "./poker/streets.js?v=0.9.9";
+import { buildFoldResult, buildSingleWinnerResult, resolveShowdown } from "./poker/results.js?v=0.9.9";
+import { applyClubDecisionBias, decideNpcForState } from "./poker/npcDecision.js?v=0.9.9";
 
 export { createInitialTableState, createAnimationState };
-export { getBetSizeOptions } from "./poker/betting.js?v=0.9.8";
-export { buildStartHandTimeline } from "./poker/events.js?v=0.9.8";
-export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=0.9.8";
+export { getBetSizeOptions } from "./poker/betting.js?v=0.9.9";
+export { buildStartHandTimeline } from "./poker/events.js?v=0.9.9";
+export { getCurrentHandInfo, getHandHint, getPhaseLabel, getUnlockConditionsFromHand } from "./poker/handInfo.js?v=0.9.9";
 
 
 export function startNewHand({ content, table, club, player, previousTableState = null, clubSnapshot = null }) {

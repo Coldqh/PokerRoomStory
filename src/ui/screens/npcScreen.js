@@ -1,6 +1,6 @@
-import { getClubContext } from "../../engine/world.js?v=0.9.8";
-import { escapeHtml } from "../components.js?v=0.9.8";
-import { initials } from "./common.js?v=0.9.8";
+import { getClubContext } from "../../engine/world.js?v=0.9.9";
+import { escapeHtml } from "../components.js?v=0.9.9";
+import { initials } from "./common.js?v=0.9.9";
 
 export function renderNpcScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);

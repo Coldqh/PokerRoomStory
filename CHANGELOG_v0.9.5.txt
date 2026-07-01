@@ -1,0 +1,9 @@
+v0.9.5 — UI File Split
+
+- Split src/ui/screens.js into focused screen modules under src/ui/screens/.
+- Kept src/ui/screens.js as a compatibility export.
+- Split src/styles.css into ordered files under src/styles/.
+- Kept src/styles.css as the ordered CSS entrypoint.
+- Updated service worker app shell for new JS/CSS files.
+- Fixed CSS asset path after moving card styles into src/styles/.
+- No poker flow, save schema, betting logic, fold logic, or UI behavior changes.

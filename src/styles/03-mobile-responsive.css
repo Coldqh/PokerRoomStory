@@ -1,0 +1,540 @@
+
+@media (max-width: 420px) {
+  .app-shell { padding-inline: 5px; }
+  .felt-stage { min-height: 430px; }
+  .seat { width: 98px; }
+  .seat-main span { display: none; }
+  .hero-player { width: 80%; grid-template-columns: auto minmax(0, 1fr); text-align: left; justify-items: stretch; }
+  .playing-cards.large .playing-card,
+  .card-slot { width: 34px; height: 50px; }
+  .table-info { grid-template-columns: 1fr; }
+  .club-status-row { grid-template-columns: 1fr; }
+  .quick-stats { grid-template-columns: 1fr 1fr; }
+  .system-grid { grid-template-columns: 1fr; }
+}
+
+/* v0.6.3 drawer navigation + mobile table repair */
+.drawer-topbar {
+  grid-template-columns: auto minmax(0, 260px) minmax(0, 1fr);
+  gap: 10px;
+}
+.menu-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,69,75,0.28);
+  border-radius: 14px;
+  color: #ffe6e7;
+  background: rgba(255,255,255,0.045);
+  cursor: pointer;
+  user-select: none;
+}
+.menu-button span { font-size: 1.18rem; line-height: 1; transform: translateY(-1px); }
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 105;
+  background: rgba(0,0,0,0.48);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.side-drawer {
+  position: fixed;
+  z-index: 110;
+  top: 14px;
+  left: 14px;
+  bottom: 14px;
+  width: min(360px, calc(100vw - 28px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  padding: 14px;
+  transform: translateX(calc(-100% - 30px));
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.main-menu-toggle:checked ~ .drawer-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+.main-menu-toggle:checked ~ .side-drawer {
+  transform: translateX(0);
+  opacity: 1;
+}
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.drawer-head span,
+.drawer-settings span,
+.drawer-system span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+.drawer-head strong { display: block; margin-top: 0.12rem; color: #ff6469; font-size: 1.18rem; }
+.drawer-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  color: var(--soft);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+.drawer-player {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.drawer-player .top-stat { padding: 0.58rem 0.6rem; border-radius: 13px; }
+.drawer-player .top-stat small { font-size: 0.5rem; }
+.drawer-player .top-stat strong { font-size: 0.8rem; }
+.drawer-nav {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.drawer-nav button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 0.72rem 0.76rem;
+  border-radius: 15px;
+  text-align: left;
+  background: rgba(255,255,255,0.035);
+}
+.drawer-nav button span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 11px;
+  color: #ff888c;
+  background: rgba(255,69,75,0.075);
+}
+.drawer-nav button b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.86rem; }
+.drawer-nav button.active {
+  border-color: rgba(255,69,75,0.45);
+  background: rgba(255,69,75,0.11);
+}
+.drawer-settings,
+.drawer-system {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 15px;
+  background: rgba(255,255,255,0.03);
+}
+.drawer-settings strong { display: block; margin-top: 0.14rem; }
+.drawer-system { margin-top: -4px; }
+
+/* Remove old always-visible nav layout after drawer migration */
+.app-nav { display: none !important; }
+.pace-block { display: none !important; }
+
+@media (min-width: 1100px) {
+  .drawer-topbar { grid-template-columns: auto minmax(0, 280px) minmax(0, 1fr); }
+  .side-drawer { width: 340px; }
+}
+
+@media (max-width: 740px) {
+  .app-shell { padding: 7px 7px 76px; }
+  .drawer-topbar {
+    position: sticky;
+    top: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 8px 9px;
+    margin: -7px -7px 8px;
+    gap: 8px;
+  }
+  .menu-button { width: 36px; height: 36px; border-radius: 12px; }
+  .crest { width: 32px; height: 32px; border-radius: 12px; }
+  .brand-card { gap: 7px; }
+  .brand h1 { font-size: 0.78rem; line-height: 1; letter-spacing: 0.045em; white-space: nowrap; }
+  .brand p { display: none; }
+  .quick-stats {
+    grid-template-columns: 1fr;
+    width: min(104px, 28vw);
+  }
+  .quick-stats .top-stat { padding: 0.42rem 0.48rem; border-radius: 11px; }
+  .quick-stats .top-stat:nth-child(n+2) { display: none; }
+  .top-stat small { font-size: 0.46rem; }
+  .top-stat strong { font-size: 0.72rem; }
+
+  .side-drawer {
+    top: 8px;
+    left: 8px;
+    bottom: 8px;
+    width: min(310px, calc(100vw - 16px));
+    border-radius: 22px;
+    padding: 12px;
+    gap: 10px;
+  }
+  .drawer-player { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .drawer-player > div:nth-child(3) { display: none; }
+  .drawer-nav button { padding: 0.64rem 0.68rem; border-radius: 14px; }
+
+  .game-area { gap: 8px; }
+  .felt-stage {
+    min-height: 520px;
+    border-radius: 24px;
+  }
+  .table-ring { inset: 11% 5% 16%; }
+  .pot-chip {
+    top: 40%;
+    min-width: 94px;
+    padding: 0.52rem 0.72rem;
+  }
+  .pot-chip strong { font-size: 1.12rem; }
+  .pot-chip small { font-size: 0.62rem; }
+  .board-zone { top: 53%; width: 96%; }
+  .playing-cards { gap: 3px; }
+
+  .board-zone .playing-cards.large .playing-card,
+  .board-zone .card-slot {
+    width: 34px !important;
+    height: 49px !important;
+    min-width: 34px;
+    padding: 4px;
+    border-radius: 9px;
+  }
+  .hero-cards .playing-cards.large .playing-card {
+    width: 42px !important;
+    height: 59px !important;
+    padding: 5px;
+    border-radius: 10px;
+  }
+  .playing-cards.large .card-corner-bottom { display: none; }
+  .playing-cards.large .card-corner-top { top: 4px; left: 4px; }
+  .playing-cards.large .card-corner b { font-size: 0.58rem; }
+  .playing-cards.large .card-corner i { font-size: 0.44rem; }
+  .board-zone .playing-cards.large .card-center-suit { font-size: 1.05rem; transform: translateY(5px); }
+  .hero-cards .playing-cards.large .card-center-suit { font-size: 1.28rem; transform: translateY(5px); }
+  .playing-card.made { transform: translateY(-1px); outline-width: 1px; box-shadow: 0 0 0 3px rgba(216,161,95,0.12), 0 9px 18px rgba(0,0,0,0.36); }
+
+  .seat {
+    width: 124px;
+    min-height: 56px;
+    padding: 6px;
+    gap: 5px;
+    border-radius: 14px;
+  }
+  .seat-avatar { width: 28px; height: 28px; font-size: 0.58rem; }
+  .seat-main strong { font-size: 0.64rem; }
+  .seat-main span { font-size: 0.56rem; }
+  .seat-status { font-size: 0.5rem; padding: 0.12rem 0.38rem; }
+  .seat-cards {
+    display: block !important;
+    right: 5px;
+    bottom: -10px;
+  }
+  .seat-cards .playing-cards.small { gap: 2px; }
+  .seat-cards .playing-cards.small .playing-card {
+    width: 19px;
+    height: 27px;
+    padding: 2px;
+    border-radius: 5px;
+  }
+  .seat-cards .playing-cards.small .card-center-suit { font-size: 0.84rem; }
+  .seat-1 { top: 5%; left: 50%; transform: translateX(-50%); }
+  .seat-2 { right: 2%; top: 18%; }
+  .seat-3 { right: 2%; bottom: 28%; }
+  .seat-4 { left: 2%; bottom: 28%; }
+  .seat-5 { left: 2%; top: 18%; }
+  .hero-player {
+    bottom: 4%;
+    width: min(285px, 92%);
+    min-height: 66px;
+    padding: 7px;
+    border-radius: 17px;
+  }
+  .hero-info strong { font-size: 0.74rem; }
+  .hero-info span { font-size: 0.66rem; }
+  .action-bubble {
+    top: 31%;
+    width: min(300px, 86%);
+    padding: 9px 11px 12px;
+    border-radius: 16px;
+  }
+  .action-bubble strong { font-size: 0.9rem; }
+  .action-bubble small { font-size: 0.72rem; }
+  .table-info {
+    grid-template-columns: 1fr;
+    padding: 8px;
+    gap: 7px;
+  }
+  .info-block { padding: 9px; border-radius: 13px; }
+  .action-dock {
+    position: sticky;
+    bottom: 7px;
+    z-index: 80;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+    border-radius: 17px;
+  }
+  .action-dock button {
+    min-width: 0;
+    padding: 0.54rem 0.22rem;
+    border-radius: 11px;
+    font-size: 0.62rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .felt-stage { min-height: 500px; }
+  .seat { width: 112px; }
+  .board-zone .playing-cards.large .playing-card,
+  .board-zone .card-slot { width: 31px !important; height: 46px !important; }
+  .hero-cards .playing-cards.large .playing-card { width: 39px !important; height: 55px !important; }
+  .board-zone .playing-cards.large .card-center-suit { font-size: 0.98rem; }
+  .hero-cards .playing-cards.large .card-center-suit { font-size: 1.18rem; }
+}
+.table-mode .drawer-topbar {
+  grid-template-columns: auto minmax(0, 260px) minmax(0, 1fr);
+}
+@media (max-width: 740px) {
+  .table-mode .drawer-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}
+
+/* v0.8.0 iPhone drawer + compact table correction */
+.table-page > .table-header {
+  display: none !important;
+}
+
+.drawer-backdrop {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.menu-button,
+.drawer-close,
+.drawer-backdrop {
+  touch-action: manipulation;
+}
+.app-shell.menu-open .drawer-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+.app-shell.menu-open .side-drawer {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.side-drawer {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(100dvh - 28px);
+}
+.menu-button {
+  font: inherit;
+  padding: 0;
+  min-width: 0;
+}
+
+/* Keep desktop cards calm: no rank/suit collision */
+.playing-cards.large .playing-card,
+.card-slot {
+  width: clamp(42px, 4.2vw, 56px) !important;
+  height: clamp(60px, 5.9vw, 78px) !important;
+}
+.playing-cards.large .card-center-suit {
+  font-size: clamp(1.18rem, 2.1vw, 1.62rem) !important;
+  transform: none !important;
+}
+.playing-cards.large .card-corner-top { top: 5px; left: 5px; }
+.playing-cards.large .card-corner-bottom { right: 5px; bottom: 5px; }
+.playing-cards.large .card-corner b { font-size: clamp(0.62rem, 1vw, 0.82rem) !important; }
+.playing-cards.large .card-corner i { font-size: clamp(0.48rem, 0.82vw, 0.64rem) !important; }
+
+@media (max-width: 740px) {
+  .app-shell {
+    padding: 5px 5px 72px !important;
+  }
+  .drawer-topbar {
+    position: sticky;
+    top: 0;
+    margin: -5px -5px 5px !important;
+    padding: calc(5px + env(safe-area-inset-top)) 7px 6px !important;
+    gap: 6px !important;
+    border-radius: 0 0 16px 16px;
+  }
+  .menu-button {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 11px !important;
+  }
+  .menu-button span { font-size: 1.02rem !important; }
+  .crest { width: 28px !important; height: 28px !important; }
+  .brand h1 { font-size: 0.72rem !important; letter-spacing: 0.04em !important; }
+  .quick-stats { width: min(86px, 24vw) !important; }
+  .quick-stats .top-stat { padding: 0.34rem 0.38rem !important; }
+  .top-stat small { font-size: 0.42rem !important; }
+  .top-stat strong { font-size: 0.66rem !important; }
+
+  .side-drawer {
+    top: max(6px, env(safe-area-inset-top)) !important;
+    left: 6px !important;
+    bottom: max(6px, env(safe-area-inset-bottom)) !important;
+    width: min(292px, calc(100vw - 12px)) !important;
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom))) !important;
+    padding: 10px !important;
+    gap: 8px !important;
+    border-radius: 20px !important;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  }
+  .drawer-head { padding-bottom: 8px !important; }
+  .drawer-head strong { font-size: 1rem !important; }
+  .drawer-close { width: 32px !important; height: 32px !important; border-radius: 11px !important; }
+  .drawer-nav { gap: 6px !important; }
+  .drawer-nav button { padding: 0.55rem 0.58rem !important; border-radius: 12px !important; grid-template-columns: 30px minmax(0, 1fr) !important; }
+  .drawer-nav button span { width: 26px !important; height: 26px !important; border-radius: 9px !important; }
+  .drawer-nav button b { font-size: 0.78rem !important; }
+  .drawer-settings,
+  .drawer-system { padding: 8px !important; border-radius: 12px !important; }
+  .drawer-settings .small-button,
+  .drawer-system .small-button { padding: 0.38rem 0.48rem !important; }
+
+  .table-page { gap: 6px !important; }
+  .game-area { gap: 6px !important; }
+  .felt-stage {
+    min-height: 0 !important;
+    height: min(55dvh, 456px) !important;
+    border-radius: 18px !important;
+  }
+  .table-ring { inset: 9% 4% 13% !important; }
+  .pot-chip {
+    top: 38% !important;
+    min-width: 76px !important;
+    padding: 0.36rem 0.48rem !important;
+    border-radius: 999px !important;
+  }
+  .pot-chip span { font-size: 0.42rem !important; }
+  .pot-chip strong { font-size: 0.88rem !important; }
+  .pot-chip small { display: none !important; }
+  .board-zone { top: 52% !important; width: 98% !important; }
+  .board-cards,
+  .playing-cards { gap: 2px !important; }
+
+  .board-zone .playing-cards.large .playing-card,
+  .board-zone .card-slot {
+    width: 28px !important;
+    height: 41px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    border-radius: 7px !important;
+  }
+  .hero-cards .playing-cards.large .playing-card {
+    width: 35px !important;
+    height: 50px !important;
+    min-width: 35px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+  }
+  .playing-cards.large .card-corner-bottom { display: none !important; }
+  .playing-cards.large .card-corner-top { top: 3px !important; left: 3px !important; }
+  .playing-cards.large .card-corner b { font-size: 0.48rem !important; line-height: 0.9 !important; }
+  .playing-cards.large .card-corner i { font-size: 0.34rem !important; line-height: 0.85 !important; margin-top: 0 !important; }
+  .board-zone .playing-cards.large .card-center-suit { font-size: 0.76rem !important; transform: translateY(5px) !important; opacity: 0.82 !important; }
+  .hero-cards .playing-cards.large .card-center-suit { font-size: 0.98rem !important; transform: translateY(6px) !important; opacity: 0.86 !important; }
+  .playing-card::before { inset: 2px !important; border-radius: 6px !important; }
+  .playing-card.made { transform: translateY(-1px) !important; outline-width: 1px !important; box-shadow: 0 0 0 2px rgba(216,161,95,0.12), 0 7px 14px rgba(0,0,0,0.34) !important; }
+
+  .seat {
+    width: 92px !important;
+    min-height: 42px !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    border-radius: 11px !important;
+  }
+  .seat-avatar { width: 22px !important; height: 22px !important; font-size: 0.48rem !important; }
+  .seat-main strong { font-size: 0.54rem !important; }
+  .seat-main span { display: none !important; }
+  .seat-status { font-size: 0.42rem !important; padding: 0.08rem 0.28rem !important; }
+  .seat-cards {
+    display: block !important;
+    right: 4px !important;
+    bottom: -8px !important;
+  }
+  .seat-cards .playing-cards.small { gap: 1px !important; }
+  .seat-cards .playing-cards.small .playing-card {
+    width: 16px !important;
+    height: 23px !important;
+    min-width: 16px !important;
+    padding: 0 !important;
+    border-radius: 4px !important;
+  }
+  .seat-cards .playing-cards.small .card-center-suit { font-size: 0.68rem !important; }
+  .seat-1 { top: 3% !important; left: 50% !important; transform: translateX(-50%) !important; }
+  .seat-2 { right: 1% !important; top: 17% !important; }
+  .seat-3 { right: 1% !important; bottom: 27% !important; }
+  .seat-4 { left: 1% !important; bottom: 27% !important; }
+  .seat-5 { left: 1% !important; top: 17% !important; }
+
+  .hero-player {
+    bottom: 3% !important;
+    width: min(250px, 78%) !important;
+    min-height: 50px !important;
+    padding: 5px !important;
+    border-radius: 13px !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    text-align: left !important;
+  }
+  .hero-info strong { font-size: 0.62rem !important; }
+  .hero-info span { font-size: 0.54rem !important; }
+  .action-bubble {
+    top: 28% !important;
+    width: min(250px, 76%) !important;
+    padding: 7px 8px 9px !important;
+    border-radius: 13px !important;
+  }
+  .action-bubble span { font-size: 0.42rem !important; }
+  .action-bubble strong { font-size: 0.76rem !important; }
+  .action-bubble small { font-size: 0.6rem !important; }
+
+  .table-info {
+    grid-template-columns: 1fr !important;
+    padding: 6px !important;
+    gap: 5px !important;
+  }
+  .info-block { padding: 7px !important; border-radius: 11px !important; }
+  .info-block span { font-size: 0.42rem !important; }
+  .info-block strong { font-size: 0.7rem !important; }
+  .info-block p { font-size: 0.62rem !important; }
+  .action-dock {
+    left: 5px !important;
+    right: 5px !important;
+    bottom: calc(5px + env(safe-area-inset-bottom)) !important;
+    gap: 3px !important;
+    padding: 4px !important;
+    border-radius: 14px !important;
+  }
+  .action-dock button {
+    padding: 0.4rem 0.05rem !important;
+    font-size: 0.54rem !important;
+    border-radius: 9px !important;
+  }
+}

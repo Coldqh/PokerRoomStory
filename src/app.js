@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.9.4";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.9.4";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.9.4";
-import { applyUnlocks } from "./engine/collections.js?v=0.9.4";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.9.5";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.9.5";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.9.5";
+import { applyUnlocks } from "./engine/collections.js?v=0.9.5";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -12,14 +12,14 @@ import {
   applyPlayerAction,
   getActionMeta,
   getAvailableActions,
-} from "./engine/poker.js?v=0.9.4";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.9.4";
-import { getDefaultStartLocation } from "./engine/selectors.js?v=0.9.4";
-import { getClubContext } from "./engine/world.js?v=0.9.4";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.9.4";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.9.4";
-import { renderScreen, getVisibleScreens } from "./ui/screens.js?v=0.9.4";
-import { escapeHtml } from "./ui/components.js?v=0.9.4";
+} from "./engine/poker.js?v=0.9.5";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.9.5";
+import { getDefaultStartLocation } from "./engine/selectors.js?v=0.9.5";
+import { getClubContext } from "./engine/world.js?v=0.9.5";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.9.5";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.9.5";
+import { renderScreen, getVisibleScreens } from "./ui/screens.js?v=0.9.5";
+import { escapeHtml } from "./ui/components.js?v=0.9.5";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -95,7 +95,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.9.4");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.9.5");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 

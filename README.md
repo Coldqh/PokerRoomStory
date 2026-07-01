@@ -1,5 +1,12 @@
-# Poker Room Story v0.9.4
+# Poker Room Story v0.9.5
 
-Content Architecture Prep: data packs are now routed through `src/data/packs/index.js`, the first room pack lives under `src/data/packs/russia/`, name pools are prepared for country-level expansion, content validation warns about broken references, and world selectors centralize default club/table lookup.
+Static web MVP.
 
-No poker flow, UI behavior, save schema, fold logic, or betting rules were intentionally changed in this patch.
+## v0.9.5 — UI File Split
+
+- Split monolithic `src/ui/screens.js` into focused screen modules under `src/ui/screens/`.
+- Split monolithic `src/styles.css` into ordered CSS chunks under `src/styles/`.
+- Kept compatibility entrypoints: `src/ui/screens.js` and `src/styles.css`.
+- Updated service-worker app shell for the new JS/CSS files.
+- No poker-flow, save-schema, UI-behavior or balance changes.
+

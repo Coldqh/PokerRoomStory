@@ -1,0 +1,414 @@
+.winning-card-row .playing-cards {
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.result-modal-clarity .playing-card {
+  width: 34px;
+  height: 48px;
+  border-radius: 8px;
+}
+.result-modal-clarity .card-corner b {
+  font-size: 0.52rem;
+}
+.result-modal-clarity .card-corner i {
+  font-size: 0.48rem;
+}
+.result-modal-clarity .card-center-suit {
+  font-size: 1.06rem;
+}
+.hand-rank-guide {
+  padding: 13px;
+  margin-bottom: 12px;
+}
+.hand-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.hand-rank-item {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 10px 10px 10px 38px;
+  min-height: 66px;
+  border: 1px solid rgba(255,255,255,0.075);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.032);
+}
+.hand-rank-item em {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  color: #1b1110;
+  background: #d8a15f;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 900;
+}
+.hand-rank-item strong {
+  color: #fff;
+  font-size: 0.82rem;
+}
+.hand-rank-item span {
+  color: var(--soft);
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+@media (max-width: 900px) {
+  .hand-rank-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .result-modal-clarity {
+    gap: 6px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+  .result-modal-clarity .playing-card {
+    width: 29px;
+    height: 41px;
+    border-radius: 7px;
+  }
+  .result-modal-clarity .card-center-suit { font-size: 0.9rem; }
+  .hand-rank-guide { padding: 10px; }
+  .hand-rank-grid { grid-template-columns: 1fr; gap: 6px; }
+  .hand-rank-item {
+    min-height: 0;
+    padding: 8px 8px 8px 34px;
+    border-radius: 12px;
+  }
+  .hand-rank-item strong { font-size: 0.76rem; }
+  .hand-rank-item span { font-size: 0.63rem; }
+}
+
+/* v0.8.4 — table route flow + readable revealed cards */
+.table-hand-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.table-hand-row > div + div {
+  padding-left: 10px;
+  border-left: 1px solid rgba(255,255,255,0.07);
+}
+.table-hand-row p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.playing-cards.seat-reveal {
+  gap: 3px;
+}
+.playing-cards.seat-reveal .playing-card {
+  width: 42px;
+  height: 58px;
+  min-width: 42px;
+  padding: 5px;
+  border-radius: 9px;
+}
+.playing-cards.seat-reveal .card-corner {
+  display: grid;
+}
+.playing-cards.seat-reveal .card-corner-top {
+  top: 4px;
+  left: 4px;
+}
+.playing-cards.seat-reveal .card-corner-bottom {
+  right: 4px;
+  bottom: 4px;
+  display: grid;
+}
+.playing-cards.seat-reveal .card-corner b {
+  font-size: 0.66rem;
+}
+.playing-cards.seat-reveal .card-corner i {
+  font-size: 0.48rem;
+}
+.playing-cards.seat-reveal .card-center-suit {
+  font-size: 1.28rem;
+  transform: none;
+}
+.seat-cards .playing-cards.seat-reveal {
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.42));
+}
+.room-table-row .table-status.waiting + button {
+  opacity: 0.45;
+}
+
+@media (max-width: 740px) {
+  .table-hand-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+  .table-hand-row > div + div {
+    padding-left: 7px !important;
+  }
+  .table-hand-row p {
+    font-size: 0.58rem !important;
+  }
+  .seat-cards .playing-cards.seat-reveal {
+    gap: 2px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .playing-card {
+    width: 34px !important;
+    height: 47px !important;
+    min-width: 34px !important;
+    padding: 4px !important;
+    border-radius: 8px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner {
+    display: grid !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner-top {
+    top: 3px !important;
+    left: 3px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner-bottom {
+    right: 3px !important;
+    bottom: 3px !important;
+    display: grid !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner b {
+    font-size: 0.52rem !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-corner i {
+    font-size: 0.38rem !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-center-suit {
+    font-size: 0.96rem !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .seat-cards .playing-cards.seat-reveal .playing-card {
+    width: 31px !important;
+    height: 43px !important;
+    min-width: 31px !important;
+  }
+  .seat-cards .playing-cards.seat-reveal .card-center-suit {
+    font-size: 0.88rem !important;
+  }
+}
+
+
+/* v0.8.6 — mini UI polish: neutral Raise, felt Leave, gray table stack, centered drawer close */
+.action-dock button.primary {
+  color: var(--text) !important;
+  border-color: var(--line) !important;
+  background: rgba(255,255,255,0.045) !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
+}
+.action-dock button.primary:hover:not(:disabled) {
+  border-color: rgba(255,255,255,0.18) !important;
+  background: rgba(255,255,255,0.075) !important;
+}
+.table-session-block {
+  border-color: rgba(255,255,255,0.08) !important;
+  background: rgba(255,255,255,0.036) !important;
+}
+.table-session-block button[data-action="leave-table"] {
+  color: #fff1f1 !important;
+  border-color: rgba(255,69,75,0.5) !important;
+  background: linear-gradient(180deg, rgba(150, 24, 30, 0.96), rgba(75, 7, 12, 0.98)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 28px rgba(227,41,47,0.16) !important;
+}
+.table-session-block button[data-action="leave-table"]:hover {
+  border-color: rgba(255,90,96,0.72) !important;
+  background: linear-gradient(180deg, rgba(178, 30, 36, 0.98), rgba(91, 9, 15, 1)) !important;
+}
+.drawer-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+.drawer-close::first-letter {
+  line-height: 1 !important;
+}
+
+/* v0.8.6 — move leave button below side panel, keep stack block clean */
+.table-session-block button[data-action="leave-table"] {
+  display: none !important;
+}
+.table-leave-bottom {
+  width: 100%;
+  margin-top: 6px;
+  color: #fff1f1 !important;
+  border-color: rgba(255,69,75,0.52) !important;
+  background: linear-gradient(180deg, rgba(150, 24, 30, 0.96), rgba(75, 7, 12, 0.98)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 28px rgba(227,41,47,0.16) !important;
+}
+.table-leave-bottom:hover:not(:disabled) {
+  border-color: rgba(255,90,96,0.72) !important;
+  background: linear-gradient(180deg, rgba(178, 30, 36, 0.98), rgba(91, 9, 15, 1)) !important;
+}
+.table-info .table-leave-bottom {
+  align-self: end;
+}
+@media (max-width: 860px) {
+  .table-leave-bottom {
+    grid-column: 1 / -1;
+    padding: 0.48rem 0.58rem !important;
+    border-radius: 12px !important;
+  }
+}
+
+/* v0.9.5 — leave button red reinforcement */
+.table-leave-bottom,
+.table-leave-bottom:hover:not(:disabled) {
+  color: #fff1f1 !important;
+  border-color: rgba(255,69,75,0.68) !important;
+  background: linear-gradient(180deg, rgba(190, 31, 38, 0.98), rgba(92, 8, 14, 1)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 28px rgba(227,41,47,0.18) !important;
+}
+
+/* v0.9.5 — custom raise amount modal */
+.bet-modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+  background: rgba(0,0,0,0.62);
+  backdrop-filter: blur(10px);
+}
+.bet-modal {
+  width: min(390px, 100%);
+  padding: 15px;
+  border-radius: 21px;
+}
+.bet-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.bet-modal-head span,
+.bet-modal-limits span,
+.bet-modal-input-row span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.56rem;
+  font-weight: 900;
+}
+.bet-modal-head strong {
+  display: block;
+  margin-top: 0.16rem;
+  color: #fff;
+  font-size: 1.06rem;
+}
+.bet-modal-head p {
+  margin: 0.16rem 0 0;
+  color: var(--soft);
+  font-size: 0.74rem;
+}
+.bet-modal-limits {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 11px;
+}
+.bet-modal-limits div {
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px;
+  background: rgba(255,255,255,0.028);
+}
+.bet-modal-limits strong {
+  display: block;
+  margin-top: 0.14rem;
+  color: #ffd39a;
+  font-size: 0.9rem;
+}
+.bet-modal-input-row {
+  display: grid;
+  gap: 6px;
+  margin-top: 11px;
+  padding: 10px;
+  border: 1px solid rgba(255,69,75,0.22);
+  border-radius: 15px;
+  background: rgba(255,255,255,0.035);
+}
+.bet-modal-input-row input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 12px;
+  color: #fff;
+  background: rgba(0,0,0,0.34);
+  font-size: 1.05rem;
+  outline: none;
+}
+.bet-modal-input-row input:focus {
+  border-color: rgba(255,69,75,0.66);
+  box-shadow: 0 0 0 3px rgba(255,69,75,0.1);
+}
+.bet-modal-hint {
+  margin: 9px 2px 0;
+  color: var(--soft);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+.bet-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.bet-modal-actions button {
+  flex: 1 1 130px;
+  min-height: 36px;
+}
+@media (max-width: 740px) {
+  .bet-modal { width: min(350px, 100%); padding: 13px; border-radius: 18px; }
+  .bet-modal-limits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bet-modal-input-row { padding: 8px; }
+  .bet-modal-actions button { min-height: 34px; font-size: 0.74rem; }
+}
+
+
+/* v0.9.5 — action dock start-only cleanup */
+.action-dock.in-hand {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+.action-dock.start-only {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  grid-template-columns: none !important;
+}
+.action-dock.start-only .start-hand-button {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 230px !important;
+  padding-inline: 1rem !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 740px) {
+  .action-dock.start-only .start-hand-button {
+    max-width: 210px !important;
+    padding-inline: 0.82rem !important;
+    font-size: 0.64rem !important;
+  }
+}
+@media (max-width: 380px) {
+  .action-dock.start-only .start-hand-button {
+    max-width: 196px !important;
+    font-size: 0.58rem !important;
+  }
+}

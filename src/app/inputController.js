@@ -1,5 +1,5 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=1.1.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.1.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=1.2.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.2.0";
 
 export const inputController = {
   handleClick(event) {
@@ -27,7 +27,22 @@ export const inputController = {
       return;
     }
 
-    if (this.state.tableState?.animation?.isPlaying && !["apply-update", "force-update", "check-update", "export-save", "import-save", "dismiss-notice", "dismiss-reward", "reset-save", "set-buyin", "confirm-buyin", "close-buyin"].includes(action)) return;
+    const animationSafeActions = [
+      "apply-update",
+      "force-update",
+      "check-update",
+      "export-save",
+      "import-save",
+      "dismiss-notice",
+      "dismiss-reward",
+      "reset-save",
+      "set-buyin",
+      "confirm-buyin",
+      "close-buyin",
+      "open-opponent-read",
+      "close-opponent-read",
+    ];
+    if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
 
     if (action === "select-table") {
       this.menuOpen = false;
@@ -56,6 +71,17 @@ export const inputController = {
 
     if (action === "leave-table") {
       this.leaveTable();
+      return;
+    }
+
+    if (action === "open-opponent-read") {
+      if (!id) return;
+      this.setSystem({ opponentReadSeatId: id });
+      return;
+    }
+
+    if (action === "close-opponent-read") {
+      this.setSystem({ opponentReadSeatId: null });
       return;
     }
 

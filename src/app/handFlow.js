@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.1.2";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, updateCareerUnlocks } from "../engine/career.js?v=1.1.2";
-import { applyUnlocks } from "../engine/collections.js?v=1.1.2";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.2.0";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, updateCareerUnlocks } from "../engine/career.js?v=1.2.0";
+import { applyUnlocks } from "../engine/collections.js?v=1.2.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -8,9 +8,9 @@ import {
   createAnimationState,
   getUnlockConditionsFromHand,
   startNewHand,
-} from "../engine/poker.js?v=1.1.2";
-import { getClubContext } from "../engine/world.js?v=1.1.2";
-import { applyClubProgression } from "../engine/progression.js?v=1.1.2";
+} from "../engine/poker.js?v=1.2.0";
+import { getClubContext } from "../engine/world.js?v=1.2.0";
+import { applyClubProgression } from "../engine/progression.js?v=1.2.0";
 
 export const handFlow = {
   startHand() {

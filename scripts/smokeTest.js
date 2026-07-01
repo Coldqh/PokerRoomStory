@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.1.2";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.1.2";
-import { createClubRoomState } from "../src/engine/club.js?v=1.1.2";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.1.2";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.1.2";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.2.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.2.0";
+import { createClubRoomState } from "../src/engine/club.js?v=1.2.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.2.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.2.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -11,9 +11,9 @@ import {
   getActionMeta,
   getAvailableActions,
   startNewHand,
-} from "../src/engine/poker.js?v=1.1.2";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.1.2";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.1.2";
+} from "../src/engine/poker.js?v=1.2.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.2.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.2.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -46,7 +46,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.1.2",
+      appVersion: "1.2.0",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -283,7 +283,7 @@ function assertClubProgressPersistsThroughUnlockRefresh(content, table, club, ca
   assert(clubHtml.includes(String(clubInfo.xp)), "club screen must display stored Room Mastery XP");
 }
 
-function assertUiSmoke(content, table) {
+function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
     tableSession: { tableId: table.id, buyIn: 200, stack: 200, handsPlayed: 0 },
@@ -301,6 +301,25 @@ function assertUiSmoke(content, table) {
   assert(visibleNotSeated.includes("club") && !visibleNotSeated.includes("table"), "club visible and table hidden before seating");
   const visibleSeated = getVisibleScreens({ tableSession: { tableId: table.id } }).map((screen) => screen.id);
   assert(visibleSeated.includes("table") && !visibleSeated.includes("club"), "table visible and club hidden after seating");
+
+  const hand = startTestHand(content, table, club);
+  const firstNpc = hand.npcSeats?.[0];
+  assert(firstNpc, "opponent read smoke expected npc seat");
+  const tableWithSeatsHtml = renderScreen(makeBaseState(content, hand, {
+    currentScreen: "table",
+    tableSession: { tableId: table.id, buyIn: 200, stack: 200, handsPlayed: 0 },
+  }));
+  assert(tableWithSeatsHtml.includes('data-action="open-opponent-read"'), "npc seats must open opponent reads");
+
+  const openReadState = makeBaseState(content, hand, {
+    currentScreen: "table",
+    tableSession: { tableId: table.id, buyIn: 200, stack: 200, handsPlayed: 0 },
+  });
+  openReadState.system = { ...openReadState.system, opponentReadSeatId: firstNpc.id };
+  const readHtml = renderScreen(openReadState);
+  assert(readHtml.includes("Opponent Read"), "opponent read modal must render title");
+  assert(readHtml.includes(firstNpc.name), "opponent read modal must render npc name");
+  assert(readHtml.includes("План"), "opponent read modal must render advice block");
 }
 
 function main() {
@@ -322,7 +341,7 @@ function main() {
   const startTimeline = buildStartHandTimeline(firstHand, table);
   assert(Array.isArray(startTimeline) && startTimeline.length > 0, "start hand timeline expected");
 
-  assertUiSmoke(content, table);
+  assertUiSmoke(content, table, club);
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);
   assertNpcPreflopDecisionTuning(content, table);

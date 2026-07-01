@@ -1,8 +1,8 @@
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.1.2";
-import { describeCards } from "../../engine/cards.js?v=1.1.2";
-import { getClubLevelInfo } from "../../engine/progression.js?v=1.1.2";
-import { escapeHtml, playingCards } from "../components.js?v=1.1.2";
-import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.1.2";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.2.0";
+import { describeCards } from "../../engine/cards.js?v=1.2.0";
+import { getClubLevelInfo } from "../../engine/progression.js?v=1.2.0";
+import { escapeHtml, playingCards } from "../components.js?v=1.2.0";
+import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.2.0";
 
 export function renderTableScreen(state) {
   const table = state.content.byId.tables[state.activeTableId];
@@ -66,6 +66,7 @@ export function renderTableScreen(state) {
       </div>
 
       ${renderActionDock(actions, hand, actionMeta, state)}
+      ${renderOpponentReadModal(state, hand)}
       ${renderHandResultModal(state)}
     </section>
   `;
@@ -83,7 +84,7 @@ function renderNpcSeats(hand, currentEvent, revealCards, highlightedIds = new Se
       const betText = !seat.folded && seat.currentBet ? ` · Bet $${seat.currentBet}` : "";
       const cards = seat.folded ? `<div class="fold-marker">Fold</div>` : playingCards(seat.holeCards, { hidden: !revealCards, highlightedIds, size: revealCards ? "small seat-reveal" : "small" });
       return `
-        <div class="seat seat-${index + 1} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner" : ""}">
+        <div class="seat opponent-seat seat-${index + 1} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner" : ""}" data-action="open-opponent-read" data-id="${escapeHtml(seat.id)}" role="button" aria-label="Профиль игрока ${escapeHtml(seat.name)}" title="Профиль игрока">
           <div class="seat-avatar">${escapeHtml(initials(seat.name))}</div>
           <div class="seat-main">
             <strong>${escapeHtml(shortName(seat.name))} <em>${escapeHtml(seat.position ?? "")}</em></strong>
@@ -398,4 +399,189 @@ function renderClubProgressResult(info, gain = 0, reward = null) {
       <p>${escapeHtml(levelLine + rewardLine)}</p>
     </div>
   `;
+}
+
+
+function renderOpponentReadModal(state, hand) {
+  const seatId = state?.system?.opponentReadSeatId;
+  if (!seatId) return "";
+
+  const seat = (hand?.npcSeats ?? []).find((entry) => entry.id === seatId);
+  if (!seat) return "";
+
+  const read = buildOpponentRead(seat);
+  const lastAction = formatOpponentLastAction(seat);
+  const stats = normalizeReadStats(seat.npc?.stats);
+
+  return `
+    <div class="opponent-read-layer" role="dialog" aria-modal="true" aria-label="Профиль игрока">
+      <article class="opponent-read-card panel-soft">
+        <header class="opponent-read-head">
+          <div>
+            <span>Opponent Read</span>
+            <strong>${escapeHtml(seat.name ?? "Игрок")}</strong>
+            <p>${escapeHtml(read.archetype)}</p>
+          </div>
+          <button class="drawer-close" data-action="close-opponent-read" aria-label="Закрыть">×</button>
+        </header>
+
+        <section class="opponent-read-snapshot">
+          <div><span>Позиция</span><strong>${escapeHtml(seat.position ?? "—")}</strong></div>
+          <div><span>Стек</span><strong>$${escapeHtml(String(seat.stack ?? 0))}</strong></div>
+          <div><span>Настрой</span><strong>${escapeHtml(read.mood)}</strong></div>
+          <div><span>Последнее</span><strong>${escapeHtml(lastAction)}</strong></div>
+        </section>
+
+        <section class="opponent-read-tags">
+          ${read.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+        </section>
+
+        <section class="opponent-read-meters">
+          ${renderReadMeter("Вход в банк", stats.vpip, readLevel(stats.vpip, "vpip"))}
+          ${renderReadMeter("Рейзы", stats.pfr, readLevel(stats.pfr, "pfr"))}
+          ${renderReadMeter("Агрессия", stats.aggression, readLevel(stats.aggression, "aggression"))}
+          ${renderReadMeter("Дисциплина", stats.discipline, readLevel(stats.discipline, "discipline"))}
+        </section>
+
+        <section class="opponent-read-lines">
+          <span>Что видно за столом</span>
+          <ul>
+            ${read.tendencies.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+          </ul>
+        </section>
+
+        <footer class="opponent-read-advice">
+          <span>План</span>
+          <strong>${escapeHtml(read.advice)}</strong>
+        </footer>
+      </article>
+    </div>
+  `;
+}
+
+function buildOpponentRead(seat) {
+  const npc = seat?.npc ?? {};
+  const archetypeId = npc.archetypeId ?? "";
+  const archetype = npc.archetype?.name ?? getArchetypeFallbackName(archetypeId);
+  const mood = getMoodLabel(seat?.mood);
+
+  const reads = {
+    ARCH_TIGHT_NIT: {
+      tags: ["тайтовый", "бережёт стек", "давит редко"],
+      tendencies: ["Часто выкидывает слабые руки.", "Не любит дорогие коллы без готовой силы.", "Его рейз обычно значит сильный диапазон."],
+      advice: "Воруй малые банки, но уважай крупный рейз.",
+    },
+    ARCH_LOOSE_CALLER: {
+      tags: ["лузовый", "любит флоп", "часто платит"],
+      tendencies: ["Широко заходит в раздачи.", "Дешёвые ставки коллит чаще нормы.", "Может дотянуть слабую пару до шоудауна."],
+      advice: "Ставь на вэлью чаще, меньше пустых блефов.",
+    },
+    ARCH_CALLING_STATION: {
+      tags: ["телефон", "липкий", "showdown"],
+      tendencies: ["Плохо отпускает руку после флопа.", "Любит проверить, чем всё закончится.", "Редко сам разгоняет банк без причины."],
+      advice: "Не блефуй в воздух. Забирай деньги готовыми руками.",
+    },
+    ARCH_TOURIST_GAMBLER: {
+      tags: ["турист", "хаос", "широкий диапазон"],
+      tendencies: ["Может сыграть странный колл.", "Переоценивает красивые руки.", "На короткой дистанции непредсказуем."],
+      advice: "Играй проще. Наказывай ошибки крупными вэлью-ставками.",
+    },
+    ARCH_AGGRESSIVE_REG: {
+      tags: ["агрессор", "давление", "рейзы"],
+      tendencies: ["Часто атакует слабость.", "Может ставить вторым темпом.", "Не даёт бесплатно смотреть улицы."],
+      advice: "Не колли мусор. Лови его с сильной рукой.",
+    },
+    ARCH_MATH_GRINDER: {
+      tags: ["математик", "аккуратный", "по шансам"],
+      tendencies: ["Смотрит на цену банка.", "Редко платит совсем без причины.", "Хорошо выбирает дешёвые продолжения."],
+      advice: "Давай плохую цену дро и не раздавай бесплатные карты.",
+    },
+    ARCH_BANKROLL_BULLY: {
+      tags: ["давит стеком", "дорогие решения", "банкролл"],
+      tendencies: ["Любит ставить так, чтобы решение было неприятным.", "Охотно разгоняет банк против пассивных.", "Может переигрывать давление."],
+      advice: "Выбирай крепкие руки и не защищай всё подряд.",
+    },
+    ARCH_OLD_SCHOOL_REG: {
+      tags: ["старый рег", "ровный", "без суеты"],
+      tendencies: ["Играет спокойно и прямолинейно.", "Не любит лишний риск.", "Сильные линии часто честные."],
+      advice: "Забирай маленькие банки, но не спорь с явной силой.",
+    },
+  };
+
+  const profile = reads[archetypeId] ?? {
+    tags: ["неизвестный стиль", "наблюдай", "адаптируйся"],
+    tendencies: ["Данных мало.", "Смотри на частоту коллов и рейзов.", "Первые руки лучше играть осторожно."],
+    advice: "Собери информацию до крупных решений.",
+  };
+
+  return { archetype, mood, ...profile };
+}
+
+function renderReadMeter(label, value, text) {
+  const width = clampPercent(value);
+  return `
+    <div class="opponent-read-meter">
+      <div><span>${escapeHtml(label)}</span><strong>${escapeHtml(text)}</strong></div>
+      <i><b style="width:${width}%"></b></i>
+    </div>
+  `;
+}
+
+function normalizeReadStats(stats = {}) {
+  return {
+    vpip: statToPercent(stats.vpip ?? 35),
+    pfr: statToPercent(stats.pfr ?? 14),
+    aggression: statToPercent(stats.aggression ?? 40),
+    discipline: statToPercent(stats.discipline ?? 50),
+  };
+}
+
+function readLevel(value, type) {
+  const v = clampPercent(value);
+  if (type === "vpip") return v >= 55 ? "часто" : v >= 34 ? "средне" : "редко";
+  if (type === "pfr") return v >= 28 ? "много" : v >= 14 ? "умеренно" : "мало";
+  if (type === "aggression") return v >= 60 ? "высокая" : v >= 38 ? "средняя" : "низкая";
+  if (type === "discipline") return v >= 60 ? "строгая" : v >= 38 ? "средняя" : "слабая";
+  return v >= 60 ? "высоко" : v >= 38 ? "средне" : "низко";
+}
+
+function statToPercent(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return clampPercent(number <= 1 ? number * 100 : number);
+}
+
+function clampPercent(value) {
+  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function formatOpponentLastAction(seat) {
+  const action = actionLabel(seat?.lastAction ?? "ready");
+  const amount = seat?.lastAmount ? ` $${seat.lastAmount}` : "";
+  return `${action}${amount}`;
+}
+
+function getMoodLabel(mood = "calm") {
+  const labels = {
+    calm: "ровный",
+    hot: "разогрет",
+    tilted: "тильт",
+    locked: "закрыт",
+    pressure: "под давлением",
+  };
+  return labels[mood] ?? "ровный";
+}
+
+function getArchetypeFallbackName(archetypeId = "") {
+  const labels = {
+    ARCH_TIGHT_NIT: "Tight Nit",
+    ARCH_LOOSE_CALLER: "Loose Caller",
+    ARCH_CALLING_STATION: "Calling Station",
+    ARCH_TOURIST_GAMBLER: "Tourist Gambler",
+    ARCH_AGGRESSIVE_REG: "Aggressive Reg",
+    ARCH_MATH_GRINDER: "Math Grinder",
+    ARCH_BANKROLL_BULLY: "Bankroll Bully",
+    ARCH_OLD_SCHOOL_REG: "Old School Reg",
+  };
+  return labels[archetypeId] ?? "Unknown Player";
 }

@@ -3284,57 +3284,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
 }
 
-/* v0.9.1 — Bet Sizing Lite */
-.bet-size-dock {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  padding: 8px 9px;
-}
-.bet-size-dock > span {
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  font-size: 0.6rem;
-  font-weight: 900;
-  white-space: nowrap;
-}
-.bet-size-options {
-  display: flex;
-  gap: 7px;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.bet-size-options::-webkit-scrollbar { display: none; }
-.bet-size-option {
-  flex: 1 0 82px;
-  display: grid;
-  justify-items: center;
-  gap: 1px;
-  padding: 0.48rem 0.58rem !important;
-  color: var(--text);
-  border-color: rgba(255,255,255,0.09);
-  background: rgba(255,255,255,0.04);
-}
-.bet-size-option b {
-  font-size: 0.68rem;
-  line-height: 1;
-}
-.bet-size-option em {
-  color: var(--muted);
-  font-style: normal;
-  font-size: 0.66rem;
-  line-height: 1.1;
-}
-.bet-size-option.selected {
-  color: #fff;
-  border-color: rgba(255,69,75,0.7) !important;
-  background: linear-gradient(180deg, rgba(226,44,50,0.9), rgba(139,16,22,0.95)) !important;
-  box-shadow: 0 10px 26px rgba(227,41,47,0.18), inset 0 1px 0 rgba(255,255,255,0.12);
-}
-.bet-size-option.selected em { color: #ffd8d8; }
+/* v0.9.3 — leave button red reinforcement */
 .table-leave-bottom,
 .table-leave-bottom:hover:not(:disabled) {
   color: #fff1f1 !important;
@@ -3343,25 +3293,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 28px rgba(227,41,47,0.18) !important;
 }
 
-@media (max-width: 740px) {
-  .bet-size-dock {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    padding: 7px;
-  }
-  .bet-size-options {
-    gap: 5px;
-  }
-  .bet-size-option {
-    flex-basis: 72px;
-    padding: 0.42rem 0.44rem !important;
-  }
-  .bet-size-option b { font-size: 0.62rem; }
-  .bet-size-option em { font-size: 0.6rem; }
-}
-
-
-/* v0.9.1 — custom raise amount modal */
+/* v0.9.3 — custom raise amount modal */
 .bet-modal-layer {
   position: fixed;
   inset: 0;
@@ -3469,4 +3401,36 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   .bet-modal-limits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bet-modal-input-row { padding: 8px; }
   .bet-modal-actions button { min-height: 34px; font-size: 0.74rem; }
+}
+
+
+/* v0.9.3 — action dock start-only cleanup */
+.action-dock.in-hand {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+.action-dock.start-only {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  grid-template-columns: none !important;
+}
+.action-dock.start-only .start-hand-button {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 230px !important;
+  padding-inline: 1rem !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 740px) {
+  .action-dock.start-only .start-hand-button {
+    max-width: 210px !important;
+    padding-inline: 0.82rem !important;
+    font-size: 0.64rem !important;
+  }
+}
+@media (max-width: 380px) {
+  .action-dock.start-only .start-hand-button {
+    max-width: 196px !important;
+    font-size: 0.58rem !important;
+  }
 }

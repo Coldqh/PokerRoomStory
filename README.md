@@ -1,3 +1,3 @@
-# Poker Room Story v0.9.1
+# Poker Room Story v0.9.3
 
-Bet Sizing Lite: custom raise amount modal.
+Action Dock Cleanup: removed idle table prompt, start button is shown alone before a hand, and action buttons appear only during an active hand.

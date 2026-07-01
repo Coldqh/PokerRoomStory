@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.9.1";
-import { getClubRoomState } from "../engine/club.js?v=0.9.1";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.9.1";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.9.1";
-import { describeCards } from "../engine/cards.js?v=0.9.1";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.9.1";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.9.3";
+import { getClubRoomState } from "../engine/club.js?v=0.9.3";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.9.3";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.9.3";
+import { describeCards } from "../engine/cards.js?v=0.9.3";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.9.3";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -317,7 +317,6 @@ function renderTableScreen(state) {
         </aside>
       </div>
 
-      ${renderBetSizeDock(actions, hand, actionMeta, state)}
       ${renderActionDock(actions, hand, actionMeta, state)}
       ${renderHandResultModal(state)}
     </section>
@@ -326,7 +325,7 @@ function renderTableScreen(state) {
 
 function renderNpcSeats(hand, currentEvent, revealCards, highlightedIds = new Set()) {
   const seats = hand?.npcSeats ?? [];
-  if (!seats.length) return `<div class="empty-seat-note">Нажми «Новая раздача».</div>`;
+  if (!seats.length) return "";
   return seats
     .map((seat, index) => {
       const isActing = !seat.folded && (currentEvent?.actorId === seat.id || hand?.currentActorId === seat.id);
@@ -379,7 +378,7 @@ function renderIdleToast(hand) {
     return `<div class="action-bubble folded"><strong>Пас</strong><small>Раздача закрыта.</small></div>`;
   }
   if (!hand?.playerHoleCards?.length) {
-    return `<div class="action-bubble idle"><strong>Стол свободен</strong><small>Новая раздача.</small></div>`;
+    return "";
   }
   if (hand.awaitingPlayer) {
     return `<div class="action-bubble waiting"><span>${escapeHtml(hand.heroSeat?.position ?? "")}</span><strong>Твой ход</strong><small>${escapeHtml(getHandHint(hand))}</small></div>`;
@@ -390,42 +389,25 @@ function renderIdleToast(hand) {
   return "";
 }
 
-function renderBetSizeDock(actions, hand, actionMeta = {}, state = {}) {
-  const animating = hand?.animation?.isPlaying;
-  const terminal = ["finished", "folded", "idle"].includes(hand?.phase);
-  const canShow = Boolean(actions.includes("raise") && hand?.awaitingPlayer && !animating && !terminal);
-  const options = actionMeta.betOptions ?? [];
-  if (!canShow || !options.length) return "";
-
-  const selectedTarget = Number(state?.system?.selectedBetTarget ?? actionMeta.raiseTarget ?? options[0]?.target ?? 0);
-  return `
-    <div class="bet-size-dock panel-soft">
-      <span>Bet size</span>
-      <div class="bet-size-options">
-        ${options.map((option) => `
-          <button class="small-button bet-size-option ${Number(option.target) === selectedTarget ? "selected" : ""}" data-action="select-bet-size" data-id="${escapeHtml(String(option.target))}">
-            <b>${escapeHtml(option.label)}</b>
-            <em>$${escapeHtml(String(option.target))}</em>
-          </button>
-        `).join("")}
-      </div>
-    </div>
-  `;
-}
-
 function renderActionDock(actions, hand, actionMeta = {}, state = {}) {
   const animating = hand?.animation?.isPlaying;
   const terminal = ["finished", "folded", "idle"].includes(hand?.phase);
+  const handStarted = Boolean(hand?.playerHoleCards?.length && !terminal);
   const canHeroAct = Boolean(hand?.awaitingPlayer && !animating && !terminal && hand?.heroSeat && !hand.heroSeat.folded && !hand.heroSeat.allIn);
   const canFold = canHeroAct || actions.includes("fold");
   const labels = actionMeta.labels ?? {};
-  const selectedTarget = Number(state?.system?.selectedBetTarget ?? actionMeta.raiseTarget ?? 0);
-  const raiseText = selectedTarget > 0
-    ? ((hand?.currentBet ?? 0) > 0 ? `Raise $${selectedTarget}` : `Bet $${selectedTarget}`)
-    : (labels.raise ?? "Raise");
+  const raiseText = labels.raise ?? ((hand?.currentBet ?? 0) > 0 ? "Raise" : "Bet");
+
+  if (!handStarted) {
+    return `
+      <div class="action-dock panel-soft start-only">
+        <button class="start-hand-button" data-action="start-hand" ${animating ? "disabled" : ""}>Начать новую раздачу</button>
+      </div>
+    `;
+  }
+
   return `
-    <div class="action-dock panel-soft ${terminal ? "terminal" : ""}">
-      <button data-action="start-hand" ${animating || hand?.awaitingPlayer ? "disabled" : ""}>Новая</button>
+    <div class="action-dock panel-soft in-hand">
       <button data-action="player-action" data-id="fold" ${canFold ? "" : "disabled"}>${escapeHtml(labels.fold ?? "Fold")}</button>
       <button data-action="player-action" data-id="check" ${actions.includes("check") ? "" : "disabled"}>${escapeHtml(labels.check ?? "Check")}</button>
       <button data-action="player-action" data-id="call" ${actions.includes("call") ? "" : "disabled"}>${escapeHtml(labels.call ?? "Call")}</button>
@@ -866,7 +848,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.9.1")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.9.3")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

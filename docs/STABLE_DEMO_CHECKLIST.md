@@ -1,4 +1,4 @@
-# Poker Room Story v1.0.0 — Stable Demo Checklist
+# Poker Room Story v1.0.1 — Stable Demo Checklist
 
 ## Automated smoke test
 
@@ -18,7 +18,7 @@ poker hands finished: 100/100
 ## Manual checks
 
 1. Open the app through a local server or GitHub Pages.
-2. Confirm version shows `v1.0.0` in Settings.
+2. Confirm version shows `v1.0.1` in Settings.
 3. Club screen opens before seating.
 4. Table screen is hidden before seating.
 5. Buy-in from the club opens the table.

@@ -1,8 +1,8 @@
-# Poker Room Story v1.0.0
+# Poker Room Story v1.0.1
 
 Static web stable demo.
 
-## v1.0.0 — Test Harness + Stable Demo
+## v1.0.1 — App Controller Split
 
 This version locks the first playable demo before expanding content.
 

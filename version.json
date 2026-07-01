@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "appVersion": "1.0.0",
-  "buildId": "prs-1.0.0-20260701-stable-demo",
-  "message": "v1.0.0 — Test Harness + Stable Demo"
+  "version": "1.0.1",
+  "appVersion": "1.0.1",
+  "buildId": "prs-1.0.1-20260701-app-controller-split",
+  "message": "v1.0.1 — App Controller Split"
 }

@@ -1,7 +1,7 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.0.0";
-import { getClubRoomState } from "../../engine/club.js?v=1.0.0";
-import { emptyState, escapeHtml } from "../components.js?v=1.0.0";
-import { stableIndex } from "./common.js?v=1.0.0";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.0.1";
+import { getClubRoomState } from "../../engine/club.js?v=1.0.1";
+import { emptyState, escapeHtml } from "../components.js?v=1.0.1";
+import { stableIndex } from "./common.js?v=1.0.1";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);

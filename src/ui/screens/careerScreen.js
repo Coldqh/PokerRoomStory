@@ -1,7 +1,6 @@
-import { canEnterTable } from "../../engine/world.js?v=1.0.0";
-import { getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../../engine/career.js?v=1.0.0";
-import { escapeHtml, metric, progressBar } from "../components.js?v=1.0.0";
-import { winRate } from "./common.js?v=1.0.0";
+import { getRankInfo, getRankLabel, getRankProgress } from "../../engine/career.js?v=1.0.1";
+import { escapeHtml, metric, progressBar } from "../components.js?v=1.0.1";
+import { winRate } from "./common.js?v=1.0.1";
 
 export function renderCareerScreen(state) {
   const player = state.player;
@@ -36,31 +35,5 @@ export function renderCareerScreen(state) {
       ${metric("Worst loss", `$${player.biggestPotLost}`)}
       ${metric("XP", player.xp)}
     </section>
-
-    <section class="career-grid">
-      <article class="panel-soft career-panel career-wide-panel">
-        <div class="section-title"><h3>Столы</h3><span>доступ</span></div>
-        <div class="table-unlock-list">
-          ${state.content.tables.filter((table) => table.clubId === state.activeClubId).map((table) => renderTableUnlockItem(state, table)).join("")}
-        </div>
-      </article>
-    </section>
   `;
 }
-
-function renderTableUnlockItem(state, table) {
-  const access = canEnterTable(state.player, table);
-  const active = state.tableSession?.tableId === table.id;
-  const req = table.unlockRequirement;
-  const reqText = req ? [`$${req.bankroll ?? 0}`, `Rep ${req.reputation ?? 0}`].join(" · ") : "доступен сразу";
-  return `
-    <div class="table-unlock-item ${access.ok ? "open" : "locked"} ${active ? "active" : ""}">
-      <div>
-        <strong>${escapeHtml(table.name)}</strong>
-        <span>$${table.smallBlind}/$${table.bigBlind} · ${escapeHtml(reqText)}</span>
-      </div>
-      <em>${active ? "active" : access.ok ? "open" : "locked"}</em>
-    </div>
-  `;
-}
-

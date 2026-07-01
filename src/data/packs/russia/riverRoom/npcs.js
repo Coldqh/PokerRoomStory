@@ -1,4 +1,4 @@
-import { createNpcNameRoster } from "../../../namePools/index.js?v=1.0.0";
+import { createNpcNameRoster } from "../../../namePools/index.js?v=1.0.1";
 
 const RUSSIA_NPC_NAMES = createNpcNameRoster("COUNTRY_RUSSIA", 32);
 

@@ -12,6 +12,7 @@ import {
   getAvailableActions,
   startNewHand,
 } from "../src/engine/poker.js?v=1.1.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.1.0";
 import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.1.0";
 
 const TEST_HANDS = 100;
@@ -156,6 +157,80 @@ function assertCustomRaise(content, table, club) {
   throw new Error("could not find a legal raise spot in 20 attempts");
 }
 
+function assertNpcPreflopDecisionTuning(content, table) {
+  const callingStation = hydrateTestNpc(content, "ARCH_CALLING_STATION");
+  const looseCaller = hydrateTestNpc(content, "ARCH_LOOSE_CALLER");
+  const tightNit = hydrateTestNpc(content, "ARCH_TIGHT_NIT");
+  const weakSuitedHand = [
+    { rank: "7", suit: "♠", value: 7, id: "7♠" },
+    { rank: "2", suit: "♠", value: 2, id: "2♠" },
+  ];
+  const trashHand = [
+    { rank: "7", suit: "♠", value: 7, id: "7♠" },
+    { rank: "2", suit: "♦", value: 2, id: "2♦" },
+  ];
+
+  const cheapCallContext = {
+    holeCards: weakSuitedHand,
+    communityCards: [],
+    phase: "preflop",
+    pressure: table.bigBlind,
+    pot: table.smallBlind + table.bigBlind,
+    currentBet: table.bigBlind,
+    bigBlind: table.bigBlind,
+    position: "CO",
+    stack: table.recommendedBuyIn ?? table.bigBlind * 100,
+    streetRaises: 0,
+  };
+
+  const stationCheapCalls = countNpcActions(() => decideNpcAction({ npc: callingStation, ...cheapCallContext }), "call", 32);
+  const looseCheapContinues = countNpcActions(() => decideNpcAction({ npc: looseCaller, ...cheapCallContext }), "fold", 32);
+  assert(stationCheapCalls >= 24, `calling station must defend cheap preflop calls, got ${stationCheapCalls}/32 calls`);
+  assert(looseCheapContinues <= 10, `loose caller must not overfold cheap preflop calls, got ${looseCheapContinues}/32 folds`);
+
+  const expensivePressureContext = {
+    ...cheapCallContext,
+    holeCards: trashHand,
+    pressure: table.bigBlind * 6,
+    pot: table.smallBlind + table.bigBlind * 3,
+    currentBet: table.bigBlind * 6,
+    position: "UTG",
+    streetRaises: 1,
+  };
+  const nitFolds = countNpcActions(() => decideNpcAction({ npc: tightNit, ...expensivePressureContext }), "fold", 32);
+  assert(nitFolds >= 20, `tight nit must still fold weak hands to heavy preflop pressure, got ${nitFolds}/32 folds`);
+}
+
+function hydrateTestNpc(content, archetypeId) {
+  const archetype = content.byId.archetypes[archetypeId];
+  assert(archetype, `missing archetype ${archetypeId}`);
+  return {
+    id: `TEST_${archetypeId}`,
+    name: archetype.name,
+    archetypeId,
+    skillLevel: 30,
+    archetype,
+    stats: {
+      skill: 30,
+      vpip: archetype.baseVpip,
+      pfr: archetype.basePfr,
+      aggression: archetype.baseAggression,
+      bluff: archetype.baseBluff,
+      risk: archetype.baseRisk,
+      tilt: archetype.baseTilt,
+      discipline: archetype.baseDiscipline,
+    },
+  };
+}
+
+function countNpcActions(factory, action, attempts) {
+  let count = 0;
+  for (let index = 0; index < attempts; index += 1) {
+    if (factory().action === action) count += 1;
+  }
+  return count;
+}
+
 function assertUiSmoke(content, table) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -197,6 +272,7 @@ function main() {
   assertUiSmoke(content, table);
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);
+  assertNpcPreflopDecisionTuning(content, table);
 
   const progressionProbe = playHandToResult(content, table, club);
   const progressResult = applyClubProgression({

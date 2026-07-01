@@ -138,24 +138,46 @@ function decidePreflop({ confidence, stats, profile, context, potOdds }) {
   const random = variance(0.055);
   const positionBonus = POSITION_PROFILE[context.position] ?? 0;
   const pressureBb = context.pressure / context.bigBlind;
+  const cheapPressure = pressureBb <= 1.05;
   const raiseCapPenalty = context.streetRaises >= 2 ? 0.22 : 0;
   const stackRiskPenalty = context.stack > 0 ? Math.min(0.18, context.pressure / Math.max(context.stack, 1) * 0.55) : 0;
+  const stickyCallProfile = Math.max(0, profile.callBoost) + Math.max(0, profile.showdownCuriosity);
 
-  const lowPressureCallDiscount = pressureBb <= 1 ? 0.045 : pressureBb <= 2 ? 0.02 : 0;
+  const lowPressureCallDiscount = cheapPressure
+    ? 0.1 + stickyCallProfile * 0.35
+    : pressureBb <= 2
+      ? 0.04 + stickyCallProfile * 0.15
+      : 0;
+
   const openLine = clamp(0.5 - stats.vpip * 0.22 + profile.openBoost - positionBonus, 0.22, 0.72);
-  const callLine = clamp(0.48 - stats.vpip * 0.16 - stats.risk * 0.08 + profile.callBoost + pressureBb * 0.035 + stackRiskPenalty - lowPressureCallDiscount, 0.2, 0.82);
+  const callLine = clamp(
+    0.5
+      - stats.vpip * 0.18
+      - stats.risk * 0.07
+      - profile.callBoost
+      - profile.showdownCuriosity * 0.55
+      + pressureBb * 0.04
+      + stackRiskPenalty
+      + stats.discipline * 0.06
+      - lowPressureCallDiscount,
+    0.16,
+    0.82,
+  );
   const raiseLine = clamp(0.7 - stats.pfr * 0.18 - stats.aggression * 0.12 + raiseCapPenalty - profile.raiseBoost - positionBonus * 0.35, 0.46, 0.9);
+  const decisionScore = confidence + profile.showdownCuriosity + random;
+  const expensivePotOddsFoldLine = clamp(0.42 + stats.discipline * 0.12 - stats.vpip * 0.08 - stickyCallProfile * 0.12, 0.32, 0.58);
+  const forcedPotOddsFold = !cheapPressure && potOdds > 0.46 && confidence < expensivePotOddsFoldLine;
 
   if (context.pressure > 0) {
-    if (confidence + profile.showdownCuriosity + random < callLine || (potOdds > 0.38 && confidence < 0.62)) {
-      return { action: "fold", confidence, reason: "weak_preflop_call" };
+    if (decisionScore < callLine || forcedPotOddsFold) {
+      return { action: "fold", confidence, reason: forcedPotOddsFold ? "bad_preflop_price" : "weak_preflop_call" };
     }
 
     if (confidence + random > raiseLine && stats.aggression > 0.35 && context.streetRaises < 2) {
       return { action: "raise", confidence, reason: "strong_preflop" };
     }
 
-    return { action: "call", confidence, reason: "continue_preflop" };
+    return { action: "call", confidence, reason: cheapPressure ? "cheap_preflop_defend" : "continue_preflop" };
   }
 
   if (confidence + random > raiseLine && stats.pfr > 0.12) {

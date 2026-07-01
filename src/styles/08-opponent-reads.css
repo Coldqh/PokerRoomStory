@@ -1,4 +1,4 @@
-/* v1.2.0 — opponent reads */
+/* v1.2.1 — opponent reads */
 .opponent-seat {
   cursor: pointer;
 }
@@ -157,4 +157,30 @@
 @media (max-width: 520px) {
   .opponent-read-card { padding: 12px; border-radius: 18px; }
   .opponent-read-snapshot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* v1.2.1 — compact table opponent blocks */
+.seat.opponent-seat {
+  min-height: 58px;
+  padding: 5px 6px;
+  border-radius: 16px;
+}
+.seat.opponent-seat .seat-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 0.62rem;
+}
+.seat.opponent-seat .seat-main strong {
+  font-size: 0.74rem;
+}
+.seat.opponent-seat .seat-main span {
+  font-size: 0.62rem;
+}
+.seat.opponent-seat .seat-status {
+  padding: 0.11rem 0.42rem;
+  font-size: 0.56rem;
+}
+.seat.opponent-seat .seat-cards {
+  right: 6px;
+  bottom: -14px;
 }

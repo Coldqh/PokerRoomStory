@@ -1,4 +1,4 @@
-import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=1.1.0";
+import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=1.2.1";
 
 const UPDATE_EVENT = "prs-update-ready";
 const CACHE_PREFIX = "poker-room-story-";
@@ -45,10 +45,16 @@ export async function checkForRemoteVersion() {
     if (!response.ok) return { ok: false, reason: "version_fetch_failed" };
 
     const remote = await response.json();
-    const remoteVersion = String(remote.appVersion ?? "");
+    const remoteVersion = String(remote.appVersion ?? remote.version ?? "");
     const remoteBuild = String(remote.buildId ?? "");
+    const versionCompare = compareVersions(remoteVersion, APP_VERSION);
+    const sameVersionNewBuild = versionCompare === 0 && remoteBuild && remoteBuild !== BUILD_ID;
 
-    if (remoteVersion && (remoteVersion !== APP_VERSION || (remoteBuild && remoteBuild !== BUILD_ID))) {
+    if (versionCompare < 0) {
+      return { ok: true, updateAvailable: false, ignoredDowngrade: true, remote };
+    }
+
+    if (versionCompare > 0 || sameVersionNewBuild) {
       dispatchUpdateReady({
         remoteVersion,
         remoteBuild,
@@ -152,4 +158,25 @@ function dispatchUpdateReady(detail = {}) {
       },
     }),
   );
+}
+
+function compareVersions(a, b) {
+  const left = parseVersion(a);
+  const right = parseVersion(b);
+  const length = Math.max(left.length, right.length);
+
+  for (let index = 0; index < length; index += 1) {
+    const x = left[index] ?? 0;
+    const y = right[index] ?? 0;
+    if (x > y) return 1;
+    if (x < y) return -1;
+  }
+  return 0;
+}
+
+function parseVersion(value) {
+  return String(value ?? "")
+    .split(".")
+    .map((part) => Number.parseInt(part, 10))
+    .map((number) => (Number.isFinite(number) ? number : 0));
 }

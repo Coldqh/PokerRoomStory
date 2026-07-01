@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.2.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.2.0";
-import { createClubRoomState } from "../src/engine/club.js?v=1.2.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.2.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.2.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.2.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.2.1";
+import { createClubRoomState } from "../src/engine/club.js?v=1.2.1";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.2.1";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.2.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -11,9 +11,9 @@ import {
   getActionMeta,
   getAvailableActions,
   startNewHand,
-} from "../src/engine/poker.js?v=1.2.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.2.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.2.0";
+} from "../src/engine/poker.js?v=1.2.1";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.2.1";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.2.1";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -46,7 +46,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.2.0",
+      appVersion: "1.2.1",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,

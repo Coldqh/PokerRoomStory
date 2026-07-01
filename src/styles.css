@@ -3284,7 +3284,7 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
 }
 
-/* v0.9.0 — Bet Sizing Lite */
+/* v0.9.1 — Bet Sizing Lite */
 .bet-size-dock {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -3358,4 +3358,115 @@ button:disabled { opacity: 0.36; cursor: not-allowed; }
   }
   .bet-size-option b { font-size: 0.62rem; }
   .bet-size-option em { font-size: 0.6rem; }
+}
+
+
+/* v0.9.1 — custom raise amount modal */
+.bet-modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+  background: rgba(0,0,0,0.62);
+  backdrop-filter: blur(10px);
+}
+.bet-modal {
+  width: min(390px, 100%);
+  padding: 15px;
+  border-radius: 21px;
+}
+.bet-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.bet-modal-head span,
+.bet-modal-limits span,
+.bet-modal-input-row span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.56rem;
+  font-weight: 900;
+}
+.bet-modal-head strong {
+  display: block;
+  margin-top: 0.16rem;
+  color: #fff;
+  font-size: 1.06rem;
+}
+.bet-modal-head p {
+  margin: 0.16rem 0 0;
+  color: var(--soft);
+  font-size: 0.74rem;
+}
+.bet-modal-limits {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 11px;
+}
+.bet-modal-limits div {
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px;
+  background: rgba(255,255,255,0.028);
+}
+.bet-modal-limits strong {
+  display: block;
+  margin-top: 0.14rem;
+  color: #ffd39a;
+  font-size: 0.9rem;
+}
+.bet-modal-input-row {
+  display: grid;
+  gap: 6px;
+  margin-top: 11px;
+  padding: 10px;
+  border: 1px solid rgba(255,69,75,0.22);
+  border-radius: 15px;
+  background: rgba(255,255,255,0.035);
+}
+.bet-modal-input-row input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 12px;
+  color: #fff;
+  background: rgba(0,0,0,0.34);
+  font-size: 1.05rem;
+  outline: none;
+}
+.bet-modal-input-row input:focus {
+  border-color: rgba(255,69,75,0.66);
+  box-shadow: 0 0 0 3px rgba(255,69,75,0.1);
+}
+.bet-modal-hint {
+  margin: 9px 2px 0;
+  color: var(--soft);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+.bet-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.bet-modal-actions button {
+  flex: 1 1 130px;
+  min-height: 36px;
+}
+@media (max-width: 740px) {
+  .bet-modal { width: min(350px, 100%); padding: 13px; border-radius: 18px; }
+  .bet-modal-limits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bet-modal-input-row { padding: 8px; }
+  .bet-modal-actions button { min-height: 34px; font-size: 0.74rem; }
 }

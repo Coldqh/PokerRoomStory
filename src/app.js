@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.9.0";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.9.0";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.9.0";
-import { applyUnlocks } from "./engine/collections.js?v=0.9.0";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.9.1";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.9.1";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.9.1";
+import { applyUnlocks } from "./engine/collections.js?v=0.9.1";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,13 +10,15 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.9.0";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.9.0";
-import { getClubContext } from "./engine/world.js?v=0.9.0";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.9.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.9.0";
-import { renderScreen, getVisibleScreens } from "./ui/screens.js?v=0.9.0";
-import { escapeHtml } from "./ui/components.js?v=0.9.0";
+  getActionMeta,
+  getAvailableActions,
+} from "./engine/poker.js?v=0.9.1";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.9.1";
+import { getClubContext } from "./engine/world.js?v=0.9.1";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.9.1";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.9.1";
+import { renderScreen, getVisibleScreens } from "./ui/screens.js?v=0.9.1";
+import { escapeHtml } from "./ui/components.js?v=0.9.1";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -91,7 +93,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.9.0");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.9.1");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -234,12 +236,26 @@ export class PokerRoomStoryApp {
     }
 
     if (action === "player-action") {
+      if (id === "raise") {
+        this.openBetAmountModal();
+        return;
+      }
       this.playAction(id);
       return;
     }
 
     if (action === "select-bet-size") {
       this.setSystem({ selectedBetTarget: Number(id) });
+      return;
+    }
+
+    if (action === "close-bet-modal") {
+      this.setSystem({ betAmountModal: null });
+      return;
+    }
+
+    if (action === "confirm-bet-raise") {
+      this.confirmBetRaise();
       return;
     }
 
@@ -309,6 +325,11 @@ export class PokerRoomStoryApp {
     const input = event.target;
     if (input.matches?.('[data-action="buy-in-input"]')) {
       this.setBuyInAmount(Number(input.value));
+      return;
+    }
+
+    if (input.matches?.('[data-action="raise-amount-input"]')) {
+      this.setBetAmount(Number(input.value));
       return;
     }
 
@@ -394,6 +415,7 @@ export class PokerRoomStoryApp {
         buyInModal: null,
         resultModalOpen: false,
         selectedBetTarget: null,
+        betAmountModal: null,
       },
     });
   }
@@ -412,9 +434,76 @@ export class PokerRoomStoryApp {
       system: {
         ...this.state.system,
         resultModalOpen: false,
+        betAmountModal: null,
         notice: table ? `Ты вышел из ${table.name}.` : "Ты вышел из-за стола.",
       },
     });
+  }
+
+  getBetAmountBounds() {
+    const table = this.content.byId.tables[this.state.activeTableId];
+    const hand = this.state.tableState;
+    const hero = hand?.heroSeat;
+    const actions = getAvailableActions(hand);
+    const meta = getActionMeta(hand, table);
+
+    if (!table || !hero || !actions.includes("raise")) {
+      return { ok: false, min: 0, max: 0, amount: 0, meta };
+    }
+
+    const min = Number(meta.betOptions?.[0]?.target ?? meta.raiseTarget ?? 0);
+    const max = Math.max(min, Math.round(Number(hero.currentBet ?? 0) + Number(hero.stack ?? 0)));
+    const fallback = Number(this.state.system?.selectedBetTarget ?? meta.raiseTarget ?? min);
+    const amount = this.clampBetAmount(fallback, min, max);
+    return { ok: true, min, max, amount, meta };
+  }
+
+  clampBetAmount(value, min, max) {
+    const amount = Math.round(Number(value));
+    if (!Number.isFinite(amount)) return min;
+    return Math.max(min, Math.min(max, amount));
+  }
+
+  openBetAmountModal() {
+    const bounds = this.getBetAmountBounds();
+    if (!bounds.ok) return;
+    this.setSystem({
+      betAmountModal: {
+        amount: bounds.amount,
+        min: bounds.min,
+        max: bounds.max,
+      },
+    });
+  }
+
+  setBetAmount(value) {
+    const modal = this.state.system?.betAmountModal;
+    const bounds = this.getBetAmountBounds();
+    if (!modal || !bounds.ok) return;
+    this.setSystem({
+      betAmountModal: {
+        ...modal,
+        min: bounds.min,
+        max: bounds.max,
+        amount: this.clampBetAmount(value, bounds.min, bounds.max),
+      },
+    });
+  }
+
+  confirmBetRaise() {
+    const bounds = this.getBetAmountBounds();
+    if (!bounds.ok) {
+      this.setSystem({ betAmountModal: null });
+      return;
+    }
+
+    const inputValue = this.root.querySelector('[data-action="raise-amount-input"]')?.value;
+    const requested = inputValue !== undefined && inputValue !== ""
+      ? Number(inputValue)
+      : this.state.system?.betAmountModal?.amount ?? this.state.system?.selectedBetTarget ?? bounds.amount;
+    const amount = this.clampBetAmount(requested, bounds.min, bounds.max);
+    this.setSystem({ betAmountModal: null, selectedBetTarget: amount });
+    this.playAction("raise", amount);
   }
 
   exportSave() {
@@ -494,9 +583,9 @@ export class PokerRoomStoryApp {
     this.playTimeline(auto.tableState, timeline);
   }
 
-  playAction(action) {
+  playAction(action, explicitRaiseTarget = null) {
     const table = this.content.byId.tables[this.state.activeTableId];
-    const raiseTarget = action === "raise" ? Number(this.state.system?.selectedBetTarget ?? 0) || null : null;
+    const raiseTarget = action === "raise" ? Number(explicitRaiseTarget ?? this.state.system?.selectedBetTarget ?? 0) || null : null;
     const { tableState, result, timeline = [] } = applyPlayerAction({
       tableState: this.state.tableState,
       player: this.state.player,
@@ -510,6 +599,7 @@ export class PokerRoomStoryApp {
       system: {
         ...this.state.system,
         selectedBetTarget: null,
+        betAmountModal: null,
       },
     };
 

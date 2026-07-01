@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.7";
-import { getClubRoomState } from "../engine/club.js?v=0.8.7";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.7";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.7";
-import { describeCards } from "../engine/cards.js?v=0.8.7";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.7";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.9.0";
+import { getClubRoomState } from "../engine/club.js?v=0.9.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.9.0";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.9.0";
+import { describeCards } from "../engine/cards.js?v=0.9.0";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.9.0";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -261,7 +261,8 @@ function renderTableScreen(state) {
         </aside>
       </div>
 
-      ${renderActionDock(actions, hand, actionMeta)}
+      ${renderBetSizeDock(actions, hand, actionMeta, state)}
+      ${renderActionDock(actions, hand, actionMeta, state)}
       ${renderHandResultModal(state)}
     </section>
   `;
@@ -333,19 +334,46 @@ function renderIdleToast(hand) {
   return "";
 }
 
-function renderActionDock(actions, hand, actionMeta = {}) {
+function renderBetSizeDock(actions, hand, actionMeta = {}, state = {}) {
+  const animating = hand?.animation?.isPlaying;
+  const terminal = ["finished", "folded", "idle"].includes(hand?.phase);
+  const canShow = Boolean(actions.includes("raise") && hand?.awaitingPlayer && !animating && !terminal);
+  const options = actionMeta.betOptions ?? [];
+  if (!canShow || !options.length) return "";
+
+  const selectedTarget = Number(state?.system?.selectedBetTarget ?? actionMeta.raiseTarget ?? options[0]?.target ?? 0);
+  return `
+    <div class="bet-size-dock panel-soft">
+      <span>Bet size</span>
+      <div class="bet-size-options">
+        ${options.map((option) => `
+          <button class="small-button bet-size-option ${Number(option.target) === selectedTarget ? "selected" : ""}" data-action="select-bet-size" data-id="${escapeHtml(String(option.target))}">
+            <b>${escapeHtml(option.label)}</b>
+            <em>$${escapeHtml(String(option.target))}</em>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderActionDock(actions, hand, actionMeta = {}, state = {}) {
   const animating = hand?.animation?.isPlaying;
   const terminal = ["finished", "folded", "idle"].includes(hand?.phase);
   const canHeroAct = Boolean(hand?.awaitingPlayer && !animating && !terminal && hand?.heroSeat && !hand.heroSeat.folded && !hand.heroSeat.allIn);
   const canFold = canHeroAct || actions.includes("fold");
   const labels = actionMeta.labels ?? {};
+  const selectedTarget = Number(state?.system?.selectedBetTarget ?? actionMeta.raiseTarget ?? 0);
+  const raiseText = selectedTarget > 0
+    ? ((hand?.currentBet ?? 0) > 0 ? `Raise $${selectedTarget}` : `Bet $${selectedTarget}`)
+    : (labels.raise ?? "Raise");
   return `
     <div class="action-dock panel-soft ${terminal ? "terminal" : ""}">
       <button data-action="start-hand" ${animating || hand?.awaitingPlayer ? "disabled" : ""}>Новая</button>
       <button data-action="player-action" data-id="fold" ${canFold ? "" : "disabled"}>${escapeHtml(labels.fold ?? "Fold")}</button>
       <button data-action="player-action" data-id="check" ${actions.includes("check") ? "" : "disabled"}>${escapeHtml(labels.check ?? "Check")}</button>
       <button data-action="player-action" data-id="call" ${actions.includes("call") ? "" : "disabled"}>${escapeHtml(labels.call ?? "Call")}</button>
-      <button class="primary" data-action="player-action" data-id="raise" ${actions.includes("raise") ? "" : "disabled"}>${escapeHtml(labels.raise ?? "Raise")}</button>
+      <button class="primary" data-action="player-action" data-id="raise" ${actions.includes("raise") ? "" : "disabled"}>${escapeHtml(raiseText)}</button>
     </div>
   `;
 }
@@ -782,7 +810,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.7")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.9.0")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

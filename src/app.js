@@ -1,7 +1,7 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=0.8.7";
-import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.8.7";
-import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.8.7";
-import { applyUnlocks } from "./engine/collections.js?v=0.8.7";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=0.9.0";
+import { buildClubHandPatch, getClubSnapshotForTable, normalizeClubNpcState } from "./engine/club.js?v=0.9.0";
+import { createNewCareer, createNewPlayer, applyHandResult, addPlayerRewards, applyChallenges, ensureActiveChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "./engine/career.js?v=0.9.0";
+import { applyUnlocks } from "./engine/collections.js?v=0.9.0";
 import {
   buildStartHandTimeline,
   createAnimationState,
@@ -10,13 +10,13 @@ import {
   startNewHand,
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
-} from "./engine/poker.js?v=0.8.7";
-import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.8.7";
-import { getClubContext } from "./engine/world.js?v=0.8.7";
-import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.8.7";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.8.7";
-import { renderScreen, getVisibleScreens } from "./ui/screens.js?v=0.8.7";
-import { escapeHtml } from "./ui/components.js?v=0.8.7";
+} from "./engine/poker.js?v=0.9.0";
+import { clearSave, exportCurrentSave, getSaveInfo, importSaveText, loadSave, saveGame } from "./engine/save.js?v=0.9.0";
+import { getClubContext } from "./engine/world.js?v=0.9.0";
+import { APP_VERSION, BUILD_ID } from "./config/appMeta.js?v=0.9.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate, getRuntimeStatus, onUpdateReady, registerAppServiceWorker } from "./engine/update.js?v=0.9.0";
+import { renderScreen, getVisibleScreens } from "./ui/screens.js?v=0.9.0";
+import { escapeHtml } from "./ui/components.js?v=0.9.0";
 
 export class PokerRoomStoryApp {
   constructor(root) {
@@ -91,7 +91,7 @@ export class PokerRoomStoryApp {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.8.7");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "0.9.0");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 
@@ -235,6 +235,11 @@ export class PokerRoomStoryApp {
 
     if (action === "player-action") {
       this.playAction(id);
+      return;
+    }
+
+    if (action === "select-bet-size") {
+      this.setSystem({ selectedBetTarget: Number(id) });
       return;
     }
 
@@ -388,6 +393,7 @@ export class PokerRoomStoryApp {
         ...this.state.system,
         buyInModal: null,
         resultModalOpen: false,
+        selectedBetTarget: null,
       },
     });
   }
@@ -474,6 +480,7 @@ export class PokerRoomStoryApp {
       system: {
         ...this.state.system,
         resultModalOpen: false,
+        selectedBetTarget: null,
       },
     }, { skipSave: true });
 
@@ -489,12 +496,22 @@ export class PokerRoomStoryApp {
 
   playAction(action) {
     const table = this.content.byId.tables[this.state.activeTableId];
+    const raiseTarget = action === "raise" ? Number(this.state.system?.selectedBetTarget ?? 0) || null : null;
     const { tableState, result, timeline = [] } = applyPlayerAction({
       tableState: this.state.tableState,
       player: this.state.player,
       action,
       table,
+      raiseTarget,
     });
+
+    this.state = {
+      ...this.state,
+      system: {
+        ...this.state.system,
+        selectedBetTarget: null,
+      },
+    };
 
     if (!result) {
       this.playTimeline(tableState, timeline);

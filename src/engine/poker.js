@@ -6,8 +6,8 @@ import {
   draw,
   estimatePreflopStrength,
   evaluateBestHand,
-} from "./cards.js?v=0.8.7";
-import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.8.7";
+} from "./cards.js?v=0.9.0";
+import { decideNpcAction, getArchetypeUnlockConditions, hydrateNpc, selectTableNpcs } from "./npc.js?v=0.9.0";
 
 const PHASES = ["preflop", "flop", "turn", "river", "showdown"];
 const STREET_LABELS = {
@@ -246,7 +246,7 @@ export function advanceUntilPlayerOrEnd({ tableState, table }) {
   return autoAdvance(syncTableState(tableState), table);
 }
 
-export function applyPlayerAction({ tableState, player, action, table }) {
+export function applyPlayerAction({ tableState, player, action, table, raiseTarget = null }) {
   if (!tableState || !tableState.awaitingPlayer || tableState.animation?.isPlaying) {
     return { tableState, player, result: null, timeline: [] };
   }
@@ -259,7 +259,8 @@ export function applyPlayerAction({ tableState, player, action, table }) {
     return { tableState: state, player, result: null, timeline: [] };
   }
 
-  const commit = commitSeatAction(state, hero.id, action === "fold" ? "fold" : normalizeAction(action, state, hero, table), table, { source: "player" });
+  const playerDecision = action === "raise" ? { action: "raise", raiseTarget } : action === "fold" ? "fold" : normalizeAction(action, state, hero, table);
+  const commit = commitSeatAction(state, hero.id, playerDecision, table, { source: "player" });
   state = commit.tableState;
   const timeline = commit.event ? [eventWithSnapshot(state, commit.event)] : [];
 
@@ -337,8 +338,10 @@ export function getActionMeta(tableState, table = null) {
     };
   }
   const toCall = getToCall(tableState, hero);
-  const target = getDefaultRaiseTarget(tableState, table ?? { bigBlind: tableState?.bigBlind || tableState?.minRaise || 20 }, hero);
+  const safeTable = table ?? { bigBlind: tableState?.bigBlind || tableState?.minRaise || 20 };
+  const target = getDefaultRaiseTarget(tableState, safeTable, hero);
   const raiseCost = Math.max(0, target - hero.currentBet);
+  const betOptions = getBetSizeOptions(tableState, safeTable);
 
   return {
     toCall,
@@ -347,6 +350,7 @@ export function getActionMeta(tableState, table = null) {
     playerStack: hero.stack ?? 0,
     raiseTarget: target,
     raiseCost,
+    betOptions,
     labels: {
       fold: "Fold",
       check: "Check",
@@ -354,6 +358,40 @@ export function getActionMeta(tableState, table = null) {
       raise: (tableState.currentBet ?? 0) > 0 ? `Raise $${target}` : `Bet $${target}`,
     },
   };
+}
+
+export function getBetSizeOptions(tableState, table = null) {
+  const hero = tableState?.heroSeat;
+  if (!hero || hero.folded || hero.allIn || ["idle", "finished", "folded"].includes(tableState?.phase)) return [];
+  if (!canRaise(tableState, hero)) return [];
+
+  const safeTable = table ?? { bigBlind: tableState.bigBlind || tableState.minRaise || 20 };
+  const bigBlind = Math.max(1, Number(safeTable.bigBlind ?? tableState.bigBlind ?? 2));
+  const toCall = getToCall(tableState, hero);
+  const pot = Math.max(0, Number(tableState.pot ?? 0));
+  const baseBet = hero.currentBet ?? 0;
+
+  const raw = [
+    { id: "min", label: "Min", target: getMinRaiseTarget(tableState, safeTable, hero) },
+    { id: "bb25", label: "2.5 BB", target: Math.round(bigBlind * 2.5) },
+    { id: "half", label: "1/2 Pot", target: baseBet + toCall + Math.ceil(Math.max(pot, bigBlind) / 2) },
+    { id: "pot", label: "Pot", target: baseBet + toCall + Math.max(pot, bigBlind) },
+  ];
+
+  const seen = new Set();
+  return raw
+    .map((option) => ({ ...option, target: getLegalRaiseTarget(tableState, safeTable, hero, option.target) }))
+    .filter((option) => {
+      if (!Number.isFinite(option.target) || option.target <= (hero.currentBet ?? 0)) return false;
+      if (seen.has(option.target)) return false;
+      seen.add(option.target);
+      return true;
+    })
+    .map((option) => ({
+      ...option,
+      cost: Math.max(0, option.target - (hero.currentBet ?? 0)),
+      actionLabel: (tableState.currentBet ?? 0) > 0 ? `Raise $${option.target}` : `Bet $${option.target}`,
+    }));
 }
 
 export function getPhaseLabel(phase) {
@@ -573,6 +611,7 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
 
   const toCall = getToCall(state, seat);
   const requestedAction = typeof decision === "string" ? decision : decision?.action;
+  const requestedRaiseTarget = typeof decision === "object" ? decision?.raiseTarget : null;
   const normalized = normalizeAction(requestedAction, state, seat, table);
   let nextSeat = { ...seat };
   let nextPot = state.pot;
@@ -597,7 +636,7 @@ function commitSeatAction(tableState, seatId, decision, table, options = {}) {
     nextPot += amount;
     message = `Call $${amount}`;
   } else if (action === "raise") {
-    const target = getDefaultRaiseTarget(state, table, seat);
+    const target = getLegalRaiseTarget(state, table, seat, requestedRaiseTarget ?? getDefaultRaiseTarget(state, table, seat));
     amount = Math.min(Math.max(0, target - nextSeat.currentBet), nextSeat.stack);
     nextSeat = applyContribution(nextSeat, amount);
     const actualTarget = nextSeat.currentBet;
@@ -1031,15 +1070,30 @@ function canRaise(tableState, seat) {
   if (!seat || seat.folded || seat.allIn) return false;
   if ((tableState.streetRaises ?? 0) >= 2) return false;
   const target = getDefaultRaiseTarget(tableState, { bigBlind: tableState.bigBlind || tableState.minRaise || 20 }, seat);
-  return seat.stack > Math.max(0, target - seat.currentBet);
+  return seat.stack >= Math.max(1, target - seat.currentBet);
 }
 
 function getDefaultRaiseTarget(tableState, table, seat) {
   const bigBlind = table.bigBlind || tableState.minRaise || 20;
   const currentBet = tableState.currentBet ?? 0;
+  if (currentBet <= 0) return getLegalRaiseTarget(tableState, table, seat, bigBlind * 2);
+  return getMinRaiseTarget(tableState, table, seat);
+}
+
+function getMinRaiseTarget(tableState, table, seat) {
+  const bigBlind = table.bigBlind || tableState.minRaise || 20;
+  const currentBet = tableState.currentBet ?? 0;
   const minRaise = tableState.minRaise || bigBlind;
-  if (currentBet <= 0) return Math.min(seat.currentBet + seat.stack, bigBlind * 2);
-  return Math.min(seat.currentBet + seat.stack, currentBet + minRaise);
+  const minTarget = currentBet <= 0 ? bigBlind : currentBet + minRaise;
+  return Math.min(seat.currentBet + seat.stack, minTarget);
+}
+
+function getLegalRaiseTarget(tableState, table, seat, requestedTarget) {
+  const minTarget = getMinRaiseTarget(tableState, table, seat);
+  const maxTarget = seat.currentBet + seat.stack;
+  const requested = Math.round(Number(requestedTarget));
+  if (!Number.isFinite(requested)) return minTarget;
+  return clampMoney(Math.max(Math.min(requested, maxTarget), minTarget));
 }
 
 function normalizeAction(action, state, seat, table) {

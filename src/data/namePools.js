@@ -4,4 +4,4 @@ export {
   getNamePool,
   createNpcName,
   createNpcNameRoster,
-} from "./namePools/index.js?v=1.0.1";
+} from "./namePools/index.js?v=1.1.0";

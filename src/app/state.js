@@ -1,10 +1,10 @@
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=1.0.1";
-import { normalizeClubNpcState } from "../engine/club.js?v=1.0.1";
-import { createInitialTableState } from "../engine/poker.js?v=1.0.1";
-import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=1.0.1";
-import { getDefaultStartLocation } from "../engine/selectors.js?v=1.0.1";
-import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=1.0.1";
-import { getRuntimeStatus } from "../engine/update.js?v=1.0.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=1.1.0";
+import { normalizeClubNpcState } from "../engine/club.js?v=1.1.0";
+import { createInitialTableState } from "../engine/poker.js?v=1.1.0";
+import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=1.1.0";
+import { getDefaultStartLocation } from "../engine/selectors.js?v=1.1.0";
+import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=1.1.0";
+import { getRuntimeStatus } from "../engine/update.js?v=1.1.0";
 
 export const stateController = {
   createInitialState() {
@@ -58,7 +58,7 @@ export const stateController = {
     const phase = tableState.phase ?? "idle";
     const activeHand = !["idle", "finished", "folded"].includes(phase);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
-    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "1.0.1");
+    const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "1.1.0");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
     const brokenActor = Boolean(currentActor && (currentActor.folded || currentActor.allIn));
 

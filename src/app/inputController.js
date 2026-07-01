@@ -1,5 +1,5 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=1.0.1";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.0.1";
+import { clearSave, importSaveText } from "../engine/save.js?v=1.1.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.1.0";
 
 export const inputController = {
   handleClick(event) {

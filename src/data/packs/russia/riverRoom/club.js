@@ -36,6 +36,20 @@ export const clubs = [
       visualTheme: "dark_local_room",
       glossaryPackId: "GLOSSARY_CORE_POKER_RU_V0_1",
       collectionPackId: "COLLECTION_CORE_V0_1",
+      progression: {
+        maxLevel: 10,
+        levels: [
+          { level: 2, xp: 80, reward: { id: "CLUB_REWARD_RIVER_FIRST_REGULAR", type: "badge", name: "First Regular", description: "Первые вечера за столами River Room." } },
+          { level: 3, xp: 180, reward: { id: "CLUB_REWARD_RIVER_RED_BACK", type: "card_back", name: "River Red", description: "Красная рубашка карт River Room.", collectionId: "COLL_CLUB_REWARD_RIVER_RED_BACK" } },
+          { level: 4, xp: 320, reward: { id: "CLUB_REWARD_LOW_STAKES_GRIND", type: "challenge_pack", name: "Low Stakes Grind", description: "Набор клубных гринд-заданий." } },
+          { level: 5, xp: 520, reward: { id: "CLUB_REWARD_BIG_POT_BADGE", type: "badge", name: "Big Pot Winner", description: "Клуб заметил крупные банки." } },
+          { level: 6, xp: 780, reward: { id: "CLUB_REWARD_DARK_RED_FELT", type: "table_felt", name: "Dark Red Felt", description: "Тёмно-красное сукно для стола.", collectionId: "COLL_CLUB_REWARD_DARK_RED_FELT" } },
+          { level: 7, xp: 1100, reward: { id: "CLUB_REWARD_RIVER_ROOM_CARD", type: "collection", name: "River Room Card", description: "Коллекционная карточка первого клуба.", collectionId: "COLL_CLUB_REWARD_RIVER_ROOM_CARD" } },
+          { level: 8, xp: 1480, reward: { id: "CLUB_REWARD_MORE_FACES", type: "npc_pool", name: "Новые лица", description: "За столами чаще появляются разные игроки." } },
+          { level: 9, xp: 1920, reward: { id: "CLUB_REWARD_SHOWDOWN_GRINDER", type: "badge", name: "Showdown Grinder", description: "Ты видел достаточно вскрытий." } },
+          { level: 10, xp: 2420, reward: { id: "CLUB_REWARD_LOCAL_TITLE", type: "title", name: "Свой человек", description: "River Room уже знает тебя." } },
+        ],
+      },
       description: "Локальный poker room.",
     },
   ];

@@ -262,7 +262,7 @@
   }
 }
 
-/* v1.0.1 — leave button red reinforcement */
+/* v1.1.0 — leave button red reinforcement */
 .table-leave-bottom,
 .table-leave-bottom:hover:not(:disabled) {
   color: #fff1f1 !important;
@@ -271,7 +271,7 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 28px rgba(227,41,47,0.18) !important;
 }
 
-/* v1.0.1 — custom raise amount modal */
+/* v1.1.0 — custom raise amount modal */
 .bet-modal-layer {
   position: fixed;
   inset: 0;
@@ -382,7 +382,7 @@
 }
 
 
-/* v1.0.1 — action dock start-only cleanup */
+/* v1.1.0 — action dock start-only cleanup */
 .action-dock.in-hand {
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
 }
@@ -411,4 +411,81 @@
     max-width: 196px !important;
     font-size: 0.58rem !important;
   }
+}
+
+/* v1.1.0 club progression */
+.club-progress-card {
+  display: grid;
+  gap: 9px;
+  margin: 10px 0 12px;
+  padding: 12px;
+  border: 1px solid rgba(216,161,95,0.18);
+  border-radius: 16px;
+  background: rgba(216,161,95,0.045);
+}
+.club-progress-main,
+.club-progress-reward {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.club-progress-main span,
+.club-progress-reward span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+.club-progress-main strong,
+.club-progress-reward strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+.club-progress-main em {
+  color: var(--gold);
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.club-progress-reward strong {
+  color: var(--gold);
+  text-align: right;
+}
+.result-club-progress {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+  padding: 10px 11px;
+  border: 1px solid rgba(216,161,95,0.24);
+  border-radius: 14px;
+  background: rgba(216,161,95,0.055);
+}
+.result-club-progress span {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  font-weight: 900;
+}
+.result-club-progress strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.result-club-progress p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+@media (max-width: 740px) {
+  .club-progress-main,
+  .club-progress-reward {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .club-progress-reward strong { text-align: left; }
 }

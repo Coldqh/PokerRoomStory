@@ -1,7 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.0.1";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges } from "../src/engine/career.js?v=1.0.1";
-import { createClubRoomState } from "../src/engine/club.js?v=1.0.1";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.0.1";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.1.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges } from "../src/engine/career.js?v=1.1.0";
+import { createClubRoomState } from "../src/engine/club.js?v=1.1.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.1.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.1.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -10,8 +11,8 @@ import {
   getActionMeta,
   getAvailableActions,
   startNewHand,
-} from "../src/engine/poker.js?v=1.0.1";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.0.1";
+} from "../src/engine/poker.js?v=1.1.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.1.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -44,7 +45,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.0.1",
+      appVersion: "1.1.0",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -196,6 +197,19 @@ function main() {
   assertUiSmoke(content, table);
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);
+
+  const progressionProbe = playHandToResult(content, table, club);
+  const progressResult = applyClubProgression({
+    content,
+    career,
+    clubId: club.id,
+    tableState: progressionProbe.tableState,
+    result: progressionProbe.result,
+    challengeResult: { completedNow: [] },
+  });
+  const clubInfo = getClubLevelInfo(content, progressResult.career, club.id);
+  assert(progressResult.gain.xp > 0, "club progression must award Club XP");
+  assert(clubInfo.xp >= progressResult.gain.xp, "club progression state must store Club XP");
 
   let previousTableState = null;
   let finished = 0;

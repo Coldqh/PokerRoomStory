@@ -1,7 +1,8 @@
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.0.1";
-import { describeCards } from "../../engine/cards.js?v=1.0.1";
-import { escapeHtml, playingCards } from "../components.js?v=1.0.1";
-import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.0.1";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.1.0";
+import { describeCards } from "../../engine/cards.js?v=1.1.0";
+import { getClubLevelInfo } from "../../engine/progression.js?v=1.1.0";
+import { escapeHtml, playingCards } from "../components.js?v=1.1.0";
+import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.1.0";
 
 export function renderTableScreen(state) {
   const table = state.content.byId.tables[state.activeTableId];
@@ -230,6 +231,8 @@ function renderHandResultModal(state) {
   const winningHand = result.winningHand?.categoryName ?? (result.showdown ? "Showdown" : "Без вскрытия");
   const board = hand?.communityCards?.length ? describeCards(hand.communityCards) : "—";
   const foldNote = heroFolded && result.showdown ? "Ты сбросил. Остальные доиграли банк." : heroFolded ? "Ты сбросил карты." : "";
+  const clubInfo = getClubLevelInfo(state.content, state.career, state.activeClubId);
+  const clubGain = clubInfo.lastGain?.xp ?? 0;
 
   return `
     <div class="result-modal-layer" role="dialog" aria-modal="true" aria-label="Итог раздачи">
@@ -250,6 +253,7 @@ function renderHandResultModal(state) {
         </section>
 
         ${foldNote ? `<p class="result-modal-note">${escapeHtml(foldNote)}</p>` : ""}
+        ${renderClubProgressResult(clubInfo, clubGain)}
         ${renderHandClarity(hand, result, heroFolded)}
         ${renderHandTranscript(hand)}
         ${result.review ? `<div class="result-modal-review"><span>${escapeHtml(result.review.title ?? "Разбор")}</span><p>${escapeHtml(result.review.text ?? "")}</p></div>` : ""}
@@ -408,3 +412,17 @@ function streetLabel(street) {
   return labels[street] ?? street;
 }
 
+
+
+function renderClubProgressResult(info, gain = 0, reward = null) {
+  if (!info?.club || !gain) return "";
+  const levelLine = info.nextLevel ? `${info.xp} / ${info.nextXp} XP` : `${info.xp} XP`;
+  const rewardLine = reward ? ` · ${reward}` : "";
+  return `
+    <div class="result-club-progress">
+      <span>Club XP +${escapeHtml(String(gain))}</span>
+      <strong>${escapeHtml(info.club.name)} Lv.${escapeHtml(String(info.level))}</strong>
+      <p>${escapeHtml(levelLine + rewardLine)}</p>
+    </div>
+  `;
+}

@@ -4,7 +4,6 @@ export const countries = [
       name: "Россия",
       region: "Europe / Eurasia",
       pokerCultureLevel: 3,
-      blackjackCultureLevel: 2,
       averageRisk: 55,
       averageAggression: 50,
       averageBankroll: 900,

@@ -1,4 +1,5 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.0.1";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.1.0";
+import { normalizeClubProgress } from "./progression.js?v=1.1.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },
@@ -18,7 +19,6 @@ export function createNewPlayer() {
     xp: 0,
     knowledgeLevel: 1,
     pokerLevel: 1,
-    blackjackLevel: 0,
     rank: "newcomer",
     handsPlayed: 0,
     handsWon: 0,
@@ -45,6 +45,7 @@ export function createNewCareer() {
     completedChallengeLog: [],
     unlockedGlossary: ["TERM_POKER_BANKROLL"],
     unlockedCollections: [],
+    clubProgress: {},
   };
 }
 
@@ -65,6 +66,7 @@ export function normalizeCareer(career = {}) {
     completedChallengeLog: safeArray(career.completedChallengeLog),
     unlockedGlossary: safeArray(career.unlockedGlossary, base.unlockedGlossary),
     unlockedCollections: safeArray(career.unlockedCollections),
+    clubProgress: normalizeClubProgress(null, career.clubProgress ?? base.clubProgress),
   };
 }
 

@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.0.1";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, updateCareerUnlocks } from "../engine/career.js?v=1.0.1";
-import { applyUnlocks } from "../engine/collections.js?v=1.0.1";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.1.0";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, updateCareerUnlocks } from "../engine/career.js?v=1.1.0";
+import { applyUnlocks } from "../engine/collections.js?v=1.1.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -8,8 +8,9 @@ import {
   createAnimationState,
   getUnlockConditionsFromHand,
   startNewHand,
-} from "../engine/poker.js?v=1.0.1";
-import { getClubContext } from "../engine/world.js?v=1.0.1";
+} from "../engine/poker.js?v=1.1.0";
+import { getClubContext } from "../engine/world.js?v=1.1.0";
+import { applyClubProgression } from "../engine/progression.js?v=1.1.0";
 
 export const handFlow = {
   startHand() {
@@ -121,6 +122,15 @@ export const handFlow = {
     });
 
     const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, challengeResult.career, this.content);
+    const clubProgressResult = applyClubProgression({
+      content: this.content,
+      career: careerAfterUnlocks,
+      clubId: this.state.activeClubId,
+      tableState,
+      result,
+      challengeResult,
+    });
+    const careerAfterProgress = updateCareerUnlocks(playerAfterHand, clubProgressResult.career, this.content);
     const clubPatch = buildClubHandPatch({
       content: this.content,
       clubNpcState: this.state.clubNpcState,
@@ -131,8 +141,8 @@ export const handFlow = {
     });
     const totalXp = result.xp + unlockResult.xpReward + challengeResult.xpReward;
     const totalRep = (result.reputationGain ?? 0) + challengeResult.reputationReward;
-    const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...challengeResult.messages, ...clubPatch.clubMessages] });
-    const rewardToast = buildRewardToast(this.content, challengeResult);
+    const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...challengeResult.messages, ...clubPatch.clubMessages, ...clubProgressResult.messages] });
+    const rewardToast = buildRewardToast(this.content, challengeResult, clubProgressResult);
     const nextTableSession = this.state.tableSession?.tableId === this.state.activeTableId
       ? {
         ...this.state.tableSession,
@@ -148,12 +158,13 @@ export const handFlow = {
       ...unlockResult.messages,
       ...challengeResult.messages,
       ...clubPatch.clubMessages,
+      ...clubProgressResult.messages,
       progressLine,
     ].slice(-100);
 
     this.setState({
       player: playerAfterHand,
-      career: careerAfterUnlocks,
+      career: careerAfterProgress,
       tableSession: nextTableSession,
       clubNpcState: clubPatch.clubNpcState,
       tableState: {
@@ -265,7 +276,17 @@ function buildProgressLine({ xp, reputation, messages }) {
   return `Прогресс: ${bits.join(" · ")}`;
 }
 
-function buildRewardToast(content, challengeResult) {
+function buildRewardToast(content, challengeResult, clubProgressResult = null) {
+  if (clubProgressResult?.levelUps?.length || clubProgressResult?.unlockedRewards?.length) {
+    const reward = clubProgressResult.unlockedRewards?.[0];
+    const level = clubProgressResult.levelUps?.at(-1);
+    return {
+      kicker: "Клубный прогресс",
+      title: level ? `River Room Lv.${level}` : "Награда клуба",
+      reward: reward?.name ? `Открыто: ${reward.name}` : `Club XP +${clubProgressResult.gain?.xp ?? 0}`,
+    };
+  }
+
   const ids = challengeResult?.completedNow ?? [];
   if (!ids.length) return null;
 

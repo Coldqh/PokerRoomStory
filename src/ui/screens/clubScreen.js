@@ -1,13 +1,15 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.0.1";
-import { getClubRoomState } from "../../engine/club.js?v=1.0.1";
-import { emptyState, escapeHtml } from "../components.js?v=1.0.1";
-import { stableIndex } from "./common.js?v=1.0.1";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.1.0";
+import { getClubRoomState } from "../../engine/club.js?v=1.1.0";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.1.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.1.0";
+import { stableIndex } from "./common.js?v=1.1.0";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
   const { club, tables } = context;
   const room = getClubRoomState(state.content, state.clubNpcState, state.activeClubId);
   const journal = room.journal ?? [];
+  const levelInfo = getClubLevelInfo(state.content, state.career, state.activeClubId);
 
   return `
     <section class="room-lobby-layout">
@@ -19,6 +21,7 @@ export function renderClubScreen(state) {
           </div>
           <em>${tables.length} tables</em>
         </div>
+        ${renderClubProgress(levelInfo)}
         <div class="room-table-list">
           ${tables.map((table) => renderTableListItem(state, table)).join("")}
         </div>
@@ -89,3 +92,26 @@ function getLobbyTablePlayers(state, table) {
   return Array.from({ length: Math.min(4, source.length) }, (_, offset) => source[(start + offset) % source.length]).filter(Boolean);
 }
 
+
+
+function renderClubProgress(info) {
+  if (!info?.club) return "";
+  const reward = info.nextReward ? formatClubReward(info.nextReward) : "Все награды открыты";
+  const xpLine = info.nextLevel ? `${info.xp} / ${info.nextXp} XP` : `${info.xp} XP`;
+  return `
+    <div class="club-progress-card">
+      <div class="club-progress-main">
+        <div>
+          <span>Room Mastery</span>
+          <strong>${escapeHtml(info.club.name)} Lv.${escapeHtml(String(info.level))}</strong>
+        </div>
+        <em>${escapeHtml(xpLine)}</em>
+      </div>
+      ${progressBar(info.percent)}
+      <div class="club-progress-reward">
+        <span>${info.nextLevel ? `Следующая награда · Lv.${info.nextLevel}` : "Максимум"}</span>
+        <strong>${escapeHtml(reward)}</strong>
+      </div>
+    </div>
+  `;
+}

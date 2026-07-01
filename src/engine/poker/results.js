@@ -1,5 +1,5 @@
-import { compareHands, evaluateBestHand } from "../cards.js?v=1.0.1";
-import { getAllSeats, syncTableState } from "./seats.js?v=1.0.1";
+import { compareHands, evaluateBestHand } from "../cards.js?v=1.1.0";
+import { getAllSeats, syncTableState } from "./seats.js?v=1.1.0";
 
 export function resolveShowdown(tableState, table) {
   const state = syncTableState(tableState);

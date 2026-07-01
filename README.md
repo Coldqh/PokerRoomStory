@@ -1,8 +1,8 @@
-# Poker Room Story v1.0.1
+# Poker Room Story v1.1.0
 
 Static web stable demo.
 
-## v1.0.1 — App Controller Split
+## v1.1.0 — Club Progression / Room Mastery
 
 This version locks the first playable demo before expanding content.
 
@@ -14,6 +14,7 @@ This version locks the first playable demo before expanding content.
 - Fold / check / call / custom raise modal.
 - Result modal with hand clarity.
 - Career, tasks, glossary, collections, settings.
+- River Room level, Club XP, reward unlocks.
 - Offline PWA cache.
 - Automated smoke test harness.
 
@@ -35,7 +36,8 @@ The smoke test checks:
 - start hand timeline;
 - fold invariant;
 - custom raise action;
-- 100 completed poker hands.
+- 100 completed poker hands;
+- Club XP progression.
 
 ### Stable demo checklist
 
@@ -47,7 +49,6 @@ docs/STABLE_DEMO_CHECKLIST.md
 
 ### Not included yet
 
-- blackjack;
 - multiple countries;
 - true buy-in cashout economy;
 - side pots;

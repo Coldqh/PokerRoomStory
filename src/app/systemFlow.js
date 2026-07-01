@@ -1,4 +1,5 @@
-import { exportCurrentSave } from "../engine/save.js?v=1.0.1";
+import { APP_VERSION } from "../config/appMeta.js?v=1.1.0";
+import { exportCurrentSave } from "../engine/save.js?v=1.1.0";
 
 export const systemFlow = {
   exportSave() {
@@ -27,3 +28,9 @@ export const systemFlow = {
     });
   }
 };
+
+function createDefaultSettings() {
+  return {
+    animationSpeed: "normal",
+  };
+}

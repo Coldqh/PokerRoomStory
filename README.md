@@ -1,3 +1,3 @@
-# Poker Room Story v0.8.6
+# Poker Room Story v0.8.7
 
-Mini UI polish: move leave-table button to the bottom of the table info panel and keep the table stack block clean.
+Mini UI patch: readable revealed NPC cards and red leave-table button.

@@ -1,9 +1,9 @@
-import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.6";
-import { getClubRoomState } from "../engine/club.js?v=0.8.6";
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.6";
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.6";
-import { describeCards } from "../engine/cards.js?v=0.8.6";
-import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.6";
+import { canEnterTable, getClubContext } from "../engine/world.js?v=0.8.7";
+import { getClubRoomState } from "../engine/club.js?v=0.8.7";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../engine/poker.js?v=0.8.7";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges, getRankInfo, getRankLabel, getRankProgress, getXpProgress } from "../engine/career.js?v=0.8.7";
+import { describeCards } from "../engine/cards.js?v=0.8.7";
+import { badges, emptyState, escapeHtml, metric, playingCards, progressBar } from "./components.js?v=0.8.7";
 
 export const SCREENS = [
   { id: "club", label: "Клуб" },
@@ -277,7 +277,7 @@ function renderNpcSeats(hand, currentEvent, revealCards, highlightedIds = new Se
       const status = seat.folded ? "Fold" : actionLabel(seat.lastAction);
       const amount = !seat.folded && seat.lastAmount ? ` $${seat.lastAmount}` : "";
       const betText = !seat.folded && seat.currentBet ? ` · Bet $${seat.currentBet}` : "";
-      const cards = seat.folded ? `<div class="fold-marker">Fold</div>` : playingCards(seat.holeCards, { hidden: !revealCards, highlightedIds, size: "small" });
+      const cards = seat.folded ? `<div class="fold-marker">Fold</div>` : playingCards(seat.holeCards, { hidden: !revealCards, highlightedIds, size: revealCards ? "small seat-reveal" : "small" });
       return `
         <div class="seat seat-${index + 1} ${seat.folded ? "folded" : ""} ${isActing ? "acting" : ""} ${isWinner ? "winner" : ""}">
           <div class="seat-avatar">${escapeHtml(initials(seat.name))}</div>
@@ -782,7 +782,7 @@ function renderSettingsScreen(state) {
       </article>
 
       <article class="panel-soft settings-card settings-wide">
-        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.6")}</span></div>
+        <div class="section-title"><h3>Система</h3><span>v${escapeHtml(system.appVersion ?? "0.8.7")}</span></div>
         <div class="system-grid">
           <div class="system-line"><span>Сейв</span><strong>${info.exists ? `schema ${escapeHtml(String(info.schemaVersion ?? "?"))}` : "новый"}</strong></div>
           <div class="system-line"><span>Сохранено</span><strong>${escapeHtml(updated)}</strong></div>

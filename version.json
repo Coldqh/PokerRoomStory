@@ -1,6 +1,6 @@
 {
-  "version": "1.4.0",
-  "appVersion": "1.4.0",
-  "buildId": "prs-1.4.0-20260701-side-pots",
-  "message": "v1.4.0 — All-in & Side Pots"
+  "version": "1.4.1",
+  "appVersion": "1.4.1",
+  "buildId": "prs-1.4.1-20260701-stack-safety-rebuy",
+  "message": "v1.4.1 — Stack Safety / Rebuy MVP"
 }

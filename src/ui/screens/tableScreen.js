@@ -1,8 +1,8 @@
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.4.0";
-import { describeCards } from "../../engine/cards.js?v=1.4.0";
-import { getClubLevelInfo } from "../../engine/progression.js?v=1.4.0";
-import { escapeHtml, playingCards } from "../components.js?v=1.4.0";
-import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.4.0";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.4.1";
+import { describeCards } from "../../engine/cards.js?v=1.4.1";
+import { getClubLevelInfo } from "../../engine/progression.js?v=1.4.1";
+import { escapeHtml, playingCards } from "../components.js?v=1.4.1";
+import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.4.1";
 
 export function renderTableScreen(state) {
   const table = state.content.byId.tables[state.activeTableId];
@@ -138,6 +138,15 @@ function renderIdleToast(hand) {
   return "";
 }
 
+function getTableTopUpTarget(state = {}, table = null, session = null) {
+  if (!table || !session) return 0;
+  const bankroll = Number(state.player?.bankroll ?? 0);
+  const min = Number(table.minBuyIn ?? table.bigBlind * 50 ?? 0);
+  const max = Math.min(Number(table.maxBuyIn ?? table.bigBlind * 150 ?? min), Number(session.stack ?? 0) + bankroll);
+  const target = Number(table.recommendedBuyIn ?? table.bigBlind * 100 ?? min);
+  return Math.max(Number(session.stack ?? 0), Math.min(max, target));
+}
+
 function renderActionDock(actions, hand, actionMeta = {}, state = {}) {
   const animating = hand?.animation?.isPlaying;
   const terminal = ["finished", "folded", "idle"].includes(hand?.phase);
@@ -146,11 +155,15 @@ function renderActionDock(actions, hand, actionMeta = {}, state = {}) {
   const canFold = canHeroAct || actions.includes("fold");
   const labels = actionMeta.labels ?? {};
   const raiseText = labels.raise ?? ((hand?.currentBet ?? 0) > 0 ? "Raise" : "Bet");
+  const table = state?.content?.byId?.tables?.[state?.activeTableId];
+  const session = state?.tableSession?.tableId === table?.id ? state.tableSession : null;
+  const lowStack = Boolean(session && table && Number(session.stack ?? 0) < Number(table.bigBlind ?? 0));
 
   if (!handStarted) {
     return `
       <div class="action-dock panel-soft start-only">
-        <button class="start-hand-button" data-action="start-hand" ${animating ? "disabled" : ""}>Начать новую раздачу</button>
+        ${lowStack ? `<div class="table-stack-warning"><strong>Недостаточно стека.</strong><span>Добери фишки или выйди из стола.</span></div>` : ""}
+        <button class="start-hand-button" data-action="start-hand" ${animating || lowStack ? "disabled" : ""}>Начать новую раздачу</button>
       </div>
     `;
   }
@@ -172,12 +185,17 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
   const current = hand?.phase === "folded" ? "Fold" : hand?.awaitingPlayer ? "Ты" : terminal ? "—" : hand?.currentActorName ?? "—";
   const tablePrompt = terminal ? "Раздача закрыта" : actionMeta.toCall ? `Call $${actionMeta.toCall}` : hand?.currentBet ? `Bet $${hand.currentBet}` : "Check available";
   const session = state?.tableSession?.tableId === table?.id ? state.tableSession : null;
+  const targetBuyIn = getTableTopUpTarget(state, table, session);
+  const canTopUp = Boolean(session && targetBuyIn > Number(session.stack ?? 0));
+  const lowStack = Boolean(session && table && Number(session.stack ?? 0) < Number(table.bigBlind ?? 0));
   return `
     ${session ? `
       <div class="info-block table-session-block">
         <span>Стек за столом</span>
         <strong>$${escapeHtml(String(session.stack ?? 0))}</strong>
         <p>${escapeHtml(table?.gameLabel ?? "NL Hold’em")} · Buy-in $${escapeHtml(String(session.buyIn ?? 0))}</p>
+        ${lowStack ? `<p>Недостаточно стека. Добери фишки или выйди из стола.</p>` : ""}
+        ${canTopUp ? `<button class="small-button" data-action="top-up-table-stack">Добрать стек</button>` : ""}
       </div>
     ` : ""}
     <div class="info-block table-hand-row">

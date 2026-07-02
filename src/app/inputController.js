@@ -1,5 +1,5 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=1.4.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.4.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=1.4.1";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.4.1";
 
 export const inputController = {
   handleClick(event) {
@@ -41,6 +41,7 @@ export const inputController = {
       "close-buyin",
       "open-opponent-read",
       "close-opponent-read",
+      "top-up-table-stack",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
 
@@ -66,6 +67,11 @@ export const inputController = {
 
     if (action === "close-buyin") {
       this.setSystem({ buyInModal: null });
+      return;
+    }
+
+    if (action === "top-up-table-stack") {
+      this.topUpTableStack();
       return;
     }
 

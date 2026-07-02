@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.4.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.4.0";
-import { createClubRoomState } from "../src/engine/club.js?v=1.4.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.4.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.4.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.4.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.4.1";
+import { createClubRoomState } from "../src/engine/club.js?v=1.4.1";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.4.1";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.4.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,10 +12,13 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.4.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.4.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.4.0";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.4.0";
+} from "../src/engine/poker.js?v=1.4.1";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.4.1";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.4.1";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.4.1";
+import { handFlow } from "../src/app/handFlow.js?v=1.4.1";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.4.1";
+import { inputController } from "../src/app/inputController.js?v=1.4.1";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -53,7 +56,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.4.0",
+      appVersion: "1.4.1",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -62,6 +65,31 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
       serviceWorker: false,
     },
     ...patch,
+  };
+}
+
+function makeFlowHarness(content, table, patch = {}) {
+  const state = makeBaseState(content, createInitialTableState(), {
+    currentScreen: "table",
+    tableSession: { tableId: table.id, buyIn: 200, stack: 200, handsPlayed: 0 },
+    ...patch,
+  });
+
+  return {
+    content,
+    state,
+    setState(update) {
+      this.state = { ...this.state, ...update };
+    },
+    setSystem(update) {
+      this.state = { ...this.state, system: { ...this.state.system, ...update } };
+    },
+    openBuyInModal() {
+      this.setSystem({ buyInModal: { tableId: table.id, amount: table.minBuyIn } });
+    },
+    playTimeline(finalTableState) {
+      this.setState({ tableState: finalTableState });
+    },
   };
 }
 
@@ -473,6 +501,53 @@ function assertBustedNpcReplacement(content, table, club) {
   assert(nextHand.npcSeats.length >= 1, "busted NPC replacement must keep table playable");
 }
 
+function assertStackSafetyAndTopUp(content, table) {
+  const lowStack = Math.max(0, table.bigBlind - 1);
+  const app = makeFlowHarness(content, table, {
+    player: { ...createNewPlayer(), bankroll: 1000 },
+    tableSession: { tableId: table.id, buyIn: 200, stack: lowStack, handsPlayed: 0 },
+  });
+
+  handFlow.startHand.call(app);
+  assert(app.state.system.notice === "Недостаточно стека. Добери фишки или выйди из стола.", "low table stack must block hand start with clear notice");
+  assert(app.state.tableState.phase === "idle", "low table stack must not start a hand");
+
+  const beforeBankroll = app.state.player.bankroll;
+  tableSessionFlow.topUpTableStack.call(app);
+  assert(app.state.tableSession.stack >= table.bigBlind, "top-up must make stack playable when bankroll allows");
+  assert(app.state.player.bankroll < beforeBankroll, "top-up must spend player bankroll");
+  assert(app.state.tableSession.stack <= table.maxBuyIn, "top-up must not exceed table max buy-in");
+
+  const afterTopUpStack = app.state.tableSession.stack;
+  handFlow.startHand.call(app);
+  assert(app.state.tableState.phase !== "idle", "after top-up hand can start");
+  assert(app.state.tableSession.stack === afterTopUpStack, "starting a hand must not change stored session stack until hand completes");
+
+  const broke = makeFlowHarness(content, table, {
+    player: { ...createNewPlayer(), bankroll: 0 },
+    tableSession: { tableId: table.id, buyIn: 200, stack: lowStack, handsPlayed: 0 },
+  });
+  tableSessionFlow.topUpTableStack.call(broke);
+  assert(broke.state.tableSession.stack === lowStack, "top-up must not change stack when bankroll is empty");
+  assert(broke.state.system.notice === "Недостаточно банкролла для добора.", "empty bankroll top-up must show clear notice");
+
+  const routed = makeFlowHarness(content, table, {
+    player: { ...createNewPlayer(), bankroll: 1000 },
+    tableSession: { tableId: table.id, buyIn: 200, stack: lowStack, handsPlayed: 0 },
+  });
+  Object.assign(routed, tableSessionFlow);
+  const event = { target: { closest: () => ({ dataset: { action: "top-up-table-stack" } }) } };
+  inputController.handleClick.call(routed, event);
+  assert(routed.state.tableSession.stack >= table.bigBlind, "input controller must route top-up action");
+
+  const html = renderScreen(makeBaseState(content, createInitialTableState(), {
+    currentScreen: "table",
+    tableSession: { tableId: table.id, buyIn: 200, stack: lowStack, handsPlayed: 0 },
+  }));
+  assert(String(html).includes('data-action="top-up-table-stack"'), "table screen must render top-up action when stack is low");
+  assert(String(html).includes("Недостаточно стека"), "table screen must render low-stack reason");
+}
+
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -534,6 +609,7 @@ function main() {
   assertDynamicTableSeats(content, table, club);
   assertHeadsUpBlinds(content, table, club);
   assertSidePots(content, table, club);
+  assertStackSafetyAndTopUp(content, table);
   assertPersistentTableEconomy(content, table, club);
   assertBustedNpcReplacement(content, table, club);
   assertUiSmoke(content, table, club);

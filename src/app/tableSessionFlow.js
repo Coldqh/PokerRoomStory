@@ -1,4 +1,4 @@
-import { createInitialTableState } from "../engine/poker.js?v=1.4.0";
+import { createInitialTableState } from "../engine/poker.js?v=1.4.1";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -68,6 +68,50 @@ export const tableSessionFlow = {
         resultModalOpen: false,
         selectedBetTarget: null,
         betAmountModal: null,
+        notice: null,
+      },
+    });
+  },
+
+  topUpTableStack() {
+    const session = this.state.tableSession;
+    const table = this.content.byId.tables[session?.tableId ?? this.state.activeTableId];
+    if (!session || !table) return;
+
+    if (isTableHandInProgress(this.state.tableState)) {
+      this.setSystem({ notice: "Сначала заверши текущую раздачу." });
+      return;
+    }
+
+    const currentStack = clampMoney(session.stack ?? 0);
+    const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
+    const target = getRecommendedBuyIn(this.state.player, table);
+    const maxStack = Math.max(currentStack, Math.min(Number(table.maxBuyIn ?? target), target));
+    const needed = clampMoney(maxStack - currentStack);
+    const amount = Math.min(needed, bankroll);
+
+    if (needed <= 0) {
+      this.setSystem({ notice: "Стек уже добран." });
+      return;
+    }
+
+    if (amount <= 0) {
+      this.setSystem({ notice: "Недостаточно банкролла для добора." });
+      return;
+    }
+
+    this.setState({
+      player: {
+        ...this.state.player,
+        bankroll: bankroll - amount,
+      },
+      tableSession: {
+        ...session,
+        buyIn: clampMoney((session.buyIn ?? 0) + amount),
+        stack: currentStack + amount,
+      },
+      system: {
+        ...this.state.system,
         notice: null,
       },
     });

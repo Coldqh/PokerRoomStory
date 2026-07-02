@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.4.0";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, updateCareerUnlocks } from "../engine/career.js?v=1.4.0";
-import { applyUnlocks } from "../engine/collections.js?v=1.4.0";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.4.1";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, updateCareerUnlocks } from "../engine/career.js?v=1.4.1";
+import { applyUnlocks } from "../engine/collections.js?v=1.4.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,9 +9,9 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=1.4.0";
-import { getClubContext } from "../engine/world.js?v=1.4.0";
-import { applyClubProgression } from "../engine/progression.js?v=1.4.0";
+} from "../engine/poker.js?v=1.4.1";
+import { getClubContext } from "../engine/world.js?v=1.4.1";
+import { applyClubProgression } from "../engine/progression.js?v=1.4.1";
 
 export const handFlow = {
   startHand() {
@@ -24,8 +24,8 @@ export const handFlow = {
       return;
     }
 
-    if ((session.stack ?? 0) < table.bigBlind * 2) {
-      this.setSystem({ notice: "Стек за столом слишком низкий. Выйди и сделай новый buy-in." });
+    if ((session.stack ?? 0) < table.bigBlind) {
+      this.setSystem({ notice: "Недостаточно стека. Добери фишки или выйди из стола." });
       return;
     }
 

@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.4.3";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=1.4.3";
-import { applyUnlocks } from "../engine/collections.js?v=1.4.3";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.6.0";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=1.6.0";
+import { applyUnlocks } from "../engine/collections.js?v=1.6.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,9 +9,10 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=1.4.3";
-import { getClubContext } from "../engine/world.js?v=1.4.3";
-import { applyClubProgression } from "../engine/progression.js?v=1.4.3";
+} from "../engine/poker.js?v=1.6.0";
+import { getClubContext } from "../engine/world.js?v=1.6.0";
+import { applyClubProgression } from "../engine/progression.js?v=1.6.0";
+import { applyClubGoals } from "../engine/clubGoals.js?v=1.6.0";
 
 export const handFlow = {
   startHand() {
@@ -122,19 +123,37 @@ export const handFlow = {
       unlockConditions,
     });
 
-    const playerAfterHand = addPlayerRewards(playerAfterBase, {
-      xp: challengeResult.xpReward,
-      reputation: challengeResult.reputationReward,
+    const clubGoalResult = applyClubGoals({
+      content: this.content,
+      career: challengeResult.career,
+      clubId: this.state.activeClubId,
+      table: this.content.byId.tables[this.state.activeTableId],
+      tableState,
+      result,
     });
 
-    const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, challengeResult.career, this.content);
+    const combinedTaskResult = {
+      ...challengeResult,
+      career: clubGoalResult.career,
+      messages: [...challengeResult.messages, ...clubGoalResult.messages],
+      completedNow: [...challengeResult.completedNow, ...clubGoalResult.completedNow],
+      xpReward: challengeResult.xpReward + clubGoalResult.xpReward,
+      reputationReward: challengeResult.reputationReward + clubGoalResult.reputationReward,
+    };
+
+    const playerAfterHand = addPlayerRewards(playerAfterBase, {
+      xp: combinedTaskResult.xpReward,
+      reputation: combinedTaskResult.reputationReward,
+    });
+
+    const careerAfterUnlocks = updateCareerUnlocks(playerAfterHand, combinedTaskResult.career, this.content);
     const clubProgressResult = applyClubProgression({
       content: this.content,
       career: careerAfterUnlocks,
       clubId: this.state.activeClubId,
       tableState,
       result,
-      challengeResult,
+      challengeResult: combinedTaskResult,
     });
     const careerAfterProgressUnlocks = updateCareerUnlocks(playerAfterHand, clubProgressResult.career, this.content);
     const careerAfterProgress = {
@@ -148,12 +167,12 @@ export const handFlow = {
       clubId: this.state.activeClubId,
       tableState,
       result,
-      challengeMessages: challengeResult.messages,
+      challengeMessages: combinedTaskResult.messages,
     });
-    const totalXp = result.xp + unlockResult.xpReward + challengeResult.xpReward;
-    const totalRep = (result.reputationGain ?? 0) + challengeResult.reputationReward;
-    const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...challengeResult.messages, ...clubPatch.clubMessages, ...clubProgressResult.messages] });
-    const rewardToast = buildRewardToast(this.content, challengeResult, clubProgressResult);
+    const totalXp = result.xp + unlockResult.xpReward + combinedTaskResult.xpReward;
+    const totalRep = (result.reputationGain ?? 0) + combinedTaskResult.reputationReward;
+    const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...combinedTaskResult.messages, ...clubPatch.clubMessages, ...clubProgressResult.messages] });
+    const rewardToast = buildRewardToast(this.content, combinedTaskResult, clubProgressResult);
     const nextTableSession = this.state.tableSession?.tableId === this.state.activeTableId
       ? {
         ...this.state.tableSession,
@@ -167,7 +186,7 @@ export const handFlow = {
       ...result.logs,
       ...(result.review ? [`Разбор: ${result.review.text}`] : []),
       ...unlockResult.messages,
-      ...challengeResult.messages,
+      ...combinedTaskResult.messages,
       ...clubPatch.clubMessages,
       ...clubProgressResult.messages,
       progressLine,

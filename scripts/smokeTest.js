@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.5.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.5.0";
-import { createClubRoomState } from "../src/engine/club.js?v=1.5.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.5.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.5.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.6.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.6.0";
+import { createClubRoomState } from "../src/engine/club.js?v=1.6.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.6.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.6.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,14 +12,15 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.5.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.5.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.5.0";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.5.0";
-import { handFlow } from "../src/app/handFlow.js?v=1.5.0";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.5.0";
-import { inputController } from "../src/app/inputController.js?v=1.5.0";
-import { canEnterTable } from "../src/engine/world.js?v=1.5.0";
+} from "../src/engine/poker.js?v=1.6.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.6.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.6.0";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.6.0";
+import { handFlow } from "../src/app/handFlow.js?v=1.6.0";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.6.0";
+import { inputController } from "../src/app/inputController.js?v=1.6.0";
+import { canEnterTable } from "../src/engine/world.js?v=1.6.0";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.6.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -57,7 +58,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.5.0",
+      appVersion: "1.6.0",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -662,6 +663,77 @@ function assertBankrollAccounting(content, table, club) {
   assert(topUpApp.state.tableSession.stack > topStackBefore, "top-up must increase table stack");
 }
 
+
+function assertUniversalClubGoals(content, club, table) {
+  const career = createNewCareer();
+  const goals = getClubGoals(content, career, club.id);
+
+  assert(goals.length >= 4, "universal club goals must generate baseline goals for any club");
+  assert(goals.some((goal) => goal.type === "club_hands"), "club goals must include hands goal");
+  assert(goals.some((goal) => goal.type === "club_wins"), "club goals must include wins goal");
+  assert(goals.some((goal) => goal.type === "club_showdowns"), "club goals must include showdown goal");
+  assert(goals.some((goal) => goal.type === "club_big_pot"), "club goals must include big pot goal");
+
+  const firstTick = applyClubGoals({
+    content,
+    career,
+    clubId: club.id,
+    table,
+    tableState: null,
+    result: { winner: "npc", pot: table.bigBlind * 4, showdown: false },
+  });
+  const progressed = getClubGoals(content, firstTick.career, club.id);
+  const handsGoal = progressed.find((goal) => goal.type === "club_hands");
+  assert(handsGoal?.current === 1, `club hands goal must progress after a hand, got ${handsGoal?.current}`);
+
+  let goalCareer = firstTick.career;
+  for (let index = 0; index < 2; index += 1) {
+    const applied = applyClubGoals({
+      content,
+      career: goalCareer,
+      clubId: club.id,
+      table,
+      tableState: null,
+      result: { winner: "player", pot: table.bigBlind * 12, showdown: index === 0 },
+    });
+    goalCareer = applied.career;
+  }
+  const afterWins = getClubGoals(content, goalCareer, club.id);
+  assert(afterWins.find((goal) => goal.type === "club_wins")?.completed, "club win goal must complete after enough player wins");
+
+  const bigPotGoal = getClubGoals(content, goalCareer, club.id).find((goal) => goal.type === "club_big_pot");
+  const bigPotResult = applyClubGoals({
+    content,
+    career: goalCareer,
+    clubId: club.id,
+    table,
+    tableState: null,
+    result: { winner: "player", pot: bigPotGoal.target, showdown: true },
+  });
+  assert(bigPotResult.completedNow.includes(bigPotGoal.id), "big pot goal must complete from matching player win pot");
+  assert(bigPotResult.xpReward > 0 && bigPotResult.reputationReward > 0, "completed club goals must grant rewards");
+
+  const shortTable = (club.tables ?? []).map((id) => content.byId.tables[id]).find((entry) => Number(entry?.seatProfile?.maxPlayers ?? entry?.seats ?? 6) <= 4);
+  if (shortTable) {
+    const shortGoal = getClubGoals(content, career, club.id).find((goal) => goal.type === "table_hands" && goal.tableId === shortTable.id);
+    assert(shortGoal, "short table goal must be generated when club has a short table");
+    const shortTick = applyClubGoals({
+      content,
+      career,
+      clubId: club.id,
+      table: shortTable,
+      tableState: null,
+      result: { winner: "npc", pot: shortTable.bigBlind * 4, showdown: false },
+    });
+    const shortProgress = getClubGoals(content, shortTick.career, club.id).find((goal) => goal.id === shortGoal.id);
+    assert(shortProgress.current === 1, "short table goal must progress only from the matching table");
+  }
+
+  const clubHtml = renderScreen(makeBaseState(content, createInitialTableState(), { currentScreen: "club", career: bigPotResult.career }));
+  assert(clubHtml.includes("Club Goals"), "club screen must render universal Club Goals board");
+  assert(clubHtml.includes("Первые руки"), "club goals board must render generated goal names");
+}
+
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -721,6 +793,7 @@ function main() {
   assert(Array.isArray(startTimeline) && startTimeline.length > 0, "start hand timeline expected");
 
   assertRiverRoomExpansion(content, club);
+  assertUniversalClubGoals(content, club, table);
   assertDynamicTableSeats(content, table, club);
   assertHeadsUpBlinds(content, table, club);
   assertSidePots(content, table, club);

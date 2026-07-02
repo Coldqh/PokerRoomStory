@@ -1,8 +1,9 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.5.0";
-import { getClubRoomState } from "../../engine/club.js?v=1.5.0";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.5.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.5.0";
-import { stableIndex } from "./common.js?v=1.5.0";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.6.0";
+import { getClubRoomState } from "../../engine/club.js?v=1.6.0";
+import { getClubGoals } from "../../engine/clubGoals.js?v=1.6.0";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.6.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.6.0";
+import { stableIndex } from "./common.js?v=1.6.0";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -11,6 +12,7 @@ export function renderClubScreen(state) {
   const journal = room.journal ?? [];
   const visibleJournal = journal.slice(-12).reverse();
   const levelInfo = getClubLevelInfo(state.content, state.career, state.activeClubId);
+  const goals = getClubGoals(state.content, state.career, state.activeClubId).slice(0, 5);
 
   return `
     <section class="room-lobby-layout">
@@ -29,6 +31,7 @@ export function renderClubScreen(state) {
       </article>
 
       <article class="panel-soft club-journal-panel room-journal-panel">
+        ${renderClubGoals(goals)}
         <div class="section-title"><h3>Журнал</h3><span>${visibleJournal.length ? `${visibleJournal.length} последних` : "последнее"}</span></div>
         <div class="feed-list club-journal-list">
           ${visibleJournal.length ? visibleJournal.map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
@@ -36,6 +39,35 @@ export function renderClubScreen(state) {
       </article>
     </section>
   `;
+}
+
+
+function renderClubGoals(goals = []) {
+  return `
+    <div class="section-title"><h3>Club Goals</h3><span>${goals.filter((goal) => goal.completed).length}/${goals.length}</span></div>
+    <div class="feed-list club-goal-list">
+      ${goals.length ? goals.map(renderClubGoalLine).join("") : emptyState("Цели появятся после открытия клуба.")}
+    </div>
+  `;
+}
+
+function renderClubGoalLine(goal) {
+  const reward = formatGoalReward(goal.reward);
+  const progress = goal.type === "club_big_pot" ? `$${goal.current} / $${goal.target}` : `${goal.current} / ${goal.target}`;
+  return `
+    <div class="feed-line club-goal-line ${goal.completed ? "completed" : "active"}">
+      <strong>${goal.completed ? "✓" : "□"} ${escapeHtml(goal.name)}</strong>
+      <span>${escapeHtml(progress)} · ${escapeHtml(reward)}</span>
+      <small>${escapeHtml(goal.description)}</small>
+    </div>
+  `;
+}
+
+function formatGoalReward(reward = {}) {
+  const parts = [];
+  if (reward.xp) parts.push(`XP +${reward.xp}`);
+  if (reward.reputation) parts.push(`Rep +${reward.reputation}`);
+  return parts.length ? parts.join(" · ") : "без награды";
 }
 
 function renderTableListItem(state, table) {

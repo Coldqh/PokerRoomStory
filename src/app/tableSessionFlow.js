@@ -1,4 +1,5 @@
-import { createInitialTableState } from "../engine/poker.js?v=1.4.4";
+import { createInitialTableState } from "../engine/poker.js?v=1.5.0";
+import { canEnterTable } from "../engine/world.js?v=1.5.0";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -7,6 +8,12 @@ export const tableSessionFlow = {
 
     if (isTableHandInProgress(this.state.tableState)) {
       this.setSystem({ notice: "Сначала заверши текущую раздачу." });
+      return;
+    }
+
+    const access = canEnterTable(this.state.player, table);
+    if (!access.ok) {
+      this.setSystem({ notice: access.reason });
       return;
     }
 
@@ -41,6 +48,12 @@ export const tableSessionFlow = {
 
     const table = this.content.byId.tables[modal.tableId];
     if (!table) return;
+
+    const access = canEnterTable(this.state.player, table);
+    if (!access.ok) {
+      this.setSystem({ notice: access.reason });
+      return;
+    }
 
     const amount = clampMoney(Math.round(Number(modal.amount) || table.minBuyIn));
     const min = Number(table.minBuyIn ?? table.bigBlind * 50);

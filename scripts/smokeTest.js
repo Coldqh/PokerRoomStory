@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.4.4";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.4.4";
-import { createClubRoomState } from "../src/engine/club.js?v=1.4.4";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.4.4";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.4.4";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.5.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.5.0";
+import { createClubRoomState } from "../src/engine/club.js?v=1.5.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.5.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.5.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,13 +12,14 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.4.4";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.4.4";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.4.4";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.4.4";
-import { handFlow } from "../src/app/handFlow.js?v=1.4.4";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.4.4";
-import { inputController } from "../src/app/inputController.js?v=1.4.4";
+} from "../src/engine/poker.js?v=1.5.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.5.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.5.0";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.5.0";
+import { handFlow } from "../src/app/handFlow.js?v=1.5.0";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.5.0";
+import { inputController } from "../src/app/inputController.js?v=1.5.0";
+import { canEnterTable } from "../src/engine/world.js?v=1.5.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -56,7 +57,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.4.4",
+      appVersion: "1.5.0",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -320,6 +321,45 @@ function assertClubProgressPersistsThroughUnlockRefresh(content, table, club, ca
   assert(clubHtml.includes(String(clubInfo.xp)), "club screen must display stored Room Mastery XP");
 }
 
+
+function assertRiverRoomExpansion(content, club) {
+  const riverTables = (content.tables ?? []).filter((table) => table.clubId === club.id);
+  assert(riverTables.length >= 5, "River Room expansion must expose at least five tables");
+
+  const byId = Object.fromEntries(riverTables.map((table) => [table.id, table]));
+  const starter = byId.TABLE_RU_BRR_LOW_001;
+  const shortAction = byId.TABLE_RU_BRR_LOW_002;
+  const looseNight = byId.TABLE_RU_BRR_MID_001;
+  const backRoom = byId.TABLE_RU_BRR_LOW_004;
+  assert(starter?.name === "Starter Table", "starter table must keep a clear unlocked entry point");
+  assert(shortAction?.seatProfile?.maxPlayers <= 4, "Short Action Table must support short-handed play");
+  assert(looseNight?.bigBlind === 5, "Loose Night Table must raise the stakes to $2/$5");
+  assert(backRoom?.bigBlind === 10 && backRoom?.unlockRequirement, "Back Room Table must be a locked higher-stakes table");
+
+  const newPlayer = createNewPlayer();
+  assert(canEnterTable(newPlayer, starter).ok, "starter table must be open to a new player");
+  assert(!canEnterTable(newPlayer, backRoom).ok, "back room table must be locked for a new player");
+
+  const lockedApp = makeFlowHarness(content, backRoom, {
+    player: newPlayer,
+    tableSession: null,
+    currentScreen: "club",
+  });
+  tableSessionFlow.openBuyInModal.call(lockedApp, backRoom.id);
+  assert(!lockedApp.state.system?.buyInModal, "locked table must not open buy-in modal");
+  assert(String(lockedApp.state.system?.notice ?? "").includes("Нужно"), "locked table must show unlock reason");
+
+  const clubHtml = renderScreen(makeBaseState(content, createInitialTableState(), { currentScreen: "club" }));
+  assert(clubHtml.includes("Starter Table"), "club screen must render Starter Table");
+  assert(clubHtml.includes("Short Action Table"), "club screen must render Short Action Table");
+  assert(clubHtml.includes("Loose Night Table"), "club screen must render Loose Night Table");
+  assert(clubHtml.includes("Back Room Table"), "club screen must render Back Room Table");
+  assert(clubHtml.includes("Закрыт"), "club screen must render locked table state");
+
+  const shortHand = startTestHand(content, shortAction, club, null);
+  const shortTotalPlayers = 1 + (shortHand.npcSeats?.length ?? 0);
+  assert(shortTotalPlayers >= shortAction.seatProfile.minPlayers && shortTotalPlayers <= shortAction.seatProfile.maxPlayers, "short table dynamic seats must respect seat profile");
+}
 
 function assertDynamicTableSeats(content, table, club) {
   const seatCounts = new Set();
@@ -666,7 +706,7 @@ function main() {
   assert(content.validation?.ok, `content validation failed: ${(content.validation?.warnings ?? []).join("; ")}`);
   assert(content.countries.length >= 1, "at least one country expected");
   assert(content.clubs.length >= 1, "at least one club expected");
-  assert(content.tables.length >= 1, "at least one table expected");
+  assert(content.tables.length >= 5, "River Room expansion expected multiple tables");
   assert(content.npcs.length >= 6, "at least six NPCs expected for table smoke tests");
 
   const career = createNewCareer();
@@ -680,6 +720,7 @@ function main() {
   const startTimeline = buildStartHandTimeline(firstHand, table);
   assert(Array.isArray(startTimeline) && startTimeline.length > 0, "start hand timeline expected");
 
+  assertRiverRoomExpansion(content, club);
   assertDynamicTableSeats(content, table, club);
   assertHeadsUpBlinds(content, table, club);
   assertSidePots(content, table, club);

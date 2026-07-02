@@ -1,8 +1,8 @@
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.4.4";
-import { describeCards } from "../../engine/cards.js?v=1.4.4";
-import { getClubLevelInfo } from "../../engine/progression.js?v=1.4.4";
-import { escapeHtml, playingCards } from "../components.js?v=1.4.4";
-import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.4.4";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.4.3";
+import { describeCards } from "../../engine/cards.js?v=1.4.3";
+import { getClubLevelInfo } from "../../engine/progression.js?v=1.4.3";
+import { escapeHtml, playingCards } from "../components.js?v=1.4.3";
+import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.4.3";
 
 export function renderTableScreen(state) {
   const table = state.content.byId.tables[state.activeTableId];

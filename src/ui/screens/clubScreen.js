@@ -1,8 +1,8 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.4.0";
-import { getClubRoomState } from "../../engine/club.js?v=1.4.0";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.4.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.4.0";
-import { stableIndex } from "./common.js?v=1.4.0";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.5.0";
+import { getClubRoomState } from "../../engine/club.js?v=1.5.0";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.5.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.5.0";
+import { stableIndex } from "./common.js?v=1.5.0";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -64,6 +64,7 @@ function renderTableListItem(state, table) {
           <span>Seats ${escapeHtml(seatsLabel)}</span>
           <span>Avg pot $${Number(table.avgPot ?? table.bigBlind * 12)}</span>
           <span>${Number(table.handsPerHour ?? 30)} hands/h</span>
+          <span>${escapeHtml(table.tableProfileLabel ?? getTableMoodLabel(table))}</span>
         </div>
         <div class="room-table-players">${players || "Состав обновляется"}</div>
         ${access.ok || active ? "" : `<div class="room-table-lock">${escapeHtml(access.reason)}</div>`}
@@ -113,4 +114,16 @@ function renderClubProgress(info) {
       </div>
     </div>
   `;
+}
+
+
+function getTableMoodLabel(table) {
+  const labels = {
+    starter: "Стартовый стол",
+    short_action: "Короткий стол",
+    loose: "Лузовая игра",
+    regular: "Регулярский стол",
+    back_room: "Закрытый стол",
+  };
+  return labels[table?.tableMood] ?? "Обычный стол";
 }

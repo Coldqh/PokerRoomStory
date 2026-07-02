@@ -1,7 +1,7 @@
-import { hydrateNpc, selectTableNpcs } from "../npc.js?v=1.4.0";
+import { hydrateNpc, selectTableNpcs } from "../npc.js?v=1.5.0";
 
-const MIN_NPCS = 1;
-const MAX_NPCS = 5;
+const DEFAULT_MIN_NPCS = 1;
+const DEFAULT_MAX_NPCS = 5;
 const MAX_TURNOVER_PER_HAND = 2;
 
 export function prepareDynamicTableNpcs(content, table, club, previousTableState = null, clubSnapshot = null) {
@@ -52,6 +52,7 @@ export function prepareDynamicTableNpcs(content, table, club, previousTableState
       handsAtTable,
       targetNpcCount: npcs.length,
       previousNpcCount: previousIds.length || null,
+      minNpcCount: getMinNpcCount(table),
       maxNpcCount: getMaxNpcCount(table),
       direction,
       departedNpcIds: finalDepartedNpcIds,
@@ -95,6 +96,7 @@ export function prepareTableNpcs(content, table, club, previousTableState, count
 }
 
 export function getTargetNpcCountForHand({ table, previousTableState = null, clubSnapshot = null } = {}) {
+  const minNpcCount = getMinNpcCount(table);
   const maxNpcCount = getMaxNpcCount(table);
   const previousNpcCount = Array.isArray(previousTableState?.npcSeats) ? previousTableState.npcSeats.length : null;
 
@@ -110,7 +112,7 @@ export function getTargetNpcCountForHand({ table, previousTableState = null, clu
   const shouldMove = handsAtTable % 3 === 0 || (tone === "loose" && handsAtTable % 2 === 0) || (tone === "tight" && handsAtTable % 4 === 0);
   if (shouldMove) next += direction;
 
-  if (next < MIN_NPCS || next > maxNpcCount) {
+  if (next < minNpcCount || next > maxNpcCount) {
     next = previousNpcCount - direction;
   }
 
@@ -141,17 +143,19 @@ function getInitialNpcCount(table, clubSnapshot = null) {
   if (tone === "loose" || tone === "hot") return clampNpcCount(maxNpcCount - (hash % 2), table);
   if (tone === "tight" || tone === "focused") return clampNpcCount(1 + (hash % Math.min(3, maxNpcCount)), table);
 
-  const spread = Math.max(1, maxNpcCount - MIN_NPCS + 1);
-  return clampNpcCount(MIN_NPCS + (hash % spread), table);
+  const minNpcCount = getMinNpcCount(table);
+  const spread = Math.max(1, maxNpcCount - minNpcCount + 1);
+  return clampNpcCount(minNpcCount + (hash % spread), table);
 }
 
 function getNextSeatCountDirection(table, previousTableState = null, clubSnapshot = null) {
   const previousDirection = Number(previousTableState?.tableDynamics?.direction ?? 0);
   const previousNpcCount = Array.isArray(previousTableState?.npcSeats) ? previousTableState.npcSeats.length : null;
+  const minNpcCount = getMinNpcCount(table);
   const maxNpcCount = getMaxNpcCount(table);
 
   if (previousNpcCount && previousDirection) {
-    if (previousNpcCount <= MIN_NPCS && previousDirection < 0) return 1;
+    if (previousNpcCount <= minNpcCount && previousDirection < 0) return 1;
     if (previousNpcCount >= maxNpcCount && previousDirection > 0) return -1;
     return previousDirection;
   }
@@ -162,7 +166,7 @@ function getNextSeatCountDirection(table, previousTableState = null, clubSnapsho
   return stableHash(`${table?.id ?? "table"}:${clubSnapshot?.day ?? 1}`) % 2 === 0 ? 1 : -1;
 }
 
-function chooseDepartingNpcIds(previousSeats = [], result = null, targetNpcCount = MIN_NPCS, handsAtTable = 1) {
+function chooseDepartingNpcIds(previousSeats = [], result = null, targetNpcCount = DEFAULT_MIN_NPCS, handsAtTable = 1) {
   if (!previousSeats.length) return [];
 
   const previousCount = previousSeats.length;
@@ -203,11 +207,24 @@ function getLeaveScore(seat, result) {
 }
 
 function getMaxNpcCount(table) {
-  return clamp(Number(table?.seats ?? 6) - 1, MIN_NPCS, MAX_NPCS);
+  const seatCap = clamp(Math.round(Number(table?.seats ?? 6) || 6), 2, 6);
+  const profileMax = Math.round(Number(table?.seatProfile?.maxPlayers ?? table?.maxPlayers ?? seatCap) || seatCap);
+  const totalMax = clamp(Math.min(seatCap, profileMax), 2, seatCap);
+  return clamp(totalMax - 1, DEFAULT_MIN_NPCS, DEFAULT_MAX_NPCS);
+}
+
+function getMinNpcCount(table) {
+  const seatCap = clamp(Math.round(Number(table?.seats ?? 6) || 6), 2, 6);
+  const maxNpcCount = getMaxNpcCount(table);
+  const maxTotalPlayers = maxNpcCount + 1;
+  const profileMin = Math.round(Number(table?.seatProfile?.minPlayers ?? table?.minPlayers ?? 2) || 2);
+  const totalMin = clamp(profileMin, 2, Math.min(seatCap, maxTotalPlayers));
+  return clamp(totalMin - 1, DEFAULT_MIN_NPCS, maxNpcCount);
 }
 
 function clampNpcCount(value, table) {
-  return clamp(Math.round(Number(value) || MIN_NPCS), MIN_NPCS, getMaxNpcCount(table));
+  const minNpcCount = getMinNpcCount(table);
+  return clamp(Math.round(Number(value) || minNpcCount), minNpcCount, getMaxNpcCount(table));
 }
 
 function stableHash(value) {

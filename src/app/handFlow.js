@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.4.1";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, updateCareerUnlocks } from "../engine/career.js?v=1.4.1";
-import { applyUnlocks } from "../engine/collections.js?v=1.4.1";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.4.4";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=1.4.4";
+import { applyUnlocks } from "../engine/collections.js?v=1.4.4";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,9 +9,9 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=1.4.1";
-import { getClubContext } from "../engine/world.js?v=1.4.1";
-import { applyClubProgression } from "../engine/progression.js?v=1.4.1";
+} from "../engine/poker.js?v=1.4.4";
+import { getClubContext } from "../engine/world.js?v=1.4.4";
+import { applyClubProgression } from "../engine/progression.js?v=1.4.4";
 
 export const handFlow = {
   startHand() {
@@ -105,10 +105,13 @@ export const handFlow = {
       unlockConditions,
     });
 
-    const playerAfterBase = applyHandResult(this.state.player, {
-      ...result,
-      xp: result.xp + unlockResult.xpReward,
-    }, tableState);
+    const playerAfterBase = normalizePlayer({
+      ...applyHandResult(this.state.player, {
+        ...result,
+        xp: result.xp + unlockResult.xpReward,
+      }, tableState),
+      bankroll: this.state.player.bankroll,
+    });
 
     const challengeResult = applyChallenges({
       content: this.content,

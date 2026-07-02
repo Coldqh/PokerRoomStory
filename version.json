@@ -1,6 +1,6 @@
 {
-  "version": "1.4.1",
-  "appVersion": "1.4.1",
-  "buildId": "prs-1.4.1-20260701-stack-safety-rebuy",
-  "message": "v1.4.1 — Stack Safety / Rebuy MVP"
+  "version": "1.4.4",
+  "appVersion": "1.4.4",
+  "buildId": "prs-1.4.4-20260701-empty-bankroll-top-up-guard",
+  "message": "v1.4.4 — Empty bankroll top-up guard"
 }

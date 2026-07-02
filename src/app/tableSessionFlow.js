@@ -1,4 +1,4 @@
-import { createInitialTableState } from "../engine/poker.js?v=1.4.1";
+import { createInitialTableState } from "../engine/poker.js?v=1.4.4";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -51,7 +51,13 @@ export const tableSessionFlow = {
       return;
     }
 
+    const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
+
     this.setState({
+      player: {
+        ...this.state.player,
+        bankroll: bankroll - amount,
+      },
       activeTableId: table.id,
       currentScreen: "table",
       tableSession: {
@@ -85,18 +91,18 @@ export const tableSessionFlow = {
 
     const currentStack = clampMoney(session.stack ?? 0);
     const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
-    const target = getRecommendedBuyIn(this.state.player, table);
-    const maxStack = Math.max(currentStack, Math.min(Number(table.maxBuyIn ?? target), target));
-    const needed = clampMoney(maxStack - currentStack);
+
+    if (bankroll <= 0) {
+      this.setSystem({ notice: "Недостаточно банкролла для добора." });
+      return;
+    }
+
+    const target = getTopUpTarget({ table, currentStack });
+    const needed = clampMoney(target - currentStack);
     const amount = Math.min(needed, bankroll);
 
     if (needed <= 0) {
       this.setSystem({ notice: "Стек уже добран." });
-      return;
-    }
-
-    if (amount <= 0) {
-      this.setSystem({ notice: "Недостаточно банкролла для добора." });
       return;
     }
 
@@ -123,7 +129,14 @@ export const tableSessionFlow = {
       return;
     }
 
+    const returnedStack = clampMoney(this.state.tableSession?.stack ?? 0);
+    const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
+
     this.setState({
+      player: {
+        ...this.state.player,
+        bankroll: bankroll + returnedStack,
+      },
       tableSession: null,
       tableState: createInitialTableState(),
       currentScreen: "club",
@@ -143,6 +156,14 @@ function getRecommendedBuyIn(player, table) {
   const max = Math.min(Number(table?.maxBuyIn ?? table?.bigBlind * 150 ?? min), bankroll);
   const target = Number(table?.recommendedBuyIn ?? table?.bigBlind * 100 ?? min);
   return clampMoney(Math.max(min, Math.min(max, target)));
+}
+
+function getTopUpTarget({ table, currentStack }) {
+  const min = Number(table?.minBuyIn ?? table?.bigBlind * 50 ?? 0);
+  const max = Number(table?.maxBuyIn ?? table?.bigBlind * 150 ?? min);
+  const recommended = Number(table?.recommendedBuyIn ?? table?.bigBlind * 100 ?? min);
+  const target = Math.min(max, Math.max(min, recommended));
+  return clampMoney(Math.max(currentStack, target));
 }
 
 function isTableHandInProgress(tableState) {

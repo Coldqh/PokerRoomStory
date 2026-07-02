@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.4.1";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.4.1";
-import { createClubRoomState } from "../src/engine/club.js?v=1.4.1";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.4.1";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.4.1";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.4.4";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.4.4";
+import { createClubRoomState } from "../src/engine/club.js?v=1.4.4";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.4.4";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.4.4";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,13 +12,13 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.4.1";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.4.1";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.4.1";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.4.1";
-import { handFlow } from "../src/app/handFlow.js?v=1.4.1";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.4.1";
-import { inputController } from "../src/app/inputController.js?v=1.4.1";
+} from "../src/engine/poker.js?v=1.4.4";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.4.4";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.4.4";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.4.4";
+import { handFlow } from "../src/app/handFlow.js?v=1.4.4";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.4.4";
+import { inputController } from "../src/app/inputController.js?v=1.4.4";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -56,7 +56,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.4.1",
+      appVersion: "1.4.4",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -548,6 +548,80 @@ function assertStackSafetyAndTopUp(content, table) {
   assert(String(html).includes("Недостаточно стека"), "table screen must render low-stack reason");
 }
 
+
+function assertBankrollAccounting(content, table, club) {
+  const buyInAmount = table.minBuyIn;
+  const buyInApp = makeFlowHarness(content, table, {
+    currentScreen: "club",
+    player: { ...createNewPlayer(), bankroll: 1000 },
+    tableSession: null,
+    system: { ...makeBaseState(content).system, buyInModal: { tableId: table.id, amount: buyInAmount } },
+  });
+  tableSessionFlow.confirmBuyIn.call(buyInApp);
+  assert(buyInApp.state.player.bankroll === 1000 - buyInAmount, "buy-in must subtract from off-table bankroll");
+  assert(buyInApp.state.tableSession.stack === buyInAmount, "buy-in must create table stack equal to buy-in");
+
+  const deniedBuyIn = makeFlowHarness(content, table, {
+    currentScreen: "club",
+    player: { ...createNewPlayer(), bankroll: Math.max(0, buyInAmount - 1) },
+    tableSession: null,
+    system: { ...makeBaseState(content).system, buyInModal: { tableId: table.id, amount: buyInAmount } },
+  });
+  tableSessionFlow.confirmBuyIn.call(deniedBuyIn);
+  assert(!deniedBuyIn.state.tableSession, "buy-in above bankroll must not seat player");
+
+  buyInApp.state = {
+    ...buyInApp.state,
+    tableSession: { ...buyInApp.state.tableSession, stack: buyInAmount + 25 },
+  };
+  tableSessionFlow.leaveTable.call(buyInApp);
+  assert(buyInApp.state.player.bankroll === 1025, "leaving table must return remaining table stack to bankroll");
+  assert(buyInApp.state.tableSession === null, "leaving table must clear table session");
+
+  const handApp = makeFlowHarness(content, table, {
+    player: { ...createNewPlayer(), bankroll: 800 },
+    tableSession: { tableId: table.id, buyIn: 200, stack: 200, handsPlayed: 0 },
+  });
+  const hand = startTestHand(content, table, club, null);
+  const terminalState = {
+    ...hand,
+    phase: "finished",
+    pot: 40,
+    actionLog: ["accounting smoke"],
+    heroSeat: {
+      ...hand.heroSeat,
+      invested: 20,
+      stack: 180,
+    },
+    npcSeats: hand.npcSeats.map((seat) => ({ ...seat, folded: true })),
+  };
+  const result = {
+    winner: "player",
+    winnerId: "player",
+    winnerName: "Ты",
+    pot: 40,
+    bankrollDelta: 20,
+    xp: 0,
+    reputationGain: 0,
+    showdown: false,
+    logs: ["accounting smoke result"],
+    review: null,
+  };
+  handFlow.completeHand.call(handApp, terminalState, result, terminalState);
+  assert(handApp.state.player.bankroll === 800, "hand result must not change off-table bankroll while seated");
+  assert(handApp.state.tableSession.stack !== 200, "hand result must update table session stack instead of bankroll");
+
+  const topUpApp = makeFlowHarness(content, table, {
+    player: { ...createNewPlayer(), bankroll: 500 },
+    tableSession: { tableId: table.id, buyIn: 200, stack: table.bigBlind, handsPlayed: 0 },
+  });
+  const topBankrollBefore = topUpApp.state.player.bankroll;
+  const topStackBefore = topUpApp.state.tableSession.stack;
+  tableSessionFlow.topUpTableStack.call(topUpApp);
+  assert(topUpApp.state.player.bankroll < topBankrollBefore, "top-up must subtract from bankroll");
+  assert(topUpApp.state.tableSession.stack > topStackBefore, "top-up must increase table stack");
+}
+
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -610,6 +684,7 @@ function main() {
   assertHeadsUpBlinds(content, table, club);
   assertSidePots(content, table, club);
   assertStackSafetyAndTopUp(content, table);
+  assertBankrollAccounting(content, table, club);
   assertPersistentTableEconomy(content, table, club);
   assertBustedNpcReplacement(content, table, club);
   assertUiSmoke(content, table, club);

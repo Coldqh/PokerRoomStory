@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.6.0";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=1.6.0";
-import { applyUnlocks } from "../engine/collections.js?v=1.6.0";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.7.1";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=1.7.1";
+import { applyUnlocks } from "../engine/collections.js?v=1.7.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,10 +9,11 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=1.6.0";
-import { getClubContext } from "../engine/world.js?v=1.6.0";
-import { applyClubProgression } from "../engine/progression.js?v=1.6.0";
-import { applyClubGoals } from "../engine/clubGoals.js?v=1.6.0";
+} from "../engine/poker.js?v=1.7.1";
+import { getClubContext } from "../engine/world.js?v=1.7.1";
+import { applyClubProgression } from "../engine/progression.js?v=1.7.1";
+import { applyClubGoals } from "../engine/clubGoals.js?v=1.7.1";
+import { applyStorylineProgress } from "../engine/storylines.js?v=1.7.1";
 
 export const handFlow = {
   startHand() {
@@ -123,11 +124,22 @@ export const handFlow = {
       unlockConditions,
     });
 
-    const clubGoalResult = applyClubGoals({
+    const activeTable = this.content.byId.tables[this.state.activeTableId];
+    const storyResult = applyStorylineProgress({
       content: this.content,
       career: challengeResult.career,
       clubId: this.state.activeClubId,
-      table: this.content.byId.tables[this.state.activeTableId],
+      table: activeTable,
+      tableState,
+      result,
+      player: playerAfterBase,
+    });
+
+    const clubGoalResult = applyClubGoals({
+      content: this.content,
+      career: storyResult.career,
+      clubId: this.state.activeClubId,
+      table: activeTable,
       tableState,
       result,
     });
@@ -135,10 +147,10 @@ export const handFlow = {
     const combinedTaskResult = {
       ...challengeResult,
       career: clubGoalResult.career,
-      messages: [...challengeResult.messages, ...clubGoalResult.messages],
-      completedNow: [...challengeResult.completedNow, ...clubGoalResult.completedNow],
-      xpReward: challengeResult.xpReward + clubGoalResult.xpReward,
-      reputationReward: challengeResult.reputationReward + clubGoalResult.reputationReward,
+      messages: [...challengeResult.messages, ...storyResult.messages, ...clubGoalResult.messages],
+      completedNow: [...challengeResult.completedNow, ...storyResult.completedNow, ...clubGoalResult.completedNow],
+      xpReward: challengeResult.xpReward + storyResult.xpReward + clubGoalResult.xpReward,
+      reputationReward: challengeResult.reputationReward + storyResult.reputationReward + clubGoalResult.reputationReward,
     };
 
     const playerAfterHand = addPlayerRewards(playerAfterBase, {

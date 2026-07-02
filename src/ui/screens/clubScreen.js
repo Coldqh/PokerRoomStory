@@ -1,9 +1,10 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.6.0";
-import { getClubRoomState } from "../../engine/club.js?v=1.6.0";
-import { getClubGoals } from "../../engine/clubGoals.js?v=1.6.0";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.6.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.6.0";
-import { stableIndex } from "./common.js?v=1.6.0";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.7.1";
+import { getClubRoomState } from "../../engine/club.js?v=1.7.1";
+import { getClubGoals } from "../../engine/clubGoals.js?v=1.7.1";
+import { getClubStorylines } from "../../engine/storylines.js?v=1.7.1";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.7.1";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.7.1";
+import { stableIndex } from "./common.js?v=1.7.1";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -13,6 +14,7 @@ export function renderClubScreen(state) {
   const visibleJournal = journal.slice(-12).reverse();
   const levelInfo = getClubLevelInfo(state.content, state.career, state.activeClubId);
   const goals = getClubGoals(state.content, state.career, state.activeClubId).slice(0, 5);
+  const storylines = getClubStorylines(state.content, state.career, state.activeClubId).slice(0, 1);
 
   return `
     <section class="room-lobby-layout">
@@ -31,6 +33,7 @@ export function renderClubScreen(state) {
       </article>
 
       <article class="panel-soft club-journal-panel room-journal-panel">
+        ${renderStorylinePanel(storylines)}
         ${renderClubGoals(goals)}
         <div class="section-title"><h3>Журнал</h3><span>${visibleJournal.length ? `${visibleJournal.length} последних` : "последнее"}</span></div>
         <div class="feed-list club-journal-list">
@@ -41,6 +44,31 @@ export function renderClubScreen(state) {
   `;
 }
 
+
+
+function renderStorylinePanel(storylines = []) {
+  if (!storylines.length) return "";
+  const story = storylines[0];
+  const step = story.currentStep;
+  const reward = formatGoalReward(step.reward);
+  const progress = step.type === "club_big_pot" ? `$${step.current} / $${step.target}` : `${step.current} / ${step.target}`;
+  const characters = (story.characters ?? []).slice(0, 5);
+
+  return `
+    <div class="section-title"><h3>Story</h3><span>${escapeHtml(story.completed ? "completed" : `Step ${story.stepIndex + 1}/${story.steps.length}`)}</span></div>
+    <div class="feed-list club-storyline-list">
+      <div class="feed-line club-storyline-line ${story.completed ? "completed" : "active"}">
+        <strong>${escapeHtml(story.label ?? story.title)}</strong>
+        <span>${escapeHtml(story.title)} · ${escapeHtml(step.title)} · ${escapeHtml(progress)} · ${escapeHtml(reward)}</span>
+        <small>${escapeHtml(step.objective)}</small>
+      </div>
+      <div class="feed-line club-storyline-intro">
+        <small>${escapeHtml(story.intro)}</small>
+      </div>
+      ${characters.length ? `<div class="feed-line club-storyline-characters"><strong>Characters</strong><span>${characters.map((character) => escapeHtml(character.name)).join(" · ")}</span></div>` : ""}
+    </div>
+  `;
+}
 
 function renderClubGoals(goals = []) {
   return `

@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.6.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.6.0";
-import { createClubRoomState } from "../src/engine/club.js?v=1.6.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.6.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.6.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.7.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.7.1";
+import { createClubRoomState } from "../src/engine/club.js?v=1.7.1";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.7.1";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.7.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,15 +12,16 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.6.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.6.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.6.0";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.6.0";
-import { handFlow } from "../src/app/handFlow.js?v=1.6.0";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.6.0";
-import { inputController } from "../src/app/inputController.js?v=1.6.0";
-import { canEnterTable } from "../src/engine/world.js?v=1.6.0";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.6.0";
+} from "../src/engine/poker.js?v=1.7.1";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.7.1";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.7.1";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.7.1";
+import { handFlow } from "../src/app/handFlow.js?v=1.7.1";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.7.1";
+import { inputController } from "../src/app/inputController.js?v=1.7.1";
+import { canEnterTable } from "../src/engine/world.js?v=1.7.1";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.7.1";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=1.7.1";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -58,7 +59,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.6.0",
+      appVersion: "1.7.1",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -734,6 +735,51 @@ function assertUniversalClubGoals(content, club, table) {
   assert(clubHtml.includes("Первые руки"), "club goals board must render generated goal names");
 }
 
+
+function assertRiverRoomStoryline(content, club, table) {
+  assert((content.storylines ?? []).length >= 1, "content registry must expose storylines");
+  const story = getClubStorylines(content, createNewCareer(), club.id)[0];
+  assert(story, "River Room must generate a storyline view");
+  assert(story.id === "STORY_RU_BRR_FIRST_NIGHT", "River Room storyline id must be stable");
+  assert(story.characters.length >= 5, "River Room storyline must introduce first characters");
+  assert(story.currentStep?.id === "first_seat", "River Room storyline must start at First Seat");
+
+  let career = createNewCareer();
+  for (let index = 0; index < 3; index += 1) {
+    const applied = applyStorylineProgress({
+      content,
+      career,
+      clubId: club.id,
+      table,
+      tableState: null,
+      result: { winner: "npc", pot: table.bigBlind * 8, showdown: false },
+      player: createNewPlayer(),
+    });
+    career = applied.career;
+  }
+
+  const afterThreeHands = getClubStorylines(content, career, club.id)[0];
+  assert(afterThreeHands.stepIndex >= 1, "storyline must advance after completing first hands objective");
+  assert(afterThreeHands.completedSteps.includes("first_seat"), "storyline must store completed first step");
+
+  const winApplied = applyStorylineProgress({
+    content,
+    career,
+    clubId: club.id,
+    table,
+    tableState: null,
+    result: { winner: "player", pot: table.bigBlind * 12, showdown: false },
+    player: { ...createNewPlayer(), reputation: 2 },
+  });
+  assert(winApplied.completedNow.some((id) => id.includes("first_win")), "storyline must complete first win from player win");
+  assert(winApplied.xpReward > 0 && winApplied.reputationReward > 0, "storyline step must grant rewards");
+
+  const clubHtml = renderScreen(makeBaseState(content, createInitialTableState(), { currentScreen: "club", career: winApplied.career }));
+  assert(clubHtml.includes("Story"), "club screen must render story block");
+  assert(clubHtml.includes("First Night"), "club screen must render story title");
+  assert(clubHtml.includes("Олег"), "club screen must render first story characters");
+}
+
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -779,6 +825,7 @@ function main() {
   assert(content.countries.length >= 1, "at least one country expected");
   assert(content.clubs.length >= 1, "at least one club expected");
   assert(content.tables.length >= 5, "River Room expansion expected multiple tables");
+  assert((content.storylines ?? []).length >= 1, "at least one storyline expected");
   assert(content.npcs.length >= 6, "at least six NPCs expected for table smoke tests");
 
   const career = createNewCareer();
@@ -794,6 +841,7 @@ function main() {
 
   assertRiverRoomExpansion(content, club);
   assertUniversalClubGoals(content, club, table);
+  assertRiverRoomStoryline(content, club, table);
   assertDynamicTableSeats(content, table, club);
   assertHeadsUpBlinds(content, table, club);
   assertSidePots(content, table, club);

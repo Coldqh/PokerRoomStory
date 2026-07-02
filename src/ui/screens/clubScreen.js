@@ -1,10 +1,10 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.7.2";
-import { getClubRoomState } from "../../engine/club.js?v=1.7.2";
-import { getClubGoals } from "../../engine/clubGoals.js?v=1.7.2";
-import { getClubStorylines } from "../../engine/storylines.js?v=1.7.2";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.7.2";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.7.2";
-import { stableIndex } from "./common.js?v=1.7.2";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.7.3";
+import { getClubRoomState } from "../../engine/club.js?v=1.7.3";
+import { getClubGoals } from "../../engine/clubGoals.js?v=1.7.3";
+import { getClubStorylines } from "../../engine/storylines.js?v=1.7.3";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.7.3";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.7.3";
+import { stableIndex } from "./common.js?v=1.7.3";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -17,33 +17,32 @@ export function renderClubScreen(state) {
   const storylines = getClubStorylines(state.content, state.career, state.activeClubId).slice(0, 1);
 
   return `
-    <section class="room-lobby-layout">
-      <article class="panel-soft room-lobby-panel">
-        <div class="room-lobby-head">
-          <div>
-            <span>Cash lobby</span>
-            <strong>${escapeHtml(club.name)}</strong>
+    <section class="club-lobby-shell">
+      ${renderStorylinePanel(storylines)}
+      <section class="room-lobby-layout club-lobby-main-grid">
+        <article class="panel-soft room-lobby-panel club-lobby-home-panel">
+          <div class="room-lobby-head">
+            <div>
+              <span>Cash lobby</span>
+              <strong>${escapeHtml(club.name)}</strong>
+            </div>
+            <em>${tables.length} tables</em>
           </div>
-          <em>${tables.length} tables</em>
-        </div>
-        ${renderClubProgress(levelInfo)}
-        <div class="room-table-list">
-          ${tables.map((table) => renderTableListItem(state, table)).join("")}
-        </div>
-      </article>
+          ${renderClubProgress(levelInfo)}
+          ${renderTablePicker(state, tables)}
+        </article>
 
-      <article class="panel-soft club-journal-panel room-journal-panel">
-        ${renderStorylinePanel(storylines)}
-        ${renderClubGoals(goals)}
-        <div class="section-title"><h3>Журнал</h3><span>${visibleJournal.length ? `${visibleJournal.length} последних` : "последнее"}</span></div>
-        <div class="feed-list club-journal-list">
-          ${visibleJournal.length ? visibleJournal.map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
-        </div>
-      </article>
+        <article class="panel-soft club-journal-panel room-journal-panel">
+          ${renderClubGoals(goals)}
+          <div class="section-title"><h3>Журнал</h3><span>${visibleJournal.length ? `${visibleJournal.length} последних` : "последнее"}</span></div>
+          <div class="feed-list club-journal-list">
+            ${visibleJournal.length ? visibleJournal.map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
+          </div>
+        </article>
+      </section>
     </section>
   `;
 }
-
 
 
 function renderStorylinePanel(storylines = []) {
@@ -52,7 +51,7 @@ function renderStorylinePanel(storylines = []) {
   const step = story.currentStep;
   const reward = formatGoalReward(step.reward);
   const progress = step.type === "club_big_pot" ? `$${step.current} / $${step.target}` : `${step.current} / ${step.target}`;
-  const characters = (story.characters ?? []).slice(0, 5);
+  const characters = getSceneCharacters(story, step);
   const stepLabel = story.completed ? "Completed" : `Step ${story.stepIndex + 1}/${story.steps.length}`;
 
   return `
@@ -63,9 +62,10 @@ function renderStorylinePanel(storylines = []) {
       </div>
       <div class="club-story-cutscene-body">
         <div class="club-story-scene">
-          <strong>${escapeHtml(story.label ?? story.title)}</strong>
           <span>${escapeHtml(story.title)}</span>
+          <strong>${escapeHtml(story.label ?? story.title)}</strong>
           <p>${escapeHtml(story.intro)}</p>
+          ${characters.length ? `<div class="club-story-cast"><span>В сцене</span>${characters.map((character) => `<button class="story-character-chip" type="button" title="${escapeHtml(character.role)} — ${escapeHtml(character.note)}">${escapeHtml(character.name)}</button>`).join("")}</div>` : ""}
         </div>
         <div class="club-story-objective ${story.completed ? "completed" : "active"}">
           <span>Current objective</span>
@@ -78,9 +78,15 @@ function renderStorylinePanel(storylines = []) {
           ${progressBar(step.percent ?? 0)}
         </div>
       </div>
-      ${characters.length ? `<div class="club-story-cast"><span>First characters</span>${characters.map((character) => `<button class="story-character-chip" type="button" title="${escapeHtml(character.role)} — ${escapeHtml(character.note)}">${escapeHtml(character.name)}</button>`).join("")}</div>` : ""}
     </section>
   `;
+}
+
+function getSceneCharacters(story, step) {
+  const all = story.characters ?? [];
+  const ids = new Set(step?.characterIds ?? []);
+  if (!ids.size) return all.slice(0, 2);
+  return all.filter((character) => ids.has(character.id));
 }
 
 function renderClubGoals(goals = []) {
@@ -123,6 +129,62 @@ function formatGoalReward(reward = {}) {
   if (reward.xp) parts.push(`XP +${reward.xp}`);
   if (reward.reputation) parts.push(`Rep +${reward.reputation}`);
   return parts.length ? parts.join(" · ") : "без награды";
+}
+
+function renderTablePicker(state, tables = []) {
+  const activeTable = getLobbyFocusTable(state, tables);
+  const availableCount = tables.filter((table) => canEnterTable(state.player, table).ok).length;
+  return `
+    <section class="club-table-picker-card">
+      <div class="club-table-picker-copy">
+        <span>Tables</span>
+        <strong>Выбор стола вынесен отдельно</strong>
+        <p>Сначала смотри сюжет, цели и прогресс клуба. Столы открывай отдельным окном, когда готов садиться.</p>
+      </div>
+      ${activeTable ? renderFocusedTablePreview(state, activeTable, availableCount, tables.length) : emptyState("Столы пока недоступны.")}
+      <details class="table-picker-shell">
+        <summary class="primary-button table-picker-trigger">Выбрать стол</summary>
+        <div class="table-picker-backdrop" role="dialog" aria-label="Выбор стола">
+          <div class="table-picker-dialog">
+            <div class="table-picker-dialog-head">
+              <div>
+                <span>Table select</span>
+                <strong>Выбери стол</strong>
+              </div>
+              <em>${availableCount}/${tables.length} доступны</em>
+            </div>
+            <div class="room-table-list table-picker-list">
+              ${tables.map((table) => renderTableListItem(state, table)).join("")}
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+  `;
+}
+
+function renderFocusedTablePreview(state, table, availableCount, totalCount) {
+  const access = canEnterTable(state.player, table);
+  const seats = table.seats ?? 6;
+  const occupied = Math.min(seats, table.occupiedSeats ?? Math.max(1, seats - 1));
+  const status = access.ok ? "доступен" : "закрыт";
+  return `
+    <div class="club-table-focus-card ${access.ok ? "open" : "locked"}">
+      <div>
+        <span>Текущий ориентир</span>
+        <strong>${escapeHtml(table.name)}</strong>
+      </div>
+      <p>${escapeHtml(table.tableProfileLabel ?? getTableMoodLabel(table))} · ${escapeHtml(table.gameLabel ?? `$${table.smallBlind}/$${table.bigBlind}`)} · ${occupied}/${seats} seats</p>
+      <em>${availableCount}/${totalCount} столов доступны · ${escapeHtml(status)}</em>
+    </div>
+  `;
+}
+
+function getLobbyFocusTable(state, tables = []) {
+  if (!tables.length) return null;
+  const active = tables.find((table) => table.id === state.tableSession?.tableId);
+  if (active) return active;
+  return tables.find((table) => canEnterTable(state.player, table).ok) ?? tables[0];
 }
 
 function renderTableListItem(state, table) {

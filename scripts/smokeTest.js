@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.7.2";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.7.2";
-import { createClubRoomState } from "../src/engine/club.js?v=1.7.2";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.7.2";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.7.2";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.7.3";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.7.3";
+import { createClubRoomState } from "../src/engine/club.js?v=1.7.3";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.7.3";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.7.3";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,16 +12,16 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.7.2";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.7.2";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.7.2";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.7.2";
-import { handFlow } from "../src/app/handFlow.js?v=1.7.2";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.7.2";
-import { inputController } from "../src/app/inputController.js?v=1.7.2";
-import { canEnterTable } from "../src/engine/world.js?v=1.7.2";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.7.2";
-import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=1.7.2";
+} from "../src/engine/poker.js?v=1.7.3";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.7.3";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.7.3";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.7.3";
+import { handFlow } from "../src/app/handFlow.js?v=1.7.3";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.7.3";
+import { inputController } from "../src/app/inputController.js?v=1.7.3";
+import { canEnterTable } from "../src/engine/world.js?v=1.7.3";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.7.3";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=1.7.3";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -59,7 +59,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.7.2",
+      appVersion: "1.7.3",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,
@@ -741,7 +741,8 @@ function assertRiverRoomStoryline(content, club, table) {
   const story = getClubStorylines(content, createNewCareer(), club.id)[0];
   assert(story, "River Room must generate a storyline view");
   assert(story.id === "STORY_RU_BRR_FIRST_NIGHT", "River Room storyline id must be stable");
-  assert(story.characters.length >= 5, "River Room storyline must introduce first characters");
+  assert(story.characters.length >= 5, "River Room storyline must define first characters");
+  assert((story.currentStep?.characterIds ?? []).length >= 1, "storyline current step must define scene characters");
   assert(story.currentStep?.id === "first_seat", "River Room storyline must start at First Seat");
 
   let career = createNewCareer();
@@ -777,7 +778,10 @@ function assertRiverRoomStoryline(content, club, table) {
   const clubHtml = renderScreen(makeBaseState(content, createInitialTableState(), { currentScreen: "club", career: winApplied.career }));
   assert(clubHtml.includes("Story"), "club screen must render story block");
   assert(clubHtml.includes("First Night"), "club screen must render story title");
-  assert(clubHtml.includes("Олег"), "club screen must render first story characters");
+  assert(clubHtml.includes("Олег"), "club screen must render current scene character");
+  assertNotIncludes(clubHtml, "Виктор", "club screen must not render non-scene story characters in first scene");
+  assert(clubHtml.includes("Выбрать стол"), "club screen must render table picker button");
+  assert(clubHtml.includes("Table select"), "club screen must render separate table select dialog markup");
 }
 
 function assertUiSmoke(content, table, club) {
@@ -793,6 +797,8 @@ function assertUiSmoke(content, table, club) {
 
   const clubHtml = renderScreen(makeBaseState(content, createInitialTableState(), { currentScreen: "club" }));
   assert(clubHtml.includes("Cash lobby"), "club screen must render lobby");
+  assert(clubHtml.includes("Выбрать стол"), "club screen must render table picker button");
+  assert(clubHtml.includes("table-picker-dialog"), "club screen must keep table list inside picker dialog");
 
   const visibleNotSeated = getVisibleScreens({ tableSession: null }).map((screen) => screen.id);
   assert(visibleNotSeated.includes("club") && !visibleNotSeated.includes("table"), "club visible and table hidden before seating");

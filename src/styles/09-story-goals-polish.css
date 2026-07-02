@@ -1,10 +1,31 @@
+.club-lobby-shell {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.club-lobby-main-grid {
+  align-items: start;
+}
+
+.club-story-cutscene,
+.club-story-cutscene *,
+.club-goals-board,
+.club-goals-board *,
+.club-table-picker-card,
+.club-table-picker-card * {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
 .club-story-cutscene {
+  width: 100%;
   border: 1px solid rgba(245, 196, 111, 0.24);
-  border-radius: 22px;
-  padding: 16px;
-  margin-bottom: 16px;
+  border-radius: 24px;
+  padding: 18px;
   background:
-    radial-gradient(circle at 16% 0%, rgba(245, 196, 111, 0.18), transparent 32%),
+    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.18), transparent 32%),
     linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
 }
@@ -12,7 +33,9 @@
 .club-story-cutscene-topline,
 .club-goals-head,
 .club-goal-card-head,
-.club-story-progress-line {
+.club-story-progress-line,
+.table-picker-dialog-head,
+.club-table-focus-card > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -23,7 +46,10 @@
 .club-goals-head span,
 .club-goal-card-head span,
 .club-story-objective > span,
-.club-story-cast > span {
+.club-story-cast > span,
+.club-table-picker-copy span,
+.club-table-focus-card span,
+.table-picker-dialog-head span {
   color: rgba(255, 255, 255, 0.52);
   font-size: 0.72rem;
   font-weight: 800;
@@ -33,11 +59,13 @@
 
 .club-story-cutscene-topline em,
 .club-goals-head em,
-.club-goal-card-head em {
+.club-goal-card-head em,
+.table-picker-dialog-head em {
   color: #f5c46f;
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .club-story-cutscene-body {
@@ -49,49 +77,57 @@
 
 .club-story-scene,
 .club-story-objective,
-.club-goal-card {
+.club-goal-card,
+.club-table-picker-card,
+.club-table-focus-card {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.045);
 }
 
-.club-story-scene {
+.club-story-scene,
+.club-story-objective,
+.club-table-picker-card,
+.club-table-focus-card {
   padding: 14px;
 }
 
 .club-story-scene strong {
   display: block;
+  margin-top: 5px;
   color: #fff;
-  font-size: 1rem;
+  font-size: clamp(1.05rem, 1.4vw, 1.35rem);
   line-height: 1.15;
 }
 
-.club-story-scene span {
+.club-story-scene > span {
   display: block;
-  margin-top: 4px;
   color: rgba(245, 196, 111, 0.88);
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .club-story-scene p,
 .club-story-objective p,
-.club-goal-card p {
+.club-goal-card p,
+.club-table-picker-copy p,
+.club-table-focus-card p {
   margin: 8px 0 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.82rem;
-  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.86rem;
+  line-height: 1.55;
 }
 
-.club-story-objective {
-  padding: 14px;
-}
-
-.club-story-objective strong {
+.club-story-objective strong,
+.club-table-picker-copy strong,
+.club-table-focus-card strong,
+.table-picker-dialog-head strong {
   display: block;
   margin-top: 6px;
   color: #fff;
-  font-size: 0.96rem;
+  font-size: 1rem;
 }
 
 .club-story-progress-line {
@@ -128,6 +164,70 @@
   font-size: 0.75rem;
   font-weight: 800;
   cursor: default;
+  white-space: normal;
+}
+
+.club-table-picker-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.club-table-focus-card em {
+  display: block;
+  margin-top: 8px;
+  color: rgba(245, 196, 111, 0.82);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.table-picker-shell {
+  position: relative;
+}
+
+.table-picker-shell > summary {
+  list-style: none;
+}
+
+.table-picker-shell > summary::-webkit-details-marker {
+  display: none;
+}
+
+.table-picker-trigger {
+  width: 100%;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.table-picker-shell[open] .table-picker-backdrop {
+  display: grid;
+}
+
+.table-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.table-picker-dialog {
+  width: min(1060px, calc(100vw - 28px));
+  max-height: min(82vh, 860px);
+  overflow: auto;
+  border: 1px solid rgba(245, 196, 111, 0.24);
+  border-radius: 24px;
+  padding: 16px;
+  background: linear-gradient(145deg, rgba(18, 20, 27, 0.98), rgba(8, 9, 13, 0.98));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+}
+
+.table-picker-list {
+  margin-top: 14px;
 }
 
 .club-goals-board {
@@ -194,6 +294,27 @@
 
 @media (min-width: 920px) {
   .club-story-cutscene-body {
-    grid-template-columns: minmax(0, 1.08fr) minmax(250px, 0.92fr);
+    grid-template-columns: minmax(420px, 1.25fr) minmax(320px, 0.75fr);
+  }
+
+  .club-story-cutscene {
+    padding: 20px;
+  }
+
+  .club-goals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .table-picker-backdrop {
+    align-items: end;
+    padding: 8px;
+  }
+
+  .table-picker-dialog {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 22px 22px 14px 14px;
   }
 }

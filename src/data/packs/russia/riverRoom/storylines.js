@@ -46,6 +46,7 @@ export const storylines = [
         type: "club_hands",
         target: 3,
         reward: { xp: 30, reputation: 2, clubXp: 20 },
+        characterIds: ["CHAR_RU_BRR_OLEG_RIVER", "CHAR_RU_BRR_MARINA_CASH"],
         completeMessage: "Олег кивает: ты не просто заглянул, ты сел играть.",
       },
       {
@@ -55,6 +56,7 @@ export const storylines = [
         type: "club_wins",
         target: 1,
         reward: { xp: 45, reputation: 2, clubXp: 25 },
+        characterIds: ["CHAR_RU_BRR_MARINA_CASH", "CHAR_RU_BRR_KIRILL_QUIET"],
         completeMessage: "Марина отмечает первую победу. Теперь тебя запомнят у кассы.",
       },
       {
@@ -64,6 +66,7 @@ export const storylines = [
         type: "club_big_pot",
         target: 60,
         reward: { xp: 60, reputation: 3, clubXp: 35 },
+        characterIds: ["CHAR_RU_BRR_ARTEM_TICKET", "CHAR_RU_BRR_OLEG_RIVER"],
         completeMessage: "Артём смеётся у стола. Такой банк уже слышали в комнате.",
       },
       {
@@ -73,6 +76,7 @@ export const storylines = [
         type: "player_reputation",
         target: 5,
         reward: { xp: 70, reputation: 3, clubXp: 45 },
+        characterIds: ["CHAR_RU_BRR_VIKTOR_BACK", "CHAR_RU_BRR_MARINA_CASH"],
         completeMessage: "Виктор смотрит со стороны задней двери. Допуск стал ближе.",
       },
     ],

@@ -1,10 +1,10 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.7.1";
-import { getClubRoomState } from "../../engine/club.js?v=1.7.1";
-import { getClubGoals } from "../../engine/clubGoals.js?v=1.7.1";
-import { getClubStorylines } from "../../engine/storylines.js?v=1.7.1";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.7.1";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.7.1";
-import { stableIndex } from "./common.js?v=1.7.1";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.7.2";
+import { getClubRoomState } from "../../engine/club.js?v=1.7.2";
+import { getClubGoals } from "../../engine/clubGoals.js?v=1.7.2";
+import { getClubStorylines } from "../../engine/storylines.js?v=1.7.2";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.7.2";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.7.2";
+import { stableIndex } from "./common.js?v=1.7.2";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -53,29 +53,51 @@ function renderStorylinePanel(storylines = []) {
   const reward = formatGoalReward(step.reward);
   const progress = step.type === "club_big_pot" ? `$${step.current} / $${step.target}` : `${step.current} / ${step.target}`;
   const characters = (story.characters ?? []).slice(0, 5);
+  const stepLabel = story.completed ? "Completed" : `Step ${story.stepIndex + 1}/${story.steps.length}`;
 
   return `
-    <div class="section-title"><h3>Story</h3><span>${escapeHtml(story.completed ? "completed" : `Step ${story.stepIndex + 1}/${story.steps.length}`)}</span></div>
-    <div class="feed-list club-storyline-list">
-      <div class="feed-line club-storyline-line ${story.completed ? "completed" : "active"}">
-        <strong>${escapeHtml(story.label ?? story.title)}</strong>
-        <span>${escapeHtml(story.title)} · ${escapeHtml(step.title)} · ${escapeHtml(progress)} · ${escapeHtml(reward)}</span>
-        <small>${escapeHtml(step.objective)}</small>
+    <section class="club-story-cutscene" aria-label="Story cutscene">
+      <div class="club-story-cutscene-topline">
+        <span>Story cutscene</span>
+        <em>${escapeHtml(stepLabel)}</em>
       </div>
-      <div class="feed-line club-storyline-intro">
-        <small>${escapeHtml(story.intro)}</small>
+      <div class="club-story-cutscene-body">
+        <div class="club-story-scene">
+          <strong>${escapeHtml(story.label ?? story.title)}</strong>
+          <span>${escapeHtml(story.title)}</span>
+          <p>${escapeHtml(story.intro)}</p>
+        </div>
+        <div class="club-story-objective ${story.completed ? "completed" : "active"}">
+          <span>Current objective</span>
+          <strong>${escapeHtml(step.title)}</strong>
+          <p>${escapeHtml(step.objective)}</p>
+          <div class="club-story-progress-line">
+            <em>${escapeHtml(progress)}</em>
+            <b>${escapeHtml(reward)}</b>
+          </div>
+          ${progressBar(step.percent ?? 0)}
+        </div>
       </div>
-      ${characters.length ? `<div class="feed-line club-storyline-characters"><strong>Characters</strong><span>${characters.map((character) => escapeHtml(character.name)).join(" · ")}</span></div>` : ""}
-    </div>
+      ${characters.length ? `<div class="club-story-cast"><span>First characters</span>${characters.map((character) => `<button class="story-character-chip" type="button" title="${escapeHtml(character.role)} — ${escapeHtml(character.note)}">${escapeHtml(character.name)}</button>`).join("")}</div>` : ""}
+    </section>
   `;
 }
 
 function renderClubGoals(goals = []) {
+  const completed = goals.filter((goal) => goal.completed).length;
   return `
-    <div class="section-title"><h3>Club Goals</h3><span>${goals.filter((goal) => goal.completed).length}/${goals.length}</span></div>
-    <div class="feed-list club-goal-list">
-      ${goals.length ? goals.map(renderClubGoalLine).join("") : emptyState("Цели появятся после открытия клуба.")}
-    </div>
+    <section class="club-goals-board" aria-label="Club Goals">
+      <div class="club-goals-head">
+        <div>
+          <span>Club Goals</span>
+          <strong>Доска клуба</strong>
+        </div>
+        <em>${completed}/${goals.length}</em>
+      </div>
+      <div class="club-goals-grid">
+        ${goals.length ? goals.map(renderClubGoalLine).join("") : emptyState("Цели появятся после открытия клуба.")}
+      </div>
+    </section>
   `;
 }
 
@@ -83,11 +105,16 @@ function renderClubGoalLine(goal) {
   const reward = formatGoalReward(goal.reward);
   const progress = goal.type === "club_big_pot" ? `$${goal.current} / $${goal.target}` : `${goal.current} / ${goal.target}`;
   return `
-    <div class="feed-line club-goal-line ${goal.completed ? "completed" : "active"}">
-      <strong>${goal.completed ? "✓" : "□"} ${escapeHtml(goal.name)}</strong>
-      <span>${escapeHtml(progress)} · ${escapeHtml(reward)}</span>
-      <small>${escapeHtml(goal.description)}</small>
-    </div>
+    <article class="club-goal-card ${goal.completed ? "completed" : "active"}">
+      <div class="club-goal-card-head">
+        <span>${goal.completed ? "Done" : "Goal"}</span>
+        <em>${escapeHtml(progress)}</em>
+      </div>
+      <strong>${escapeHtml(goal.name)}</strong>
+      <p>${escapeHtml(goal.description)}</p>
+      ${progressBar(goal.percent ?? 0)}
+      <div class="club-goal-reward">${escapeHtml(reward)}</div>
+    </article>
   `;
 }
 

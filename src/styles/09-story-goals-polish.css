@@ -1,0 +1,199 @@
+.club-story-cutscene {
+  border: 1px solid rgba(245, 196, 111, 0.24);
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(245, 196, 111, 0.18), transparent 32%),
+    linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.club-story-cutscene-topline,
+.club-goals-head,
+.club-goal-card-head,
+.club-story-progress-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.club-story-cutscene-topline span,
+.club-goals-head span,
+.club-goal-card-head span,
+.club-story-objective > span,
+.club-story-cast > span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.club-story-cutscene-topline em,
+.club-goals-head em,
+.club-goal-card-head em {
+  color: #f5c46f;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.club-story-cutscene-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.club-story-scene,
+.club-story-objective,
+.club-goal-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.club-story-scene {
+  padding: 14px;
+}
+
+.club-story-scene strong {
+  display: block;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.club-story-scene span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(245, 196, 111, 0.88);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.club-story-scene p,
+.club-story-objective p,
+.club-goal-card p {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.club-story-objective {
+  padding: 14px;
+}
+
+.club-story-objective strong {
+  display: block;
+  margin-top: 6px;
+  color: #fff;
+  font-size: 0.96rem;
+}
+
+.club-story-progress-line {
+  margin: 12px 0 8px;
+}
+
+.club-story-progress-line em {
+  color: #fff;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.club-story-progress-line b,
+.club-goal-reward {
+  color: #f5c46f;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.club-story-cast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.story-character-chip {
+  border: 1px solid rgba(245, 196, 111, 0.22);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(245, 196, 111, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: default;
+}
+
+.club-goals-board {
+  margin-bottom: 16px;
+}
+
+.club-goals-head {
+  margin-bottom: 10px;
+}
+
+.club-goals-head strong {
+  display: block;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.club-goals-head em {
+  display: inline-flex;
+  min-width: 42px;
+  justify-content: center;
+  border: 1px solid rgba(245, 196, 111, 0.22);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(245, 196, 111, 0.08);
+}
+
+.club-goals-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.club-goal-card {
+  padding: 12px;
+}
+
+.club-goal-card.completed {
+  border-color: rgba(121, 255, 170, 0.24);
+  background: rgba(80, 210, 132, 0.065);
+}
+
+.club-goal-card-head {
+  margin-bottom: 8px;
+}
+
+.club-goal-card.completed .club-goal-card-head span,
+.club-goal-card.completed .club-goal-card-head em {
+  color: #8cffb4;
+}
+
+.club-goal-card strong {
+  display: block;
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.club-goal-card .progress-bar {
+  margin-top: 10px;
+}
+
+.club-goal-reward {
+  margin-top: 8px;
+}
+
+@media (min-width: 920px) {
+  .club-story-cutscene-body {
+    grid-template-columns: minmax(0, 1.08fr) minmax(250px, 0.92fr);
+  }
+}

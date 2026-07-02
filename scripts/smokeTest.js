@@ -1,8 +1,8 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.7.1";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.7.1";
-import { createClubRoomState } from "../src/engine/club.js?v=1.7.1";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.7.1";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.7.1";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.7.2";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.7.2";
+import { createClubRoomState } from "../src/engine/club.js?v=1.7.2";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.7.2";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.7.2";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,16 +12,16 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.7.1";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.7.1";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.7.1";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.7.1";
-import { handFlow } from "../src/app/handFlow.js?v=1.7.1";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.7.1";
-import { inputController } from "../src/app/inputController.js?v=1.7.1";
-import { canEnterTable } from "../src/engine/world.js?v=1.7.1";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.7.1";
-import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=1.7.1";
+} from "../src/engine/poker.js?v=1.7.2";
+import { decideNpcAction } from "../src/engine/npc.js?v=1.7.2";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.7.2";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.7.2";
+import { handFlow } from "../src/app/handFlow.js?v=1.7.2";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.7.2";
+import { inputController } from "../src/app/inputController.js?v=1.7.2";
+import { canEnterTable } from "../src/engine/world.js?v=1.7.2";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.7.2";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=1.7.2";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -59,7 +59,7 @@ function makeBaseState(content, tableState = createInitialTableState(), patch = 
     log: [],
     settings: { animationSpeed: "instant" },
     system: {
-      appVersion: "1.7.1",
+      appVersion: "1.7.2",
       resultModalOpen: false,
       buyInModal: null,
       betAmountModal: null,

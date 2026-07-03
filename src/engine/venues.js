@@ -1,4 +1,4 @@
-import { applyLifeAction, getLifeView } from "./life.js?v=2.3.0";
+import { applyLifeAction, getLifeView } from "./life.js?v=2.4.0";
 import {
   getLifeAsset,
   getLifeCafeOrder,
@@ -6,9 +6,9 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.3.0";
-import { getClubTables } from "./selectors.js?v=2.3.0";
-import { canEnterClub } from "./world.js?v=2.3.0";
+} from "./lifeContent.js?v=2.4.0";
+import { getClubTables } from "./selectors.js?v=2.4.0";
+import { canEnterClub } from "./world.js?v=2.4.0";
 
 export function getCityVenues(content, cityId = null) {
   return (content?.venues ?? [])
@@ -162,7 +162,7 @@ function isVenueActionAllowed(venue, actionId = "", career = {}) {
   if (venue?.type === "store") return type === "buy" && (venue.inventoryIds ?? []).includes(id);
   if (venue?.type === "cafe") return type === "cafe" && (venue.orderIds ?? []).includes(id);
   if (venue?.type === "job_site") return type === "job" && (venue.jobIds ?? []).includes(id);
-  if (venue?.type === "real_estate_agency") return ["rentHousing", "buyHousing"].includes(type) && (venue.housingIds ?? []).includes(id);
+  if (venue?.type === "real_estate_agency") return ["rentHousing", "buyHousing", "moveHousing"].includes(type) && (venue.housingIds ?? []).includes(id);
   if (venue?.type === "car_dealer") return type === "buyVehicle" && (venue.vehicleIds ?? []).includes(id);
   if (venue?.type === "asset_store") return type === "buyAsset" && (venue.assetIds ?? []).includes(id);
   if (venue?.type === "home") return type === "rest" || type === "use";

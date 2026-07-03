@@ -1,6 +1,6 @@
-import { getLifeView } from "../../engine/life.js?v=2.3.0";
-import { getVenueById } from "../../engine/venues.js?v=2.3.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.3.0";
+import { getLifeView } from "../../engine/life.js?v=2.4.0";
+import { getVenueById } from "../../engine/venues.js?v=2.4.0";
+import { escapeHtml, progressBar } from "../components.js?v=2.4.0";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -19,7 +19,7 @@ export function renderLifeScreen(state) {
         <div class="life-day-card">
           <span>Actions</span>
           <strong>${escapeHtml(String(view.actionsLeft))}/${escapeHtml(String(life.actionsPerDay))}</strong>
-          <p>Rent $${escapeHtml(String(life.rentAmount))} через ${escapeHtml(String(view.daysUntilRent))} дн.</p>
+          <p>${life.rentAmount > 0 ? `Rent $${escapeHtml(String(life.rentAmount))} через ${escapeHtml(String(view.daysUntilRent))} дн.` : "Жильё куплено · аренды нет"}</p>
         </div>
       </article>
 
@@ -34,6 +34,13 @@ export function renderLifeScreen(state) {
         <div>
           <span>Current home</span>
           <strong>${escapeHtml(view.currentHousing.name)}</strong>
+          <p>${escapeHtml(view.currentHousing.district)} · ${escapeHtml(view.currentHousing.address)}</p>
+          <div class="housing-specs life-home-specs">
+            <small>${escapeHtml(String(view.currentHousing.rooms))}к</small>
+            <small>${escapeHtml(String(view.currentHousing.sqm))} м²</small>
+            <small>до ${escapeHtml(String(view.currentHousing.capacity))} чел.</small>
+            <small>${escapeHtml(view.currentHousing.repair)}</small>
+          </div>
           <p>Rest: ${escapeHtml(formatEffect(view.currentHousing.restEffect))}</p>
         </div>
         <button class="primary" data-action="life-action" data-id="rest:home" ${view.canRest ? "" : "disabled"}>Отдохнуть дома</button>
@@ -60,7 +67,10 @@ export function renderLifeScreen(state) {
         <article class="life-section panel-soft">
           <header><span>Property</span><strong>Имущество</strong></header>
           <div class="life-summary-list">
-            <div><span>Жильё</span><strong>${escapeHtml(view.currentHousing.name)}</strong></div>
+            <div><span>Жильё</span><strong>${escapeHtml(view.currentHousing.name)} · ${escapeHtml(view.currentHousing.district)}</strong></div>
+            <div><span>Адрес</span><strong>${escapeHtml(view.currentHousing.address)}</strong></div>
+            <div><span>Площадь</span><strong>${escapeHtml(String(view.currentHousing.rooms))}к · ${escapeHtml(String(view.currentHousing.sqm))} м² · до ${escapeHtml(String(view.currentHousing.capacity))} чел.</strong></div>
+            <div><span>Ремонт</span><strong>${escapeHtml(view.currentHousing.repair)}</strong></div>
             <div><span>Транспорт</span><strong>${escapeHtml(vehicle?.name ?? "Нет")}</strong></div>
             <div><span>Вещи</span><strong>${escapeHtml(assets.length ? assets.map((asset) => asset.name).join(", ") : "Нет")}</strong></div>
             <div><span>Текущий объект</span><strong>${escapeHtml(homeVenue?.name ?? "Город")}</strong></div>

@@ -234,3 +234,71 @@
     grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
   }
 }
+
+.housing-row {
+  align-items: stretch;
+}
+
+.housing-copy {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.housing-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.housing-title-line em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 8px;
+  border: 1px solid rgba(245, 196, 111, 0.24);
+  border-radius: 999px;
+  color: #f5c46f;
+  background: rgba(245, 196, 111, 0.08);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.housing-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.housing-specs small {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.housing-copy p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.life-home-specs {
+  margin-top: 8px;
+}
+
+.home-current-row {
+  border-color: rgba(245, 196, 111, 0.24);
+}

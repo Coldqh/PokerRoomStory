@@ -12,12 +12,12 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.3.0";
+} from "./lifeContent.js?v=2.4.0";
 
 const MAX_NEED = LIFE_LIMITS.maxNeed;
 const MAX_FOCUS = LIFE_LIMITS.maxFocus;
 const ACTIONS_PER_DAY = LIFE_LIMITS.actionsPerDay;
-const RENT_INTERVAL_DAYS = LIFE_LIMITS.rentIntervalDays;
+const DEFAULT_RENT_INTERVAL_DAYS = LIFE_LIMITS.rentIntervalDays;
 
 export function createInitialLifeState() {
   const housing = getLifeHousing("HOUSING_CHEAP_ROOM");
@@ -55,6 +55,10 @@ export function normalizeLifeState(life = {}) {
         stress: life.stress ?? base.needs.stress,
       };
   const housing = getLifeHousing(life.housingId ?? base.housingId);
+  const ownedHousingIds = normalizeHousingIds(life.ownedHousingIds);
+  const ownsCurrentHousing = ownedHousingIds.includes(housing.id);
+  const rentAmount = ownsCurrentHousing ? 0 : clampInt(life.rentAmount ?? housing.rent, housing.rent, 0, 999999);
+
   return {
     ...base,
     ...life,
@@ -70,11 +74,11 @@ export function normalizeLifeState(life = {}) {
     focusTokens: clampInt(life.focusTokens, base.focusTokens, 0, MAX_FOCUS),
     inventory: normalizeInventory(life.inventory),
     housingId: housing.id,
-    ownedHousingIds: safeUniqueIds(life.ownedHousingIds),
+    ownedHousingIds,
     vehicleId: getLifeVehicle(life.vehicleId)?.id ?? null,
     assetIds: safeUniqueIds(life.assetIds),
-    rentDueDay: clampInt(life.rentDueDay, base.rentDueDay, 1, 9999),
-    rentAmount: clampInt(life.rentAmount ?? housing.rent, housing.rent, 1, 999999),
+    rentDueDay: ownsCurrentHousing ? 9999 : clampInt(life.rentDueDay, base.rentDueDay, 1, 9999),
+    rentAmount,
     debt: clampInt(life.debt, base.debt, 0, 999999),
     lastMessage: typeof life.lastMessage === "string" ? life.lastMessage : null,
   };
@@ -83,7 +87,8 @@ export function normalizeLifeState(life = {}) {
 export function getLifeView(career = {}, player = {}) {
   const life = normalizeLifeState(career.life);
   const currentHousing = getLifeHousing(life.housingId);
-  const daysUntilRent = Math.max(0, life.rentDueDay - life.day);
+  const ownsCurrentHousing = life.ownedHousingIds.includes(currentHousing.id);
+  const daysUntilRent = life.rentAmount > 0 ? Math.max(0, life.rentDueDay - life.day) : null;
   const actionsLeft = Math.max(0, life.actionsPerDay - life.actionsToday);
   const bankroll = money(player.bankroll);
   const warnings = [];
@@ -92,22 +97,29 @@ export function getLifeView(career = {}, player = {}) {
   if (life.needs.thirst <= 20) warnings.push("Жажда низкая.");
   if (life.needs.energy < 25) warnings.push("Мало энергии.");
   if (life.needs.stress >= 80) warnings.push("Стресс высокий.");
-  if (bankroll < life.rentAmount && daysUntilRent <= 1) warnings.push("Аренда близко, денег может не хватить.");
+  if (life.rentAmount > 0 && bankroll < life.rentAmount && daysUntilRent <= 1) warnings.push("Аренда близко, денег может не хватить.");
 
   return {
     life,
     currentHousing,
+    ownsCurrentHousing,
     items: LIFE_ITEMS.map((item) => ({ ...item, ownedQty: getInventoryQty(life, item.id), canBuy: bankroll >= item.price })),
     inventory: life.inventory.map((entry) => ({ ...entry, item: getLifeItem(entry.itemId) })).filter((entry) => entry.item),
     cafeOrders: LIFE_CAFE_ORDERS.map((order) => ({ ...order, canUse: bankroll >= order.price && actionsLeft >= order.actionCost })),
     jobs: LIFE_JOBS.map((job) => ({ ...job, canWork: actionsLeft >= job.actionCost && life.needs.energy > 0 })),
-    housing: LIFE_HOUSING.map((housing) => ({
-      ...housing,
-      current: housing.id === life.housingId,
-      owned: life.ownedHousingIds.includes(housing.id),
-      canRent: bankroll >= housing.rent && housing.id !== life.housingId,
-      canBuy: Boolean(housing.purchasePrice && bankroll >= housing.purchasePrice && !life.ownedHousingIds.includes(housing.id)),
-    })),
+    housing: LIFE_HOUSING.map((housing) => {
+      const owned = life.ownedHousingIds.includes(housing.id);
+      const current = housing.id === life.housingId;
+      return {
+        ...housing,
+        current,
+        owned,
+        canRent: bankroll >= housing.rent && !current && !owned,
+        canMove: owned && !current,
+        canBuy: Boolean(housing.purchasePrice && bankroll >= housing.purchasePrice && !owned),
+        rentLabel: owned ? "owned" : `$${housing.rent} / 7 дней`,
+      };
+    }),
     assets: LIFE_ASSETS.map((asset) => ({ ...asset, owned: life.assetIds.includes(asset.id), canBuy: bankroll >= asset.price && !life.assetIds.includes(asset.id) })),
     vehicles: LIFE_VEHICLES.map((vehicle) => ({ ...vehicle, owned: life.vehicleId === vehicle.id, canBuy: bankroll >= vehicle.price && life.vehicleId !== vehicle.id })),
     actionsLeft,
@@ -125,7 +137,13 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
 
   if (!parsed.type) return fail(career, player, "Действие не найдено.");
 
-  let nextLife = { ...life, needs: { ...life.needs }, inventory: [...life.inventory], assetIds: [...life.assetIds], ownedHousingIds: [...life.ownedHousingIds] };
+  let nextLife = {
+    ...life,
+    needs: { ...life.needs },
+    inventory: [...life.inventory],
+    assetIds: [...life.assetIds],
+    ownedHousingIds: [...life.ownedHousingIds],
+  };
   let message = "";
   let nextScreen = null;
   let actionCost = 0;
@@ -178,16 +196,34 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     message = `Отдых: ${housing.name}. ${formatEffect(housing.restEffect)}.`;
   }
 
+  if (parsed.type === "moveHousing") {
+    const housing = getLifeHousing(parsed.id);
+    if (!housing) return failWithLife(career, player, nextLife, "Жильё не найдено.");
+    if (!nextLife.ownedHousingIds.includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё не куплено.");
+    if (nextLife.housingId === housing.id) return failWithLife(career, player, nextLife, "Это текущее жильё.");
+    nextLife.housingId = housing.id;
+    nextLife.rentAmount = 0;
+    nextLife.rentDueDay = 9999;
+    message = `Переезд: ${housing.name}. ${housing.district}. ${housing.rooms}к · ${housing.sqm} м².`;
+  }
+
   if (parsed.type === "rentHousing") {
     const housing = getLifeHousing(parsed.id);
     if (!housing) return failWithLife(career, player, nextLife, "Жильё не найдено.");
     if (nextLife.housingId === housing.id) return failWithLife(career, player, nextLife, "Это жильё уже выбрано.");
-    if (nextPlayer.bankroll < housing.rent) return failWithLife(career, player, nextLife, "Недостаточно денег.");
-    nextPlayer.bankroll -= housing.rent;
-    nextLife.housingId = housing.id;
-    nextLife.rentAmount = housing.rent;
-    nextLife.rentDueDay = nextLife.day + housing.intervalDays;
-    message = `Жильё: ${housing.name}. -$${housing.rent}.`;
+    if (nextLife.ownedHousingIds.includes(housing.id)) {
+      nextLife.housingId = housing.id;
+      nextLife.rentAmount = 0;
+      nextLife.rentDueDay = 9999;
+      message = `Переезд: ${housing.name}. ${housing.district}. ${housing.rooms}к · ${housing.sqm} м².`;
+    } else {
+      if (nextPlayer.bankroll < housing.rent) return failWithLife(career, player, nextLife, "Недостаточно денег.");
+      nextPlayer.bankroll -= housing.rent;
+      nextLife.housingId = housing.id;
+      nextLife.rentAmount = housing.rent;
+      nextLife.rentDueDay = nextLife.day + (housing.intervalDays ?? DEFAULT_RENT_INTERVAL_DAYS);
+      message = `Аренда: ${housing.name}. ${housing.district}. -$${housing.rent}. ${housing.rooms}к · ${housing.sqm} м².`;
+    }
   }
 
   if (parsed.type === "buyHousing") {
@@ -196,11 +232,11 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     if (nextLife.ownedHousingIds.includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё уже куплено.");
     if (nextPlayer.bankroll < housing.purchasePrice) return failWithLife(career, player, nextLife, "Недостаточно денег.");
     nextPlayer.bankroll -= housing.purchasePrice;
-    nextLife.ownedHousingIds = safeUniqueIds([...nextLife.ownedHousingIds, housing.id]);
+    nextLife.ownedHousingIds = normalizeHousingIds([...nextLife.ownedHousingIds, housing.id]);
     nextLife.housingId = housing.id;
     nextLife.rentAmount = 0;
     nextLife.rentDueDay = 9999;
-    message = `Куплено жильё: ${housing.name}. -$${housing.purchasePrice}.`;
+    message = `Куплено жильё: ${housing.name}. ${housing.district}. -$${housing.purchasePrice}. ${housing.rooms}к · ${housing.sqm} м².`;
   }
 
   if (parsed.type === "buyAsset") {
@@ -262,8 +298,10 @@ function advanceDayIfNeeded(life, player) {
     if (nextLife.needs.hunger <= 0) nextLife.needs.stress = clamp(nextLife.needs.stress + 15, 0, MAX_NEED);
     if (nextLife.needs.thirst <= 0) nextLife.needs.energy = clamp(nextLife.needs.energy - 20, 0, MAX_NEED);
 
-    if (nextLife.rentAmount > 0 && nextLife.day >= nextLife.rentDueDay) {
-      const rent = nextLife.rentAmount;
+    const housing = getLifeHousing(nextLife.housingId);
+    const ownsCurrentHousing = nextLife.ownedHousingIds.includes(housing.id);
+    if (!ownsCurrentHousing && nextLife.rentAmount > 0 && nextLife.day >= nextLife.rentDueDay) {
+      const rent = nextLife.rentAmount || housing.rent;
       if (money(nextPlayer.bankroll) >= rent) {
         nextPlayer.bankroll = money(nextPlayer.bankroll) - rent;
         messages.push(`Аренда: -$${rent}.`);
@@ -272,7 +310,7 @@ function advanceDayIfNeeded(life, player) {
         nextLife.needs.stress = clamp(nextLife.needs.stress + 20, 0, MAX_NEED);
         messages.push(`Аренда не оплачена. Долг +$${rent}.`);
       }
-      nextLife.rentDueDay += RENT_INTERVAL_DAYS;
+      nextLife.rentDueDay += housing.intervalDays ?? DEFAULT_RENT_INTERVAL_DAYS;
     }
   }
 
@@ -333,6 +371,11 @@ function normalizeInventory(inventory = []) {
   return inventory
     .map((entry) => ({ itemId: String(entry.itemId ?? ""), qty: clampInt(entry.qty, 0, 0, 999) }))
     .filter((entry) => entry.itemId && entry.qty > 0);
+}
+
+function normalizeHousingIds(value = []) {
+  if (!Array.isArray(value)) return [];
+  return safeUniqueIds(value.map((entry) => getLifeHousing(entry)?.id).filter(Boolean));
 }
 
 function safeUniqueIds(value = []) {

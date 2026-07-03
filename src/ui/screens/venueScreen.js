@@ -1,5 +1,5 @@
-import { getVenueView } from "../../engine/venues.js?v=2.3.0";
-import { escapeHtml } from "../components.js?v=2.3.0";
+import { getVenueView } from "../../engine/venues.js?v=2.4.0";
+import { escapeHtml } from "../components.js?v=2.4.0";
 
 export function renderVenueScreen(state) {
   const venueId = state.activeVenueId ?? state.career?.city?.activeVenueId;
@@ -107,12 +107,27 @@ function renderJobRow(row) {
 
 function renderHousingRow(row) {
   const housing = row.housing;
-  const buyText = housing.purchasePrice ? `$${housing.purchasePrice}` : "locked";
+  const buyText = housing.purchasePrice ? `$${housing.purchasePrice}` : "нельзя купить";
+  const status = row.view?.current ? "Текущее" : row.view?.owned ? "Куплено" : "Доступно";
   return `
-    <div class="life-row ${row.view?.current ? "current" : ""}">
-      <div><strong>${escapeHtml(housing.name)}</strong><span>Rent $${escapeHtml(String(housing.rent))} / 7 days · Rest ${escapeHtml(formatEffect(housing.restEffect))} · Buy ${escapeHtml(String(buyText))}</span></div>
+    <div class="life-row housing-row ${row.view?.current ? "current" : ""}">
+      <div class="housing-copy">
+        <div class="housing-title-line">
+          <strong>${escapeHtml(housing.name)}</strong>
+          <em>${escapeHtml(status)}</em>
+        </div>
+        <span>${escapeHtml(housing.district)} · ${escapeHtml(housing.address)}</span>
+        <div class="housing-specs">
+          <small>${escapeHtml(String(housing.rooms))}к</small>
+          <small>${escapeHtml(String(housing.sqm))} м²</small>
+          <small>до ${escapeHtml(String(housing.capacity))} чел.</small>
+          <small>${escapeHtml(housing.repair)}</small>
+        </div>
+        <p>Аренда $${escapeHtml(String(housing.rent))} / 7 дней · Отдых ${escapeHtml(formatEffect(housing.restEffect))} · Купить ${escapeHtml(String(buyText))}</p>
+      </div>
       <div class="life-row-actions">
-        <button class="small-button" data-action="venue-action" data-id="rentHousing:${escapeHtml(housing.id)}" ${row.canRent ? "" : "disabled"}>Арендовать</button>
+        <button class="small-button" data-action="venue-action" data-id="rentHousing:${escapeHtml(housing.id)}" ${row.canRent ? "" : "disabled"}>Снять</button>
+        <button class="small-button" data-action="venue-action" data-id="moveHousing:${escapeHtml(housing.id)}" ${row.view?.canMove ? "" : "disabled"}>Переехать</button>
         <button class="small-button" data-action="venue-action" data-id="buyHousing:${escapeHtml(housing.id)}" ${row.canBuy ? "" : "disabled"}>Купить</button>
       </div>
     </div>
@@ -140,8 +155,21 @@ function renderAssetRow(row) {
 function renderHomeRow(row) {
   if (row.kind === "home_rest") {
     return `
-      <div class="life-row">
-        <div><strong>Отдых</strong><span>${escapeHtml(formatEffect(row.housing.restEffect))}</span></div>
+      <div class="life-row housing-row home-current-row">
+        <div class="housing-copy">
+          <div class="housing-title-line">
+            <strong>Отдых</strong>
+            <em>${escapeHtml(row.housing.name)}</em>
+          </div>
+          <span>${escapeHtml(row.housing.district ?? "")} · ${escapeHtml(row.housing.address ?? "")}</span>
+          <div class="housing-specs">
+            <small>${escapeHtml(String(row.housing.rooms ?? 1))}к</small>
+            <small>${escapeHtml(String(row.housing.sqm ?? "—"))} м²</small>
+            <small>до ${escapeHtml(String(row.housing.capacity ?? 1))} чел.</small>
+            <small>${escapeHtml(row.housing.repair ?? "ремонт")}</small>
+          </div>
+          <p>${escapeHtml(formatEffect(row.housing.restEffect))}</p>
+        </div>
         <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Отдохнуть</button>
       </div>
     `;

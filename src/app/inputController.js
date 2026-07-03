@@ -1,11 +1,15 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=1.9.1";
-import { getClubTables } from "../engine/selectors.js?v=1.9.1";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.9.1";
+import { clearSave, importSaveText } from "../engine/save.js?v=1.9.2";
+import { getClubTables } from "../engine/selectors.js?v=1.9.2";
+import { canEnterClub } from "../engine/world.js?v=1.9.2";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.9.2";
 
 export const inputController = {
   handleClick(event) {
     const target = event.target.closest("[data-action]");
-    if (!target) return;
+    if (!target) {
+      if (isModalBackdrop(event.target)) this.closeOpenWindows();
+      return;
+    }
 
     const action = target.dataset.action;
     const id = target.dataset.id;
@@ -44,12 +48,37 @@ export const inputController = {
       "close-opponent-read",
       "top-up-table-stack",
       "select-club",
+      "open-club-picker",
+      "open-table-picker",
+      "close-modal",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
+
+    if (action === "open-table-picker") {
+      this.setSystem({ tablePickerOpen: true, clubPickerOpen: false });
+      return;
+    }
+
+    if (action === "open-club-picker") {
+      this.setSystem({ clubPickerOpen: true, tablePickerOpen: false });
+      return;
+    }
+
+    if (action === "close-modal") {
+      if (target.classList?.contains("table-picker-backdrop") && event.target.closest(".table-picker-dialog")) return;
+      if (target.classList?.contains("club-picker-backdrop") && event.target.closest(".club-picker-dialog")) return;
+      this.closeOpenWindows();
+      return;
+    }
 
     if (action === "select-club") {
       const club = this.content.byId.clubs[id];
       if (!club) return;
+      const access = canEnterClub(this.state.player, this.state.career, club);
+      if (!access.ok) {
+        this.setSystem({ notice: access.reason, clubPickerOpen: true });
+        return;
+      }
       const tables = getClubTables(this.content, id);
       this.menuOpen = false;
       this.setState({
@@ -60,6 +89,8 @@ export const inputController = {
           ...this.state.system,
           notice: null,
           buyInModal: null,
+          clubPickerOpen: false,
+          tablePickerOpen: false,
         },
       });
       return;
@@ -67,6 +98,7 @@ export const inputController = {
 
     if (action === "select-table") {
       this.menuOpen = false;
+      this.setSystem({ tablePickerOpen: false, clubPickerOpen: false });
       if (this.state.tableSession?.tableId === id) {
         this.setState({ activeTableId: id, currentScreen: "table" });
       } else {
@@ -197,6 +229,17 @@ export const inputController = {
     }
   },
 
+  closeOpenWindows() {
+    this.setSystem({
+      tablePickerOpen: false,
+      clubPickerOpen: false,
+      buyInModal: null,
+      betAmountModal: null,
+      opponentReadSeatId: null,
+      resultModalOpen: false,
+    });
+  },
+
   handleChange(event) {
     const input = event.target;
     if (input.matches?.('[data-action="buy-in-input"]')) {
@@ -226,3 +269,12 @@ export const inputController = {
       });
   }
 };
+
+function isModalBackdrop(target) {
+  return Boolean(target?.classList?.contains("table-picker-backdrop")
+    || target?.classList?.contains("club-picker-backdrop")
+    || target?.classList?.contains("buyin-modal-layer")
+    || target?.classList?.contains("bet-modal-layer")
+    || target?.classList?.contains("opponent-read-layer")
+    || target?.classList?.contains("result-modal-layer"));
+}

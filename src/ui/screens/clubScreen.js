@@ -1,17 +1,14 @@
-import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=1.9.1";
-import { getClubRoomState } from "../../engine/club.js?v=1.9.1";
-import { getClubGoals } from "../../engine/clubGoals.js?v=1.9.1";
-import { getClubStorylines } from "../../engine/storylines.js?v=1.9.1";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.9.1";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.9.1";
-import { stableIndex } from "./common.js?v=1.9.1";
+import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=1.9.2";
+import { getClubRoomState } from "../../engine/club.js?v=1.9.2";
+import { getClubGoals } from "../../engine/clubGoals.js?v=1.9.2";
+import { getClubStorylines } from "../../engine/storylines.js?v=1.9.2";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.9.2";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.9.2";
+import { stableIndex } from "./common.js?v=1.9.2";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
   const { club, tables } = context;
-  const room = getClubRoomState(state.content, state.clubNpcState, state.activeClubId);
-  const journal = room.journal ?? [];
-  const visibleJournal = journal.slice(-12).reverse();
   const levelInfo = getClubLevelInfo(state.content, state.career, state.activeClubId);
   const goals = getClubGoals(state.content, state.career, state.activeClubId).slice(0, 5);
   const storylines = getClubStorylines(state.content, state.career, state.activeClubId).slice(0, 1);
@@ -19,10 +16,9 @@ export function renderClubScreen(state) {
 
   return `
     <section class="club-lobby-shell">
-      ${renderClubSelector(state, club, cityClubs)}
       ${renderStorylinePanel(storylines)}
-      <section class="room-lobby-layout club-lobby-main-grid">
-        <article class="panel-soft room-lobby-panel club-lobby-home-panel">
+      <section class="club-lobby-main-grid club-lobby-clean-grid">
+        <article class="panel-soft club-lobby-home-panel">
           <div class="room-lobby-head">
             <div>
               <span>Cash lobby</span>
@@ -31,34 +27,67 @@ export function renderClubScreen(state) {
             <em>${tables.length} tables</em>
           </div>
           ${renderClubProgress(levelInfo)}
-          ${renderTablePicker(state, tables)}
+          ${renderClubActions(state, club, cityClubs, tables)}
         </article>
 
-        <article class="panel-soft club-journal-panel room-journal-panel">
+        <article class="panel-soft club-goals-panel">
           ${renderClubGoals(goals)}
-          <div class="section-title"><h3>Журнал</h3><span>${visibleJournal.length ? `${visibleJournal.length} последних` : "последнее"}</span></div>
-          <div class="feed-list club-journal-list">
-            ${visibleJournal.length ? visibleJournal.map((line) => `<div class="feed-line journal-${escapeHtml(line.type ?? "club")}">${escapeHtml(line.text ?? line)}</div>`).join("") : emptyState("Пока пусто.")}
-          </div>
         </article>
       </section>
+      ${renderClubPickerModal(state, club, cityClubs)}
+      ${renderTablePickerModal(state, tables)}
     </section>
   `;
 }
 
-
-function renderClubSelector(state, activeClub, clubs = []) {
-  if (clubs.length <= 1) return "";
+function renderClubActions(state, activeClub, clubs = [], tables = []) {
+  const availableTables = tables.filter((table) => canEnterTable(state.player, table).ok).length;
+  const clubCount = clubs.length;
+  const hasClubPicker = clubCount > 1;
   return `
-    <section class="club-location-strip" aria-label="Club locations">
-      <div class="club-location-head">
-        <span>Locations</span>
-        <strong>Клубы города</strong>
-      </div>
-      <div class="club-location-list">
-        ${clubs.map((club) => renderClubSelectorItem(state, activeClub, club)).join("")}
-      </div>
+    <section class="club-action-grid" aria-label="Club actions">
+      <article class="club-action-card primary-action">
+        <div>
+          <span>Play</span>
+          <strong>Играть за столом</strong>
+          <p>Выбери лимит, состав и buy-in в отдельном окне.</p>
+        </div>
+        <em>${availableTables}/${tables.length} столов доступны</em>
+        <button class="primary club-action-button" type="button" data-action="open-table-picker">Выбрать стол</button>
+      </article>
+      ${hasClubPicker ? `
+        <article class="club-action-card">
+          <div>
+            <span>Locations</span>
+            <strong>Клубы города</strong>
+            <p>Текущий клуб: ${escapeHtml(activeClub.name)}. Новые клубы открываются после завершения маршрута.</p>
+          </div>
+          <em>${clubCount} клуба в городе</em>
+          <button class="small-button club-action-button" type="button" data-action="open-club-picker">Выбрать клуб</button>
+        </article>
+      ` : ""}
     </section>
+  `;
+}
+
+function renderClubPickerModal(state, activeClub, clubs = []) {
+  if (clubs.length <= 1) return "";
+  const open = Boolean(state.system?.clubPickerOpen);
+  return `
+    <div class="club-picker-backdrop ${open ? "is-open" : ""}" data-action="close-modal" role="dialog" aria-modal="true" aria-label="Выбор клуба">
+      <div class="club-picker-dialog panel-soft">
+        <div class="club-picker-dialog-head">
+          <div>
+            <span>Moscow clubs</span>
+            <strong>Выбери клуб</strong>
+          </div>
+          <button class="drawer-close" type="button" data-action="close-modal" aria-label="Закрыть">×</button>
+        </div>
+        <div class="club-location-list">
+          ${clubs.map((club) => renderClubSelectorItem(state, activeClub, club)).join("")}
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -66,12 +95,14 @@ function renderClubSelectorItem(state, activeClub, club) {
   const access = canEnterClub(state.player, state.career, club);
   const active = activeClub?.id === club.id;
   const tables = club.tables?.length ?? 0;
+  const story = getClubStorylines(state.content, state.career, club.id)[0];
+  const routeLabel = story ? (story.completed ? "Route complete" : `Route ${story.stepIndex + 1}/${story.steps.length}`) : "No route";
   const label = active ? "Текущий" : access.ok ? "Открыт" : "Закрыт";
   return `
     <button class="club-location-card ${active ? "active" : ""} ${access.ok ? "open" : "locked"}" type="button" data-action="select-club" data-id="${escapeHtml(club.id)}" ${access.ok ? "" : "disabled"}>
       <span>${escapeHtml(label)}</span>
       <strong>${escapeHtml(club.name)}</strong>
-      <em>${escapeHtml(club.tier ?? "Club")} · ${tables} tables</em>
+      <em>${escapeHtml(club.tier ?? "Club")} · ${tables} tables · ${escapeHtml(routeLabel)}</em>
       ${access.ok ? "" : `<small>${escapeHtml(access.reason)}</small>`}
     </button>
   `;
@@ -172,35 +203,27 @@ function formatGoalReward(reward = {}) {
   return parts.length ? parts.join(" · ") : "без награды";
 }
 
-function renderTablePicker(state, tables = []) {
-  const activeTable = getLobbyFocusTable(state, tables);
+function renderTablePickerModal(state, tables = []) {
+  const open = Boolean(state.system?.tablePickerOpen);
   const availableCount = tables.filter((table) => canEnterTable(state.player, table).ok).length;
   return `
-    <section class="club-table-picker-card">
-      <div class="club-table-picker-copy">
-        <span>Tables</span>
-        <strong>Выбор стола вынесен отдельно</strong>
-        <p>Сначала смотри сюжет, цели и прогресс клуба. Столы открывай отдельным окном, когда готов садиться.</p>
-      </div>
-      ${activeTable ? renderFocusedTablePreview(state, activeTable, availableCount, tables.length) : emptyState("Столы пока недоступны.")}
-      <details class="table-picker-shell">
-        <summary class="primary-button table-picker-trigger">Выбрать стол</summary>
-        <div class="table-picker-backdrop" role="dialog" aria-label="Выбор стола">
-          <div class="table-picker-dialog">
-            <div class="table-picker-dialog-head">
-              <div>
-                <span>Table select</span>
-                <strong>Выбери стол</strong>
-              </div>
-              <em>${availableCount}/${tables.length} доступны</em>
-            </div>
-            <div class="room-table-list table-picker-list">
-              ${tables.map((table) => renderTableListItem(state, table)).join("")}
-            </div>
+    <div class="table-picker-backdrop ${open ? "is-open" : ""}" data-action="close-modal" role="dialog" aria-modal="true" aria-label="Выбор стола">
+      <div class="table-picker-dialog panel-soft">
+        <div class="table-picker-dialog-head">
+          <div>
+            <span>Table select</span>
+            <strong>Выбери стол</strong>
+          </div>
+          <div class="table-picker-dialog-actions">
+            <em>${availableCount}/${tables.length} доступны</em>
+            <button class="drawer-close" type="button" data-action="close-modal" aria-label="Закрыть">×</button>
           </div>
         </div>
-      </details>
-    </section>
+        <div class="room-table-list table-picker-list">
+          ${tables.map((table) => renderTableListItem(state, table)).join("")}
+        </div>
+      </div>
+    </div>
   `;
 }
 

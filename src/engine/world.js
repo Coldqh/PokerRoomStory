@@ -1,4 +1,4 @@
-import { getClubNpcs, getClubTables } from "./selectors.js?v=1.9.1";
+import { getClubNpcs, getClubTables } from "./selectors.js?v=1.9.2";
 
 export function getClubContext(content, clubId) {
   const club = content.byId.clubs[clubId];
@@ -14,12 +14,17 @@ export function getClubContext(content, clubId) {
 
 export function canEnterClub(player, career = {}, club) {
   if (!club) return { ok: false, reason: "Клуб не найден." };
+  const req = club.unlockRequirement ?? null;
+
+  if (req?.storyCompleted && !isStoryCompleted(career, req.storyCompleted)) {
+    return { ok: false, reason: "Заверши все сцены River Room." };
+  }
+
   const unlocked = new Set(career?.unlockedClubs ?? []);
-  if (unlocked.has(club.id) || !club.unlockRequirement) return { ok: true, reason: null };
+  if (unlocked.has(club.id) || !req) return { ok: true, reason: null };
 
   const bankroll = Number(player?.bankroll ?? 0);
   const reputation = Number(player?.reputation ?? 0);
-  const req = club.unlockRequirement ?? {};
   if (req.bankroll && bankroll < req.bankroll) return { ok: false, reason: `Нужно минимум $${req.bankroll} банкролла.` };
   if (req.reputation && reputation < req.reputation) return { ok: false, reason: `Нужно ${req.reputation} репутации.` };
   return { ok: true, reason: null };
@@ -42,4 +47,8 @@ export function canEnterTable(player, table) {
   }
 
   return { ok: true, reason: null };
+}
+
+function isStoryCompleted(career = {}, storyId) {
+  return Boolean(career?.storyProgress?.[storyId]?.completed);
 }

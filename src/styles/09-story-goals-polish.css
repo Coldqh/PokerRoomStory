@@ -428,3 +428,147 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* v1.9.2 — clean club lobby + modal pickers */
+.club-lobby-clean-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.club-goals-panel .club-goals-board {
+  margin-bottom: 0;
+}
+
+.club-action-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.club-action-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(245, 196, 111, 0.11), transparent 30%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.club-action-card.primary-action {
+  border-color: rgba(245, 196, 111, 0.24);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+}
+
+.club-action-card span,
+.club-picker-dialog-head span,
+.table-picker-dialog-actions em {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.club-action-card strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.club-action-card p {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.club-action-card em {
+  color: #f5c46f;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.club-action-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.table-picker-backdrop,
+.club-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.table-picker-backdrop.is-open,
+.club-picker-backdrop.is-open {
+  display: grid;
+}
+
+.table-picker-dialog,
+.club-picker-dialog {
+  width: min(1060px, calc(100vw - 28px));
+  max-height: min(82vh, 860px);
+  overflow: auto;
+  border: 1px solid rgba(245, 196, 111, 0.24);
+  border-radius: 24px;
+  padding: 16px;
+  background: linear-gradient(145deg, rgba(18, 20, 27, 0.98), rgba(8, 9, 13, 0.98));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+}
+
+.club-picker-dialog-head,
+.table-picker-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.club-picker-dialog-head strong {
+  display: block;
+  margin-top: 6px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.club-picker-dialog .club-location-list {
+  margin-top: 14px;
+}
+
+@media (min-width: 920px) {
+  .club-lobby-clean-grid {
+    grid-template-columns: minmax(420px, 0.9fr) minmax(420px, 1.1fr);
+  }
+
+  .club-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .table-picker-backdrop,
+  .club-picker-backdrop {
+    align-items: end;
+    padding: 8px;
+  }
+
+  .table-picker-dialog,
+  .club-picker-dialog {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 22px 22px 14px 14px;
+  }
+}

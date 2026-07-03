@@ -1,5 +1,5 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.9.1";
-import { normalizeClubProgress } from "./progression.js?v=1.9.1";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.9.2";
+import { normalizeClubProgress } from "./progression.js?v=1.9.2";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },
@@ -196,6 +196,11 @@ export function updateCareerUnlocks(player, career, content) {
     const alreadyUnlocked = unlockedClubs.has(club.id);
     const bankrollOk = !req?.bankroll || player.bankroll >= req.bankroll;
     const reputationOk = !req?.reputation || player.reputation >= req.reputation;
+    const storyOk = !req?.storyCompleted || Boolean(normalizedCareer.storyProgress?.[req.storyCompleted]?.completed);
+    if (req?.storyCompleted && !storyOk) {
+      unlockedClubs.delete(club.id);
+      continue;
+    }
     if (!req || alreadyUnlocked || (bankrollOk && reputationOk)) {
       unlockedClubs.add(club.id);
       if (club.cityId) unlockedCities.add(club.cityId);

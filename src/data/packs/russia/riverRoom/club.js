@@ -77,7 +77,7 @@ export const clubs = [
       "NPC_RU_MUC_T1_004",
     ],
     eventTags: ["second_location", "regular_pressure", "mid_stakes"],
-    unlockRequirement: { bankroll: 1000, reputation: 18 },
+    unlockRequirement: { storyCompleted: "STORY_RU_BRR_FIRST_NIGHT" },
     visualTheme: "underground_private_room",
     glossaryPackId: "GLOSSARY_CORE_POKER_RU_V0_1",
     collectionPackId: "COLLECTION_CORE_V0_1",

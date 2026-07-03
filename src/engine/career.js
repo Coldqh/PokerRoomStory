@@ -1,6 +1,6 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.1.0";
-import { normalizeClubProgress } from "./progression.js?v=2.1.0";
-import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.1.0";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.2.0";
+import { normalizeClubProgress } from "./progression.js?v=2.2.0";
+import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.2.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },

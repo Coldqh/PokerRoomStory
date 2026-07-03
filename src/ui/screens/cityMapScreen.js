@@ -1,5 +1,5 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.0.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.0.0";
+import { getCityMapView } from "../../engine/locations.js?v=2.2.0";
+import { escapeHtml, progressBar } from "../components.js?v=2.2.0";
 
 export function renderCityMapScreen(state) {
   const activeClub = state.content?.byId?.clubs?.[state.activeClubId] ?? null;

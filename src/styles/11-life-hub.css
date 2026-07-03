@@ -1,0 +1,149 @@
+.life-screen {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.life-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: stretch;
+  padding: 20px;
+  border: 1px solid rgba(245, 196, 111, 0.18);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.14), transparent 34%),
+    linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
+}
+
+.life-hero span,
+.life-stat-card span,
+.life-action-card span,
+.life-warning-panel span,
+.life-last-message span {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.life-hero h2 {
+  margin: 4px 0 0;
+  color: #fff;
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  line-height: 1;
+}
+
+.life-hero p,
+.life-stat-card p,
+.life-action-card p,
+.life-warning-panel p,
+.life-last-message p {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+}
+
+.life-day-card,
+.life-stat-card,
+.life-action-card,
+.life-warning-panel,
+.life-last-message {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.life-day-card {
+  min-width: 160px;
+  padding: 16px;
+  text-align: right;
+}
+
+.life-day-card strong,
+.life-stat-card strong,
+.life-action-card strong {
+  display: block;
+  margin-top: 6px;
+  color: #fff;
+}
+
+.life-day-card strong {
+  color: #f5c46f;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.life-stats-grid,
+.life-actions-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.life-stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.life-stat-card {
+  padding: 14px;
+}
+
+.life-stat-card .progress-bar {
+  margin-top: 10px;
+}
+
+.life-warning-panel,
+.life-last-message {
+  padding: 14px;
+}
+
+.life-warning-panel {
+  border-color: rgba(245, 196, 111, 0.28);
+  background: rgba(245, 196, 111, 0.07);
+}
+
+.life-actions-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.life-action-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+}
+
+.life-action-card em {
+  display: block;
+  margin-top: 10px;
+  color: #f5c46f;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.life-action-card.disabled {
+  opacity: 0.58;
+}
+
+.life-action-card button {
+  min-width: 104px;
+}
+
+@media (max-width: 920px) {
+  .life-hero,
+  .life-action-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .life-day-card {
+    text-align: left;
+  }
+
+  .life-stats-grid,
+  .life-actions-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

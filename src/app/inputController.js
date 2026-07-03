@@ -1,7 +1,9 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.0.0";
-import { getClubTables } from "../engine/selectors.js?v=2.0.0";
-import { canEnterClub } from "../engine/world.js?v=2.0.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.0.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.1.0";
+import { applyLifeAction } from "../engine/life.js?v=2.1.0";
+import { normalizePlayer } from "../engine/career.js?v=2.1.0";
+import { getClubTables } from "../engine/selectors.js?v=2.1.0";
+import { canEnterClub } from "../engine/world.js?v=2.1.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.1.0";
 
 export const inputController = {
   handleClick(event) {
@@ -58,8 +60,31 @@ export const inputController = {
       "open-club-picker",
       "open-table-picker",
       "close-modal",
+      "life-action",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
+
+
+    if (action === "life-action") {
+      const result = applyLifeAction({ actionId: id, career: this.state.career, player: this.state.player });
+      if (!result.ok) {
+        this.setSystem({ notice: result.message });
+        return;
+      }
+      this.setState({
+        career: result.career,
+        player: normalizePlayer(result.player),
+        currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : this.state.currentScreen,
+        log: [...(this.state.log ?? []), result.message].slice(-100),
+        system: {
+          ...this.state.system,
+          notice: result.message,
+          tablePickerOpen: false,
+          clubPickerOpen: false,
+        },
+      });
+      return;
+    }
 
     if (action === "open-table-picker") {
       this.setSystem({ tablePickerOpen: true, clubPickerOpen: false });

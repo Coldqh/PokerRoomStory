@@ -1,10 +1,10 @@
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=1.1.0";
-import { normalizeClubNpcState } from "../engine/club.js?v=1.1.0";
-import { createInitialTableState } from "../engine/poker.js?v=1.1.0";
-import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=1.1.0";
-import { getDefaultStartLocation } from "../engine/selectors.js?v=1.1.0";
-import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=1.1.0";
-import { getRuntimeStatus } from "../engine/update.js?v=1.1.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=2.1.0";
+import { normalizeClubNpcState } from "../engine/club.js?v=2.1.0";
+import { createInitialTableState } from "../engine/poker.js?v=2.1.0";
+import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=2.1.0";
+import { getDefaultStartLocation } from "../engine/selectors.js?v=2.1.0";
+import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=2.1.0";
+import { getRuntimeStatus } from "../engine/update.js?v=2.1.0";
 
 export const stateController = {
   createInitialState() {
@@ -17,12 +17,12 @@ export const stateController = {
       career: ensureActiveChallenges(this.content, createNewCareer()),
       knownNpcIds: [],
       clubNpcState: normalizeClubNpcState(this.content, {}, startLocation.clubId),
-      currentScreen: "club",
+      currentScreen: "life",
       activeClubId: startLocation.clubId,
       activeTableId: startLocation.tableId,
       tableSession: null,
       tableState: createInitialTableState(),
-      log: [`Patch v${APP_VERSION} · living club.`],
+      log: [`Patch v${APP_VERSION} · life hub.`],
       settings: createDefaultSettings(),
       system: this.createSystemState(saveMeta),
     };

@@ -1,15 +1,17 @@
-import { renderCityMapScreen } from "./cityMapScreen.js?v=2.0.0";
-import { renderClubScreen } from "./clubScreen.js?v=2.0.0";
-import { renderTableScreen } from "./tableScreen.js?v=2.0.0";
-import { renderCareerScreen } from "./careerScreen.js?v=2.0.0";
-import { renderTasksScreen } from "./tasksScreen.js?v=2.0.0";
-import { renderNpcScreen } from "./npcScreen.js?v=2.0.0";
-import { renderGlossaryScreen } from "./glossaryScreen.js?v=2.0.0";
-import { renderCollectionsScreen } from "./collectionsScreen.js?v=2.0.0";
-import { renderSettingsScreen } from "./settingsScreen.js?v=2.0.0";
-import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=2.0.0";
+import { renderLifeScreen } from "./lifeScreen.js?v=2.1.0";
+import { renderCityMapScreen } from "./cityMapScreen.js?v=2.1.0";
+import { renderClubScreen } from "./clubScreen.js?v=2.1.0";
+import { renderTableScreen } from "./tableScreen.js?v=2.1.0";
+import { renderCareerScreen } from "./careerScreen.js?v=2.1.0";
+import { renderTasksScreen } from "./tasksScreen.js?v=2.1.0";
+import { renderNpcScreen } from "./npcScreen.js?v=2.1.0";
+import { renderGlossaryScreen } from "./glossaryScreen.js?v=2.1.0";
+import { renderCollectionsScreen } from "./collectionsScreen.js?v=2.1.0";
+import { renderSettingsScreen } from "./settingsScreen.js?v=2.1.0";
+import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=2.1.0";
 
 export const SCREENS = [
+  { id: "life", label: "Жизнь" },
   { id: "locations", label: "Карта" },
   { id: "club", label: "Клуб" },
   { id: "table", label: "Стол" },
@@ -34,7 +36,8 @@ export function renderScreen(state) {
   const seated = Boolean(state.tableSession?.tableId);
   const currentScreen = seated && state.currentScreen === "club" ? "table" : !seated && state.currentScreen === "table" ? "club" : state.currentScreen;
   let screen = "";
-  if (currentScreen === "locations") screen = renderCityMapScreen(state);
+  if (currentScreen === "life") screen = renderLifeScreen(state);
+  else if (currentScreen === "locations") screen = renderCityMapScreen(state);
   else if (currentScreen === "club") screen = renderClubScreen(state);
   else if (currentScreen === "table") screen = renderTableScreen(state);
   else if (currentScreen === "career") screen = renderCareerScreen(state);
@@ -43,6 +46,6 @@ export function renderScreen(state) {
   else if (currentScreen === "glossary") screen = renderGlossaryScreen(state);
   else if (currentScreen === "collections") screen = renderCollectionsScreen(state);
   else if (currentScreen === "settings") screen = renderSettingsScreen(state);
-  else screen = renderCityMapScreen(state);
+  else screen = renderLifeScreen(state);
   return `${screen}${renderBuyInModal(state)}${renderBetAmountModal(state)}`;
 }

@@ -33,7 +33,7 @@ export function applyStorylineProgress({ content, career = {}, clubId, table = n
     }
 
     const current = Math.max(0, Math.round(Number(saved.current ?? 0) || 0));
-    const nextCurrent = getNextStepValue(step, current, { clubId, table, tableState, result, player });
+    const nextCurrent = getNextStepValue(step, current, { career, clubId, table, tableState, result, player });
     const stepCompleted = nextCurrent >= step.target;
     const completedSteps = [...new Set([...(saved.completedSteps ?? []), ...(stepCompleted ? [step.id] : [])])];
     const nextStepIndex = stepCompleted ? saved.stepIndex + 1 : saved.stepIndex;
@@ -46,6 +46,7 @@ export function applyStorylineProgress({ content, career = {}, clubId, table = n
       stepIndex: Math.min(nextStepIndex, story.steps.length - 1),
       completedSteps,
       completed: storyCompleted,
+      unlocked: storyCompleted ? (step.unlocks ?? story.unlocks ?? saved.unlocked ?? null) : (saved.unlocked ?? null),
       updatedAt: new Date().toISOString(),
     };
 
@@ -57,6 +58,8 @@ export function applyStorylineProgress({ content, career = {}, clubId, table = n
     reputationReward += Math.max(0, Math.round(Number(reward.reputation ?? 0) || 0));
     messages.push(`Story: ${story.title} · ${step.title} · ${formatStoryReward(reward)}`);
     if (step.completeMessage) messages.push(step.completeMessage);
+    const unlock = step.unlocks ?? (storyCompleted ? story.unlocks : null);
+    if (unlock?.clubLabel) messages.push(`Новая локация: ${unlock.clubLabel}`);
   }
 
   return {
@@ -84,6 +87,7 @@ function buildStoryView(storyline, saved = null) {
     ...storyline,
     stepIndex,
     completed,
+    unlocked: progress.unlocked ?? (completed ? storyline.unlocks : null),
     currentStep: {
       ...currentStep,
       current: visibleCurrent,
@@ -94,15 +98,28 @@ function buildStoryView(storyline, saved = null) {
   };
 }
 
-function getNextStepValue(step, current, { table, result, player }) {
-  if (table?.clubId !== step.clubId && step.clubId) return current;
+function getNextStepValue(step, current, { career, clubId, table, result, player }) {
+  const stepClubId = step.clubId ?? null;
+  if (stepClubId && stepClubId !== clubId) return current;
+  if (step.tableId && table?.id !== step.tableId) return current;
+  if (!step.tableId && table?.clubId && table.clubId !== clubId) return current;
 
   if (step.type === "club_hands") return current + 1;
+  if (step.type === "table_hands") return current + 1;
   if (step.type === "club_wins") return result?.winner === "player" ? current + 1 : current;
+  if (step.type === "table_wins") return result?.winner === "player" ? current + 1 : current;
+  if (step.type === "club_showdowns") return result?.showdown ? current + 1 : current;
   if (step.type === "club_big_pot") return result?.winner === "player" ? Math.max(current, Math.round(Number(result?.pot ?? 0) || 0)) : current;
   if (step.type === "player_reputation") return Math.max(current, Math.round(Number(player?.reputation ?? 0) || 0));
+  if (step.type === "player_bankroll") return Math.max(current, Math.round(Number(player?.bankroll ?? 0) || 0));
+  if (step.type === "room_mastery_level") return Math.max(current, getClubMasteryLevel(career, clubId));
 
   return current;
+}
+
+function getClubMasteryLevel(career = {}, clubId) {
+  const value = career?.clubProgress?.[clubId]?.level ?? career?.clubProgress?.[clubId]?.progression?.level ?? 0;
+  return Math.max(0, Math.round(Number(value ?? 0) || 0));
 }
 
 function normalizeStoryProgress(progress = {}) {
@@ -115,6 +132,7 @@ function normalizeStoryProgress(progress = {}) {
       stepIndex: Math.max(0, Math.round(Number(value?.stepIndex ?? 0) || 0)),
       completedSteps: Array.isArray(value?.completedSteps) ? value.completedSteps : [],
       completed: Boolean(value?.completed),
+      unlocked: value?.unlocked ?? null,
       updatedAt: value?.updatedAt ?? null,
     };
   }
@@ -128,6 +146,7 @@ function createStorySave() {
     stepIndex: 0,
     completedSteps: [],
     completed: false,
+    unlocked: null,
     updatedAt: null,
   };
 }

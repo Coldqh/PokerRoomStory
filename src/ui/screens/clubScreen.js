@@ -1,10 +1,10 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.7.3";
-import { getClubRoomState } from "../../engine/club.js?v=1.7.3";
-import { getClubGoals } from "../../engine/clubGoals.js?v=1.7.3";
-import { getClubStorylines } from "../../engine/storylines.js?v=1.7.3";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.7.3";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.7.3";
-import { stableIndex } from "./common.js?v=1.7.3";
+import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.8.1";
+import { getClubRoomState } from "../../engine/club.js?v=1.8.1";
+import { getClubGoals } from "../../engine/clubGoals.js?v=1.8.1";
+import { getClubStorylines } from "../../engine/storylines.js?v=1.8.1";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.8.1";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.8.1";
+import { stableIndex } from "./common.js?v=1.8.1";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -44,15 +44,16 @@ export function renderClubScreen(state) {
   `;
 }
 
-
 function renderStorylinePanel(storylines = []) {
   if (!storylines.length) return "";
   const story = storylines[0];
   const step = story.currentStep;
   const reward = formatGoalReward(step.reward);
-  const progress = step.type === "club_big_pot" ? `$${step.current} / $${step.target}` : `${step.current} / ${step.target}`;
+  const progress = step.type === "club_big_pot" || step.type === "player_bankroll" ? `$${step.current} / $${step.target}` : `${step.current} / ${step.target}`;
   const characters = getSceneCharacters(story, step);
   const stepLabel = story.completed ? "Completed" : `Step ${story.stepIndex + 1}/${story.steps.length}`;
+  const sceneLines = Array.isArray(step.cutscene) && step.cutscene.length ? step.cutscene : [story.intro];
+  const unlock = step.unlocks ?? story.unlocked ?? (story.completed ? story.unlocks : null);
 
   return `
     <section class="club-story-cutscene" aria-label="Story cutscene">
@@ -63,13 +64,16 @@ function renderStorylinePanel(storylines = []) {
       <div class="club-story-cutscene-body">
         <div class="club-story-scene">
           <span>${escapeHtml(story.title)}</span>
-          <strong>${escapeHtml(story.label ?? story.title)}</strong>
-          <p>${escapeHtml(story.intro)}</p>
+          <strong>${escapeHtml(step.title)}</strong>
+          <div class="club-story-lines">
+            ${sceneLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+          </div>
           ${characters.length ? `<div class="club-story-cast"><span>В сцене</span>${characters.map((character) => `<button class="story-character-chip" type="button" title="${escapeHtml(character.role)} — ${escapeHtml(character.note)}">${escapeHtml(character.name)}</button>`).join("")}</div>` : ""}
+          ${unlock?.clubLabel ? `<div class="club-story-location-unlock"><span>Следующая локация</span><strong>${escapeHtml(unlock.clubLabel)}</strong></div>` : ""}
         </div>
         <div class="club-story-objective ${story.completed ? "completed" : "active"}">
-          <span>Current objective</span>
-          <strong>${escapeHtml(step.title)}</strong>
+          <span>${story.completed ? "Route completed" : "Current objective"}</span>
+          <strong>${escapeHtml(story.label ?? story.title)}</strong>
           <p>${escapeHtml(step.objective)}</p>
           <div class="club-story-progress-line">
             <em>${escapeHtml(progress)}</em>
@@ -264,7 +268,6 @@ function renderClubProgress(info) {
     </div>
   `;
 }
-
 
 function getTableMoodLabel(table) {
   const labels = {

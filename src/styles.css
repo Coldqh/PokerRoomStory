@@ -1,11 +1,11 @@
 /* Ordered CSS entrypoint. */
-@import "./styles/00-base-layout.css?v=1.7.3";
-@import "./styles/01-table-cards.css?v=1.7.3";
-@import "./styles/02-career-tasks.css?v=1.7.3";
-@import "./styles/03-mobile-responsive.css?v=1.7.3";
-@import "./styles/04-club-drawer-settings.css?v=1.7.3";
-@import "./styles/05-result-modals.css?v=1.7.3";
-@import "./styles/06-table-lobby-polish.css?v=1.7.3";
-@import "./styles/07-readability-hotfix.css?v=1.7.3";
-@import "./styles/08-opponent-reads.css?v=1.7.3";
-@import "./styles/09-story-goals-polish.css?v=1.7.3";
+@import "./styles/00-base-layout.css?v=1.8.1";
+@import "./styles/01-table-cards.css?v=1.8.1";
+@import "./styles/02-career-tasks.css?v=1.8.1";
+@import "./styles/03-mobile-responsive.css?v=1.8.1";
+@import "./styles/04-club-drawer-settings.css?v=1.8.1";
+@import "./styles/05-result-modals.css?v=1.8.1";
+@import "./styles/06-table-lobby-polish.css?v=1.8.1";
+@import "./styles/07-readability-hotfix.css?v=1.8.1";
+@import "./styles/08-opponent-reads.css?v=1.8.1";
+@import "./styles/09-story-goals-polish.css?v=1.8.1";

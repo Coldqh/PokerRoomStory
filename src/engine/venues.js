@@ -1,4 +1,4 @@
-import { applyLifeAction, getLifeView } from "./life.js?v=2.4.0";
+import { applyLifeAction, getLifeView } from "./life.js?v=2.5.0";
 import {
   getLifeAsset,
   getLifeCafeOrder,
@@ -6,9 +6,10 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.4.0";
-import { getClubTables } from "./selectors.js?v=2.4.0";
-import { canEnterClub } from "./world.js?v=2.4.0";
+} from "./lifeContent.js?v=2.5.0";
+import { getClubTables } from "./selectors.js?v=2.5.0";
+import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=2.5.0";
+import { canEnterClub } from "./world.js?v=2.5.0";
 
 export function getCityVenues(content, cityId = null) {
   return (content?.venues ?? [])
@@ -73,7 +74,7 @@ export function getVenueView({ content, career = {}, player = {}, venueId = null
     city,
     country,
     lifeView,
-    rows: getVenueRows(venue, lifeView),
+    rows: getVenueRows(venue, lifeView, career, player),
     club: venue?.type === "poker_club" ? content?.byId?.clubs?.[venue.clubId] ?? null : null,
     tables: venue?.type === "poker_club" ? getClubTables(content, venue.clubId) : [],
   };
@@ -87,7 +88,9 @@ export function applyVenueAction({ content, venueId, actionId, career = {}, play
     return { career, player, ok: false, message: "Действие недоступно здесь.", nextScreen: null };
   }
 
-  const result = applyLifeAction({ actionId, career, player });
+  const result = isBusinessAction(actionId)
+    ? applyBusinessAction({ actionId, career, player })
+    : applyLifeAction({ actionId, career, player });
   if (!result.ok) return result;
 
   return {
@@ -96,7 +99,7 @@ export function applyVenueAction({ content, venueId, actionId, career = {}, play
   };
 }
 
-function getVenueRows(venue, lifeView) {
+function getVenueRows(venue, lifeView, career = {}, player = {}) {
   if (!venue) return [];
   if (venue.type === "store") {
     return (venue.inventoryIds ?? []).map((id) => {
@@ -146,6 +149,10 @@ function getVenueRows(venue, lifeView) {
     }).filter(Boolean);
   }
 
+  if (venue.type === "business_broker") {
+    return getBusinessBrokerRows(venue.businessIds ?? [], career, player).map((entry) => ({ kind: "business", ...entry }));
+  }
+
   if (venue.type === "home") {
     const inventoryRows = lifeView.inventory.map((entry) => ({ kind: "inventory", actionId: `use:${entry.item.id}`, entry, canUse: true }));
     return [
@@ -165,8 +172,14 @@ function isVenueActionAllowed(venue, actionId = "", career = {}) {
   if (venue?.type === "real_estate_agency") return ["rentHousing", "buyHousing", "moveHousing"].includes(type) && (venue.housingIds ?? []).includes(id);
   if (venue?.type === "car_dealer") return type === "buyVehicle" && (venue.vehicleIds ?? []).includes(id);
   if (venue?.type === "asset_store") return type === "buyAsset" && (venue.assetIds ?? []).includes(id);
+  if (venue?.type === "business_broker") return isBusinessAction(`${type}:${id}`) && (venue.businessIds ?? []).includes(id);
   if (venue?.type === "home") return type === "rest" || type === "use";
   return false;
+}
+
+function isBusinessAction(actionId = "") {
+  const type = String(actionId).split(":")[0];
+  return ["buyBusiness", "collectBusiness", "upgradeBusiness"].includes(type);
 }
 
 function markVenueVisited(career = {}, venueId) {
@@ -190,7 +203,8 @@ function sortVenue(left, right) {
     food_store: 2,
     work: 3,
     property: 4,
-    transport: 5,
+    business: 5,
+    transport: 6,
   };
   const leftOrder = order[left.category] ?? 50;
   const rightOrder = order[right.category] ?? 50;

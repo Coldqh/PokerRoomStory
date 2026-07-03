@@ -1,6 +1,7 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.4.0";
-import { normalizeClubProgress } from "./progression.js?v=2.4.0";
-import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.4.0";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.5.0";
+import { normalizeClubProgress } from "./progression.js?v=2.5.0";
+import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.5.0";
+import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=2.5.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },
@@ -50,6 +51,7 @@ export function createNewCareer() {
     storyProgress: {},
     life: createInitialLifeState(),
     city: { activeVenueId: null, visitedVenueIds: [] },
+    businesses: createInitialBusinessState(),
   };
 }
 
@@ -74,6 +76,7 @@ export function normalizeCareer(career = {}) {
     storyProgress: career.storyProgress && typeof career.storyProgress === "object" ? career.storyProgress : {},
     life: normalizeLifeState(career.life ?? base.life),
     city: normalizeCityState(career.city ?? base.city),
+    businesses: normalizeBusinessState(career.businesses ?? base.businesses),
   };
 }
 

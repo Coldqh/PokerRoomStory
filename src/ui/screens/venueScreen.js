@@ -1,5 +1,5 @@
-import { getVenueView } from "../../engine/venues.js?v=2.4.0";
-import { escapeHtml } from "../components.js?v=2.4.0";
+import { getVenueView } from "../../engine/venues.js?v=2.5.0";
+import { escapeHtml } from "../components.js?v=2.5.0";
 
 export function renderVenueScreen(state) {
   const venueId = state.activeVenueId ?? state.career?.city?.activeVenueId;
@@ -46,6 +46,7 @@ function renderVenueBody(view, state) {
   if (venue.type === "real_estate_agency") return renderRows("Жильё", view.rows.map(renderHousingRow));
   if (venue.type === "car_dealer") return renderRows("Машины", view.rows.map(renderVehicleRow));
   if (venue.type === "asset_store") return renderRows("Имущество", view.rows.map(renderAssetRow));
+  if (venue.type === "business_broker") return renderRows("Бизнесы", view.rows.map(renderBusinessRow));
   if (venue.type === "home") return renderRows("Дом", view.rows.map(renderHomeRow));
   return renderRows("Действия", [`<div class="life-empty">Действий нет.</div>`]);
 }
@@ -152,6 +153,36 @@ function renderAssetRow(row) {
   `;
 }
 
+function renderBusinessRow(row) {
+  const business = row.template;
+  const owned = Boolean(row.owned);
+  const status = owned ? `Lv.${row.owned.level} · Condition ${row.owned.condition}` : "Доступно";
+  return `
+    <div class="life-row business-row ${owned ? "current" : ""}">
+      <div class="business-copy">
+        <div class="housing-title-line">
+          <strong>${escapeHtml(business.name)}</strong>
+          <em>${escapeHtml(status)}</em>
+        </div>
+        <span>${escapeHtml(business.brand)} · ${escapeHtml(business.district)} · ${escapeHtml(business.address)}</span>
+        <div class="housing-specs">
+          <small>${escapeHtml(business.type)}</small>
+          <small>${escapeHtml(business.scale)}</small>
+          <small>staff ${escapeHtml(String(business.staffSlots))}</small>
+          <small>risk ${escapeHtml(String(business.risk))}</small>
+        </div>
+        <p>Цена $${escapeHtml(String(business.buyPrice))} · Revenue $${escapeHtml(String(business.dailyRevenue))} · Expenses $${escapeHtml(String(business.dailyExpenses))} · Profit $${escapeHtml(String(row.dailyProfit))}/день</p>
+        ${owned ? `<p>К сбору: $${escapeHtml(String(row.collectableProfit))} · дней ${escapeHtml(String(row.collectableDays))} · всего +$${escapeHtml(String(row.owned.totalProfit ?? 0))}</p>` : ""}
+      </div>
+      <div class="life-row-actions">
+        <button class="small-button" data-action="venue-action" data-id="buyBusiness:${escapeHtml(business.id)}" ${row.canBuy ? "" : "disabled"}>Купить</button>
+        <button class="small-button" data-action="venue-action" data-id="collectBusiness:${escapeHtml(business.id)}" ${row.canCollect ? "" : "disabled"}>Собрать</button>
+        <button class="small-button" data-action="venue-action" data-id="upgradeBusiness:${escapeHtml(business.id)}" ${row.canUpgrade ? "" : "disabled"}>Апгрейд $${escapeHtml(String(row.upgradeCost ?? 0))}</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderHomeRow(row) {
   if (row.kind === "home_rest") {
     return `
@@ -191,6 +222,7 @@ function typeLabel(type) {
     real_estate_agency: "Real estate",
     car_dealer: "Car dealer",
     asset_store: "Asset store",
+    business_broker: "Business broker",
     poker_club: "Poker club",
   };
   return labels[type] ?? "Venue";

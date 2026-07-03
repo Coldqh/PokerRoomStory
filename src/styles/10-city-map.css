@@ -426,3 +426,7 @@
     width: 100%;
   }
 }
+
+.city-venue-card .city-venue-meta span:nth-child(1) {
+  max-width: 100%;
+}

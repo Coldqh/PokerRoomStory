@@ -1,5 +1,5 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.4.0";
-import { escapeHtml } from "../components.js?v=2.4.0";
+import { getCityMapView } from "../../engine/locations.js?v=2.5.0";
+import { escapeHtml } from "../components.js?v=2.5.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
@@ -7,6 +7,7 @@ const VENUE_GROUPS = [
   { id: "food_store", title: "Food & Stores" },
   { id: "work", title: "Work" },
   { id: "property", title: "Property" },
+  { id: "business", title: "Business" },
   { id: "transport", title: "Transport" },
 ];
 
@@ -86,6 +87,7 @@ function getVenueMeta(entry) {
   if (venue.type === "real_estate_agency") return [`${venue.housingIds?.length ?? 0} варианта`];
   if (venue.type === "car_dealer") return [`${venue.vehicleIds?.length ?? 0} машины`];
   if (venue.type === "asset_store") return [`${venue.assetIds?.length ?? 0} вещи`];
+  if (venue.type === "business_broker") return [`${venue.businessIds?.length ?? 0} бизнесов`];
   if (venue.type === "home") return ["отдых", "инвентарь"];
   return [venue.id];
 }
@@ -100,6 +102,7 @@ function typeLabel(type) {
     real_estate_agency: "Housing",
     car_dealer: "Cars",
     asset_store: "Assets",
+    business_broker: "Business",
   };
   return labels[type] ?? "Venue";
 }

@@ -1,6 +1,7 @@
-import { getLifeView } from "../../engine/life.js?v=2.4.0";
-import { getVenueById } from "../../engine/venues.js?v=2.4.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.4.0";
+import { getLifeView } from "../../engine/life.js?v=2.5.0";
+import { getBusinessView } from "../../engine/businesses.js?v=2.5.0";
+import { getVenueById } from "../../engine/venues.js?v=2.5.0";
+import { escapeHtml, progressBar } from "../components.js?v=2.5.0";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -8,6 +9,8 @@ export function renderLifeScreen(state) {
   const homeVenue = getVenueById(state.content, state.activeVenueId) ?? getVenueById(state.content, state.career?.city?.activeVenueId) ?? getVenueById(state.content, "VENUE_RU_MOS_HOME_CHEAP_ROOM");
   const vehicle = view.vehicles.find((entry) => entry.owned);
   const assets = view.assets.filter((entry) => entry.owned);
+  const businesses = getBusinessView(state.career, state.player).owned;
+  const dailyBusinessProfit = businesses.reduce((sum, row) => sum + Number(row.dailyProfit ?? 0), 0);
   return `
     <section class="life-screen">
       <article class="life-hero panel-soft">
@@ -64,6 +67,16 @@ export function renderLifeScreen(state) {
           </div>
         </article>
 
+
+
+        <article class="life-section panel-soft">
+          <header><span>Business</span><strong>Бизнесы</strong></header>
+          <div class="life-list compact">
+            ${businesses.length ? businesses.slice(0, 6).map(renderBusinessItem).join("") : `<div class="life-empty">Нет бизнесов</div>`}
+          </div>
+          <button class="small-button" data-action="select-venue" data-id="VENUE_RU_MOS_BUSINESS_BROKER_001">Business Broker</button>
+        </article>
+
         <article class="life-section panel-soft">
           <header><span>Property</span><strong>Имущество</strong></header>
           <div class="life-summary-list">
@@ -73,6 +86,7 @@ export function renderLifeScreen(state) {
             <div><span>Ремонт</span><strong>${escapeHtml(view.currentHousing.repair)}</strong></div>
             <div><span>Транспорт</span><strong>${escapeHtml(vehicle?.name ?? "Нет")}</strong></div>
             <div><span>Вещи</span><strong>${escapeHtml(assets.length ? assets.map((asset) => asset.name).join(", ") : "Нет")}</strong></div>
+            <div><span>Бизнесы</span><strong>${escapeHtml(businesses.length ? `${businesses.length} · Profit $${dailyBusinessProfit}/день` : "Нет")}</strong></div>
             <div><span>Текущий объект</span><strong>${escapeHtml(homeVenue?.name ?? "Город")}</strong></div>
           </div>
         </article>
@@ -96,6 +110,15 @@ function renderInventoryItem(entry) {
     <div class="life-row">
       <div><strong>${escapeHtml(entry.item.name)} x${escapeHtml(String(entry.qty))}</strong><span>${escapeHtml(formatEffect(entry.item.effect))}</span></div>
       <button class="small-button" data-action="life-action" data-id="use:${escapeHtml(entry.item.id)}">Использовать</button>
+    </div>
+  `;
+}
+
+function renderBusinessItem(row) {
+  return `
+    <div class="life-row">
+      <div><strong>${escapeHtml(row.template.name)}</strong><span>Lv.${escapeHtml(String(row.owned.level))} · Profit $${escapeHtml(String(row.dailyProfit))}/день · к сбору $${escapeHtml(String(row.collectableProfit))}</span></div>
+      <button class="small-button" data-action="select-venue" data-id="VENUE_RU_MOS_BUSINESS_BROKER_001">Управлять</button>
     </div>
   `;
 }

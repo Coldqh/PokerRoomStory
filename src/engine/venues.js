@@ -1,4 +1,4 @@
-import { applyLifeAction, getLifeView } from "./life.js?v=2.5.0";
+import { applyLifeAction, getLifeView } from "./life.js?v=2.6.0";
 import {
   getLifeAsset,
   getLifeCafeOrder,
@@ -6,10 +6,10 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.5.0";
-import { getClubTables } from "./selectors.js?v=2.5.0";
-import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=2.5.0";
-import { canEnterClub } from "./world.js?v=2.5.0";
+} from "./lifeContent.js?v=2.6.0";
+import { getClubTables } from "./selectors.js?v=2.6.0";
+import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=2.6.0";
+import { canEnterClub } from "./world.js?v=2.6.0";
 
 export function getCityVenues(content, cityId = null) {
   return (content?.venues ?? [])
@@ -109,7 +109,7 @@ function getVenueRows(venue, lifeView, career = {}, player = {}) {
     }).filter(Boolean);
   }
 
-  if (venue.type === "cafe") {
+  if (["cafe", "restaurant"].includes(venue.type)) {
     return (venue.orderIds ?? []).map((id) => {
       const order = getLifeCafeOrder(id);
       const viewOrder = lifeView.cafeOrders.find((entry) => entry.id === id);
@@ -167,7 +167,7 @@ function getVenueRows(venue, lifeView, career = {}, player = {}) {
 function isVenueActionAllowed(venue, actionId = "", career = {}) {
   const [type, id = null] = String(actionId).split(":");
   if (venue?.type === "store") return type === "buy" && (venue.inventoryIds ?? []).includes(id);
-  if (venue?.type === "cafe") return type === "cafe" && (venue.orderIds ?? []).includes(id);
+  if (["cafe", "restaurant"].includes(venue?.type)) return type === "cafe" && (venue.orderIds ?? []).includes(id);
   if (venue?.type === "job_site") return type === "job" && (venue.jobIds ?? []).includes(id);
   if (venue?.type === "real_estate_agency") return ["rentHousing", "buyHousing", "moveHousing"].includes(type) && (venue.housingIds ?? []).includes(id);
   if (venue?.type === "car_dealer") return type === "buyVehicle" && (venue.vehicleIds ?? []).includes(id);
@@ -200,11 +200,13 @@ function sortVenue(left, right) {
   const order = {
     home: 0,
     poker: 1,
-    food_store: 2,
-    work: 3,
-    property: 4,
-    business: 5,
-    transport: 6,
+    groceries: 2,
+    cafes: 3,
+    restaurants: 4,
+    work: 5,
+    property: 6,
+    business: 7,
+    transport: 8,
   };
   const leftOrder = order[left.category] ?? 50;
   const rightOrder = order[right.category] ?? 50;

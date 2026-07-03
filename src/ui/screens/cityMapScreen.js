@@ -1,10 +1,12 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.5.0";
-import { escapeHtml } from "../components.js?v=2.5.0";
+import { getCityMapView } from "../../engine/locations.js?v=2.6.0";
+import { escapeHtml } from "../components.js?v=2.6.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
   { id: "poker", title: "Poker Clubs" },
-  { id: "food_store", title: "Food & Stores" },
+  { id: "groceries", title: "Groceries" },
+  { id: "cafes", title: "Cafes" },
+  { id: "restaurants", title: "Restaurants" },
   { id: "work", title: "Work" },
   { id: "property", title: "Property" },
   { id: "business", title: "Business" },
@@ -82,10 +84,10 @@ function getVenueMeta(entry) {
     return [club?.tier ?? "Club", club?.name ?? venue.name];
   }
   if (venue.type === "store") return [`${venue.inventoryIds?.length ?? 0} товаров`];
-  if (venue.type === "cafe") return [`${venue.orderIds?.length ?? 0} заказа`];
+  if (["cafe", "restaurant"].includes(venue.type)) return [`${venue.orderIds?.length ?? 0} позиций`];
   if (venue.type === "job_site") return [`${venue.jobIds?.length ?? 0} смены`];
   if (venue.type === "real_estate_agency") return [`${venue.housingIds?.length ?? 0} варианта`];
-  if (venue.type === "car_dealer") return [`${venue.vehicleIds?.length ?? 0} машины`];
+  if (venue.type === "car_dealer") return [`${venue.vehicleIds?.length ?? 0} машин`];
   if (venue.type === "asset_store") return [`${venue.assetIds?.length ?? 0} вещи`];
   if (venue.type === "business_broker") return [`${venue.businessIds?.length ?? 0} бизнесов`];
   if (venue.type === "home") return ["отдых", "инвентарь"];
@@ -98,6 +100,7 @@ function typeLabel(type) {
     poker_club: "Poker",
     store: "Store",
     cafe: "Cafe",
+    restaurant: "Restaurant",
     job_site: "Work",
     real_estate_agency: "Housing",
     car_dealer: "Cars",

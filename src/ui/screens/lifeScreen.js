@@ -1,7 +1,7 @@
-import { getLifeView } from "../../engine/life.js?v=2.5.0";
-import { getBusinessView } from "../../engine/businesses.js?v=2.5.0";
-import { getVenueById } from "../../engine/venues.js?v=2.5.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.5.0";
+import { getLifeView } from "../../engine/life.js?v=2.6.0";
+import { getBusinessView } from "../../engine/businesses.js?v=2.6.0";
+import { getVenueById } from "../../engine/venues.js?v=2.6.0";
+import { escapeHtml, progressBar } from "../components.js?v=2.6.0";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -84,7 +84,7 @@ export function renderLifeScreen(state) {
             <div><span>Адрес</span><strong>${escapeHtml(view.currentHousing.address)}</strong></div>
             <div><span>Площадь</span><strong>${escapeHtml(String(view.currentHousing.rooms))}к · ${escapeHtml(String(view.currentHousing.sqm))} м² · до ${escapeHtml(String(view.currentHousing.capacity))} чел.</strong></div>
             <div><span>Ремонт</span><strong>${escapeHtml(view.currentHousing.repair)}</strong></div>
-            <div><span>Транспорт</span><strong>${escapeHtml(vehicle?.name ?? "Нет")}</strong></div>
+            <div><span>Транспорт</span><strong>${escapeHtml(vehicle ? `${vehicle.name} · ${vehicle.class ?? "car"} · upkeep $${vehicle.upkeepPer7Days ?? 0}/7д` : "Нет")}</strong></div>
             <div><span>Вещи</span><strong>${escapeHtml(assets.length ? assets.map((asset) => asset.name).join(", ") : "Нет")}</strong></div>
             <div><span>Бизнесы</span><strong>${escapeHtml(businesses.length ? `${businesses.length} · Profit $${dailyBusinessProfit}/день` : "Нет")}</strong></div>
             <div><span>Текущий объект</span><strong>${escapeHtml(homeVenue?.name ?? "Город")}</strong></div>

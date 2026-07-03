@@ -1,7 +1,7 @@
-import { getClubTables } from "./selectors.js?v=2.5.0";
-import { canEnterClub } from "./world.js?v=2.5.0";
-import { getClubLevelInfo } from "./progression.js?v=2.5.0";
-import { getCityVenues, getVenueStatus } from "./venues.js?v=2.5.0";
+import { getClubTables } from "./selectors.js?v=2.6.0";
+import { canEnterClub } from "./world.js?v=2.6.0";
+import { getClubLevelInfo } from "./progression.js?v=2.6.0";
+import { getCityVenues, getVenueStatus } from "./venues.js?v=2.6.0";
 
 export function getCityMapView(content, career = {}, player = {}, cityId = null, activeClubId = null, activeVenueId = null) {
   const activeClub = content?.byId?.clubs?.[activeClubId] ?? null;

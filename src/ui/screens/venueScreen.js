@@ -1,5 +1,5 @@
-import { getVenueView } from "../../engine/venues.js?v=2.5.0";
-import { escapeHtml } from "../components.js?v=2.5.0";
+import { getVenueView } from "../../engine/venues.js?v=2.6.0";
+import { escapeHtml } from "../components.js?v=2.6.0";
 
 export function renderVenueScreen(state) {
   const venueId = state.activeVenueId ?? state.career?.city?.activeVenueId;
@@ -41,7 +41,7 @@ function renderVenueBody(view, state) {
   const venue = view.venue;
   if (venue.type === "poker_club") return renderPokerClubVenue(view);
   if (venue.type === "store") return renderRows("Товары", view.rows.map(renderStoreRow));
-  if (venue.type === "cafe") return renderRows("Меню", view.rows.map(renderCafeRow));
+  if (["cafe", "restaurant"].includes(venue.type)) return renderRows("Меню", view.rows.map(renderCafeRow));
   if (venue.type === "job_site") return renderRows("Смены", view.rows.map(renderJobRow));
   if (venue.type === "real_estate_agency") return renderRows("Жильё", view.rows.map(renderHousingRow));
   if (venue.type === "car_dealer") return renderRows("Машины", view.rows.map(renderVehicleRow));
@@ -136,9 +136,19 @@ function renderHousingRow(row) {
 }
 
 function renderVehicleRow(row) {
+  const vehicle = row.vehicle;
+  const meta = [
+    vehicle.class,
+    `upkeep $${vehicle.upkeepPer7Days ?? 0}/7д`,
+    `status ${vehicle.status ?? 0}`,
+    `${vehicle.seats ?? 5} seats`,
+  ].filter(Boolean).join(" · ");
   return `
-    <div class="life-row ${row.owned ? "current" : ""}">
-      <div><strong>${escapeHtml(row.vehicle.name)}</strong><span>$${escapeHtml(String(row.vehicle.price))} · ${escapeHtml(formatEffect(row.vehicle.effect))}</span></div>
+    <div class="life-row vehicle-row ${row.owned ? "current" : ""}">
+      <div>
+        <strong>${escapeHtml(vehicle.name)}</strong>
+        <span>$${escapeHtml(String(vehicle.price))} · ${escapeHtml(meta)} · ${escapeHtml(formatEffect(vehicle.effect))}</span>
+      </div>
       <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Купить</button>
     </div>
   `;
@@ -218,6 +228,7 @@ function typeLabel(type) {
     home: "Home",
     store: "Store",
     cafe: "Cafe",
+    restaurant: "Restaurant",
     job_site: "Work",
     real_estate_agency: "Real estate",
     car_dealer: "Car dealer",

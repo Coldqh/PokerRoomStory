@@ -1,6 +1,6 @@
-export const APP_VERSION = "1.9.2";
+export const APP_VERSION = "2.0.0";
 export const SAVE_SCHEMA_VERSION = 2;
-export const CONTENT_VERSION = "content-v1.9.2";
+export const CONTENT_VERSION = "content-v2.0.0";
 export const BUILD_DATE = "2026-07-03";
-export const BUILD_ID = "prs-1.9.2-20260703-club-lobby-route-gate-fix";
+export const BUILD_ID = "prs-2.0.0-20260703-city-map-location-progression";
 export const APP_NAME = "Poker Room Story";

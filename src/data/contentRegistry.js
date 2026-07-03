@@ -1,5 +1,5 @@
-import { DATA_PACKS } from "./packs/index.js?v=1.9.2";
-import { validateContentRegistry } from "./validateContent.js?v=1.9.2";
+import { DATA_PACKS } from "./packs/index.js?v=2.0.0";
+import { validateContentRegistry } from "./validateContent.js?v=2.0.0";
 
 const packs = DATA_PACKS;
 

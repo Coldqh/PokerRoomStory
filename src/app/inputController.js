@@ -1,7 +1,7 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=1.9.2";
-import { getClubTables } from "../engine/selectors.js?v=1.9.2";
-import { canEnterClub } from "../engine/world.js?v=1.9.2";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.9.2";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.0.0";
+import { getClubTables } from "../engine/selectors.js?v=2.0.0";
+import { canEnterClub } from "../engine/world.js?v=2.0.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.0.0";
 
 export const inputController = {
   handleClick(event) {
@@ -28,7 +28,14 @@ export const inputController = {
 
     if (action === "screen") {
       this.menuOpen = false;
-      this.setState({ currentScreen: this.resolveScreen(id) });
+      this.setState({
+        currentScreen: this.resolveScreen(id),
+        system: {
+          ...this.state.system,
+          tablePickerOpen: false,
+          clubPickerOpen: false,
+        },
+      });
       return;
     }
 

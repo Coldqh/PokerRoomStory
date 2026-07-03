@@ -1,10 +1,10 @@
-import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=1.9.2";
-import { getClubRoomState } from "../../engine/club.js?v=1.9.2";
-import { getClubGoals } from "../../engine/clubGoals.js?v=1.9.2";
-import { getClubStorylines } from "../../engine/storylines.js?v=1.9.2";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.9.2";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.9.2";
-import { stableIndex } from "./common.js?v=1.9.2";
+import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=2.0.0";
+import { getClubRoomState } from "../../engine/club.js?v=2.0.0";
+import { getClubGoals } from "../../engine/clubGoals.js?v=2.0.0";
+import { getClubStorylines } from "../../engine/storylines.js?v=2.0.0";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=2.0.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=2.0.0";
+import { stableIndex } from "./common.js?v=2.0.0";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -55,12 +55,21 @@ function renderClubActions(state, activeClub, clubs = [], tables = []) {
         <em>${availableTables}/${tables.length} столов доступны</em>
         <button class="primary club-action-button" type="button" data-action="open-table-picker">Выбрать стол</button>
       </article>
+      <article class="club-action-card map-action">
+        <div>
+          <span>City map</span>
+          <strong>Карта локаций</strong>
+          <p>Посмотри путь по Москве: текущий клуб, закрытые комнаты и прогресс маршрутов.</p>
+        </div>
+        <em>Москва · ${clubCount} клуба</em>
+        <button class="small-button club-action-button" type="button" data-action="screen" data-id="locations">Вернуться на карту</button>
+      </article>
       ${hasClubPicker ? `
-        <article class="club-action-card">
+        <article class="club-action-card secondary-action">
           <div>
-            <span>Locations</span>
-            <strong>Клубы города</strong>
-            <p>Текущий клуб: ${escapeHtml(activeClub.name)}. Новые клубы открываются после завершения маршрута.</p>
+            <span>Quick switch</span>
+            <strong>Быстрый выбор клуба</strong>
+            <p>Текущий клуб: ${escapeHtml(activeClub.name)}. Полная прогрессия теперь на карте.</p>
           </div>
           <em>${clubCount} клуба в городе</em>
           <button class="small-button club-action-button" type="button" data-action="open-club-picker">Выбрать клуб</button>

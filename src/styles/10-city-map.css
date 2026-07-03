@@ -1,0 +1,221 @@
+.city-map-screen {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.city-map-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(245, 196, 111, 0.18);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.14), transparent 34%),
+    linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
+}
+
+.city-map-hero span,
+.city-club-head span,
+.city-club-route span,
+.city-club-meta span,
+.city-map-summary span {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.city-map-hero h2 {
+  margin: 4px 0 0;
+  color: #fff;
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  line-height: 1;
+}
+
+.city-map-hero p {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+}
+
+.city-map-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.city-map-summary > div {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.city-map-summary strong {
+  display: block;
+  margin-top: 5px;
+  color: #f5c46f;
+  font-size: 1.2rem;
+}
+
+.city-map-path {
+  display: grid;
+  gap: 12px;
+}
+
+.city-club-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 22px;
+  padding: 16px;
+  background: linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.94));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+
+.city-club-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 0% 0%, rgba(245, 196, 111, 0.12), transparent 30%);
+  opacity: 0.7;
+}
+
+.city-club-card.is-current {
+  border-color: rgba(245, 196, 111, 0.34);
+}
+
+.city-club-card.status-completed {
+  border-color: rgba(121, 255, 170, 0.24);
+}
+
+.city-club-card.is-locked {
+  opacity: 0.76;
+  background: linear-gradient(145deg, rgba(15, 16, 21, 0.96), rgba(7, 8, 12, 0.96));
+}
+
+.city-club-node {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(245, 196, 111, 0.24);
+  border-radius: 16px;
+  background: rgba(245, 196, 111, 0.08);
+  color: #f5c46f;
+  font-weight: 950;
+  z-index: 1;
+}
+
+.city-club-main,
+.city-club-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.city-club-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.city-club-head strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: clamp(1.05rem, 1.8vw, 1.38rem);
+}
+
+.city-club-head em {
+  border: 1px solid rgba(245, 196, 111, 0.2);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #f5c46f;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.city-club-card p {
+  margin: 9px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.city-club-route {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.city-club-route > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.city-club-route strong {
+  color: #fff;
+  font-size: 0.86rem;
+}
+
+.city-club-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.city-club-meta span {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(255, 255, 255, 0.045);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.city-club-actions {
+  grid-column: 1 / -1;
+}
+
+.city-club-actions button {
+  width: 100%;
+}
+
+.city-map-empty {
+  padding: 18px;
+}
+
+@media (min-width: 820px) {
+  .city-map-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    align-items: end;
+  }
+
+  .city-club-card {
+    grid-template-columns: auto minmax(0, 1fr) minmax(160px, 220px);
+    align-items: center;
+  }
+
+  .city-club-actions {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .city-map-summary {
+    grid-template-columns: 1fr;
+  }
+}

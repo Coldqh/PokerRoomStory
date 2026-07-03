@@ -1,5 +1,5 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.9.2";
-import { normalizeClubProgress } from "./progression.js?v=1.9.2";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.0.0";
+import { normalizeClubProgress } from "./progression.js?v=2.0.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },

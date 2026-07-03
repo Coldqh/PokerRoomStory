@@ -1,5 +1,3 @@
-
-
 export const navigationController = {
   resolveScreen(screenId) {
     const seated = Boolean(this.state.tableSession?.tableId);

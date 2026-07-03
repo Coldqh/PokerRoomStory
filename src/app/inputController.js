@@ -1,9 +1,10 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.2.0";
-import { applyLifeAction } from "../engine/life.js?v=2.2.0";
-import { normalizePlayer } from "../engine/career.js?v=2.2.0";
-import { getClubTables } from "../engine/selectors.js?v=2.2.0";
-import { canEnterClub } from "../engine/world.js?v=2.2.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.2.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.3.0";
+import { applyLifeAction } from "../engine/life.js?v=2.3.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.3.0";
+import { normalizePlayer } from "../engine/career.js?v=2.3.0";
+import { getClubTables } from "../engine/selectors.js?v=2.3.0";
+import { canEnterClub } from "../engine/world.js?v=2.3.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.3.0";
 
 export const inputController = {
   handleClick(event) {
@@ -61,9 +62,70 @@ export const inputController = {
       "open-table-picker",
       "close-modal",
       "life-action",
+      "select-venue",
+      "venue-action",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
 
+
+
+    if (action === "select-venue") {
+      const venue = getVenueById(this.content, id);
+      const access = canEnterVenue(this.state.player, this.state.career, venue, this.content);
+      if (!venue) return;
+      if (!access.ok) {
+        this.setSystem({ notice: access.reason });
+        return;
+      }
+      const visited = new Set(this.state.career?.city?.visitedVenueIds ?? []);
+      visited.add(venue.id);
+      this.setState({
+        activeVenueId: venue.id,
+        currentScreen: "venue",
+        career: {
+          ...this.state.career,
+          city: {
+            ...(this.state.career?.city ?? {}),
+            activeVenueId: venue.id,
+            visitedVenueIds: [...visited],
+          },
+        },
+        system: {
+          ...this.state.system,
+          notice: null,
+          tablePickerOpen: false,
+          clubPickerOpen: false,
+        },
+      });
+      return;
+    }
+
+    if (action === "venue-action") {
+      const result = applyVenueAction({
+        content: this.content,
+        venueId: this.state.activeVenueId ?? this.state.career?.city?.activeVenueId,
+        actionId: id,
+        career: this.state.career,
+        player: this.state.player,
+      });
+      if (!result.ok) {
+        this.setSystem({ notice: result.message });
+        return;
+      }
+      this.setState({
+        career: result.career,
+        player: normalizePlayer(result.player),
+        currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : this.state.currentScreen,
+        log: [...(this.state.log ?? []), result.message].slice(-100),
+        system: {
+          ...this.state.system,
+          notice: result.message,
+          tablePickerOpen: false,
+          clubPickerOpen: false,
+        },
+      });
+      return;
+    }
 
     if (action === "life-action") {
       const result = applyLifeAction({ actionId: id, career: this.state.career, player: this.state.player });
@@ -115,6 +177,15 @@ export const inputController = {
       this.menuOpen = false;
       this.setState({
         activeClubId: id,
+        activeVenueId: (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id ?? this.state.activeVenueId,
+        career: {
+          ...this.state.career,
+          city: {
+            ...(this.state.career?.city ?? {}),
+            activeVenueId: (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id ?? this.state.career?.city?.activeVenueId ?? null,
+            visitedVenueIds: [...new Set([...(this.state.career?.city?.visitedVenueIds ?? []), (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id].filter(Boolean))],
+          },
+        },
         activeTableId: tables[0]?.id ?? this.state.activeTableId,
         currentScreen: "club",
         system: {

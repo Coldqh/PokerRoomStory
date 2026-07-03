@@ -1,14 +1,15 @@
-import { renderLifeScreen } from "./lifeScreen.js?v=2.2.0";
-import { renderCityMapScreen } from "./cityMapScreen.js?v=2.2.0";
-import { renderClubScreen } from "./clubScreen.js?v=2.2.0";
-import { renderTableScreen } from "./tableScreen.js?v=2.2.0";
-import { renderCareerScreen } from "./careerScreen.js?v=2.2.0";
-import { renderTasksScreen } from "./tasksScreen.js?v=2.2.0";
-import { renderNpcScreen } from "./npcScreen.js?v=2.2.0";
-import { renderGlossaryScreen } from "./glossaryScreen.js?v=2.2.0";
-import { renderCollectionsScreen } from "./collectionsScreen.js?v=2.2.0";
-import { renderSettingsScreen } from "./settingsScreen.js?v=2.2.0";
-import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=2.2.0";
+import { renderLifeScreen } from "./lifeScreen.js?v=2.3.0";
+import { renderCityMapScreen } from "./cityMapScreen.js?v=2.3.0";
+import { renderVenueScreen } from "./venueScreen.js?v=2.3.0";
+import { renderClubScreen } from "./clubScreen.js?v=2.3.0";
+import { renderTableScreen } from "./tableScreen.js?v=2.3.0";
+import { renderCareerScreen } from "./careerScreen.js?v=2.3.0";
+import { renderTasksScreen } from "./tasksScreen.js?v=2.3.0";
+import { renderNpcScreen } from "./npcScreen.js?v=2.3.0";
+import { renderGlossaryScreen } from "./glossaryScreen.js?v=2.3.0";
+import { renderCollectionsScreen } from "./collectionsScreen.js?v=2.3.0";
+import { renderSettingsScreen } from "./settingsScreen.js?v=2.3.0";
+import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=2.3.0";
 
 export const SCREENS = [
   { id: "life", label: "Жизнь" },
@@ -38,6 +39,7 @@ export function renderScreen(state) {
   let screen = "";
   if (currentScreen === "life") screen = renderLifeScreen(state);
   else if (currentScreen === "locations") screen = renderCityMapScreen(state);
+  else if (currentScreen === "venue") screen = renderVenueScreen(state);
   else if (currentScreen === "club") screen = renderClubScreen(state);
   else if (currentScreen === "table") screen = renderTableScreen(state);
   else if (currentScreen === "career") screen = renderCareerScreen(state);

@@ -1,9 +1,19 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.2.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.2.0";
+import { getCityMapView } from "../../engine/locations.js?v=2.3.0";
+import { escapeHtml } from "../components.js?v=2.3.0";
+
+const VENUE_GROUPS = [
+  { id: "home", title: "Home" },
+  { id: "poker", title: "Poker Clubs" },
+  { id: "food_store", title: "Food & Stores" },
+  { id: "work", title: "Work" },
+  { id: "property", title: "Property" },
+  { id: "transport", title: "Transport" },
+];
 
 export function renderCityMapScreen(state) {
   const activeClub = state.content?.byId?.clubs?.[state.activeClubId] ?? null;
-  const view = getCityMapView(state.content, state.career, state.player, activeClub?.cityId, state.activeClubId);
+  const activeVenueId = state.activeVenueId ?? state.career?.city?.activeVenueId ?? null;
+  const view = getCityMapView(state.content, state.career, state.player, activeClub?.cityId, state.activeClubId, activeVenueId);
   const cityName = view.city?.name ?? "Город";
   const countryName = view.country?.name ?? "Россия";
 
@@ -11,77 +21,85 @@ export function renderCityMapScreen(state) {
     <section class="city-map-screen">
       <article class="panel-soft city-map-hero">
         <div>
-          <span>Location progression</span>
-          <h2>Карта города</h2>
-          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Проходи клубы как локации: сцены, задания, доступ к следующей комнате.</p>
+          <span>City ecosystem</span>
+          <h2>Город</h2>
+          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Объекты города: клубы, дом, магазины, кафе, работа, жильё, машины.</p>
         </div>
         <div class="city-map-summary">
-          <div><span>Клубы</span><strong>${escapeHtml(String(view.summary.total))}</strong></div>
+          <div><span>Объекты</span><strong>${escapeHtml(String(view.summary.total))}</strong></div>
           <div><span>Открыто</span><strong>${escapeHtml(String(view.summary.unlocked))}</strong></div>
-          <div><span>Пройдено</span><strong>${escapeHtml(String(view.summary.completed))}</strong></div>
+          <div><span>Клубы</span><strong>${escapeHtml(String(view.summary.clubs))}</strong></div>
         </div>
       </article>
 
-      <section class="city-map-path" aria-label="Клубы города">
-        ${view.clubs.length ? view.clubs.map(renderClubLocationCard).join("") : renderEmptyCity()}
+      <section class="city-venue-map" aria-label="Объекты города">
+        ${VENUE_GROUPS.map((group) => renderVenueGroup(group, view.venues)).join("")}
       </section>
     </section>
   `;
 }
 
-function renderClubLocationCard(entry, index) {
-  const club = entry.club;
-  const route = entry.route;
-  const mastery = entry.mastery;
-  const tableCount = entry.tables.length;
-  const locked = !entry.access.ok;
-  const canEnter = entry.access.ok && !entry.current;
-  const description = club?.description ?? getThemeLine(club);
-  const routeTitle = route.story?.label ?? route.story?.title ?? "Club route";
-  const routeLine = route.total ? `${route.current}/${route.total} scenes` : "No route";
-  const masteryLine = mastery?.club ? `Room Mastery Lv.${mastery.level}` : "Room Mastery —";
-
+function renderVenueGroup(group, venues) {
+  const entries = venues.filter((entry) => (entry.venue?.category ?? "") === group.id);
+  if (!entries.length) return "";
   return `
-    <article class="city-club-card status-${escapeHtml(entry.statusId)} ${entry.current ? "is-current" : ""} ${locked ? "is-locked" : ""}">
-      <div class="city-club-node">${escapeHtml(String(index + 1).padStart(2, "0"))}</div>
-      <div class="city-club-main">
-        <div class="city-club-head">
-          <div>
-            <span>${escapeHtml(entry.statusLabel)}</span>
-            <strong>${escapeHtml(club?.name ?? "Club")}</strong>
-          </div>
-          <em>${escapeHtml(club?.tier ?? "Club")}</em>
-        </div>
-        <p>${escapeHtml(description)}</p>
-        <div class="city-club-route">
-          <div>
-            <span>${escapeHtml(routeTitle)}</span>
-            <strong>${escapeHtml(routeLine)}</strong>
-          </div>
-          ${progressBar(route.percent ?? 0)}
-        </div>
-        <div class="city-club-meta">
-          <span>${escapeHtml(String(tableCount))} tables</span>
-          <span>${escapeHtml(masteryLine)}</span>
-          ${locked ? `<span>${escapeHtml(entry.access.reason)}</span>` : ""}
-        </div>
+    <section class="city-venue-group">
+      <header><span>City layer</span><strong>${escapeHtml(group.title)}</strong></header>
+      <div class="city-venue-grid">
+        ${entries.map(renderVenueCard).join("")}
       </div>
-      <div class="city-club-actions">
-        <button class="${entry.current ? "small-button" : "primary"}" data-action="select-club" data-id="${escapeHtml(club?.id ?? "")}" ${canEnter ? "" : "disabled"}>
-          ${escapeHtml(entry.actionLabel)}
-        </button>
+    </section>
+  `;
+}
+
+function renderVenueCard(entry) {
+  const venue = entry.venue;
+  const locked = !entry.access.ok;
+  const meta = getVenueMeta(entry);
+  return `
+    <article class="city-venue-card venue-${escapeHtml(venue.type)} ${entry.current ? "is-current" : ""} ${locked ? "is-locked" : ""}">
+      <div class="city-venue-head">
+        <div>
+          <span>${escapeHtml(typeLabel(venue.type))}</span>
+          <strong>${escapeHtml(venue.name)}</strong>
+        </div>
+        <em>${escapeHtml(entry.statusLabel)}</em>
       </div>
+      <div class="city-venue-meta">
+        ${meta.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
+        ${locked ? `<span>${escapeHtml(entry.access.reason)}</span>` : ""}
+      </div>
+      <button class="${entry.current ? "small-button" : "primary"}" data-action="select-venue" data-id="${escapeHtml(venue.id)}" ${locked ? "disabled" : ""}>${escapeHtml(entry.actionLabel)}</button>
     </article>
   `;
 }
 
-function renderEmptyCity() {
-  return `<article class="panel-soft city-map-empty"><strong>Локаций нет.</strong><p>Клубы появятся после подключения content pack.</p></article>`;
+function getVenueMeta(entry) {
+  const venue = entry.venue;
+  if (venue.type === "poker_club") {
+    const club = entry.linkedClub;
+    return [club?.tier ?? "Club", club?.name ?? venue.name];
+  }
+  if (venue.type === "store") return [`${venue.inventoryIds?.length ?? 0} товаров`];
+  if (venue.type === "cafe") return [`${venue.orderIds?.length ?? 0} заказа`];
+  if (venue.type === "job_site") return [`${venue.jobIds?.length ?? 0} смены`];
+  if (venue.type === "real_estate_agency") return [`${venue.housingIds?.length ?? 0} варианта`];
+  if (venue.type === "car_dealer") return [`${venue.vehicleIds?.length ?? 0} машины`];
+  if (venue.type === "asset_store") return [`${venue.assetIds?.length ?? 0} вещи`];
+  if (venue.type === "home") return ["отдых", "инвентарь"];
+  return [venue.id];
 }
 
-function getThemeLine(club = {}) {
-  const tags = club.styleTags ?? [];
-  if (tags.includes("mid_stakes")) return "Закрытая комната с дорогими решениями и сильными регулярами.";
-  if (tags.includes("starter")) return "Первый локальный клуб: дешёвые лимиты, знакомые лица, маршрут новичка.";
-  return "Покерная локация города.";
+function typeLabel(type) {
+  const labels = {
+    home: "Home",
+    poker_club: "Poker",
+    store: "Store",
+    cafe: "Cafe",
+    job_site: "Work",
+    real_estate_agency: "Housing",
+    car_dealer: "Cars",
+    asset_store: "Assets",
+  };
+  return labels[type] ?? "Venue";
 }

@@ -1,8 +1,9 @@
-import { getClubTables } from "./selectors.js?v=2.2.0";
-import { canEnterClub } from "./world.js?v=2.2.0";
-import { getClubLevelInfo } from "./progression.js?v=2.2.0";
+import { getClubTables } from "./selectors.js?v=2.3.0";
+import { canEnterClub } from "./world.js?v=2.3.0";
+import { getClubLevelInfo } from "./progression.js?v=2.3.0";
+import { getCityVenues, getVenueStatus } from "./venues.js?v=2.3.0";
 
-export function getCityMapView(content, career = {}, player = {}, cityId = null, activeClubId = null) {
+export function getCityMapView(content, career = {}, player = {}, cityId = null, activeClubId = null, activeVenueId = null) {
   const activeClub = content?.byId?.clubs?.[activeClubId] ?? null;
   const resolvedCityId = cityId ?? activeClub?.cityId ?? content?.cities?.[0]?.id ?? null;
   const city = content?.byId?.cities?.[resolvedCityId] ?? content?.cities?.find((entry) => entry.id === resolvedCityId) ?? null;
@@ -10,19 +11,25 @@ export function getCityMapView(content, career = {}, player = {}, cityId = null,
   const clubs = (content?.clubs ?? [])
     .filter((club) => !resolvedCityId || club.cityId === resolvedCityId)
     .map((club) => getClubLocationStatus(content, career, player, club, activeClubId));
+  const venues = getCityVenues(content, resolvedCityId)
+    .map((venue) => getVenueStatus(content, career, player, venue, activeVenueId ?? career?.city?.activeVenueId ?? null, activeClubId));
 
   const completed = clubs.filter((club) => club.statusId === "completed").length;
-  const unlocked = clubs.filter((club) => club.access.ok).length;
+  const unlockedClubs = clubs.filter((club) => club.access.ok).length;
+  const openVenues = venues.filter((entry) => entry.access.ok).length;
 
   return {
     city,
     country,
     clubs,
+    venues,
     summary: {
-      total: clubs.length,
-      unlocked,
+      total: venues.length,
+      clubs: clubs.length,
+      unlocked: openVenues,
       completed,
-      locked: clubs.length - unlocked,
+      locked: venues.length - openVenues,
+      unlockedClubs,
     },
   };
 }

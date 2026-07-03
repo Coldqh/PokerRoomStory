@@ -1,5 +1,5 @@
-import { DATA_PACKS } from "./packs/index.js?v=2.2.0";
-import { validateContentRegistry } from "./validateContent.js?v=2.2.0";
+import { DATA_PACKS } from "./packs/index.js?v=2.3.0";
+import { validateContentRegistry } from "./validateContent.js?v=2.3.0";
 
 const packs = DATA_PACKS;
 
@@ -22,6 +22,7 @@ export function buildContentRegistry() {
     eventTemplates: flattenContent("eventTemplates"),
     challenges: flattenContent("challenges"),
     storylines: flattenContent("storylines"),
+    venues: flattenContent("venues"),
   };
 
   registry.byId = {
@@ -37,6 +38,7 @@ export function buildContentRegistry() {
     eventTemplates: indexById(registry.eventTemplates),
     challenges: indexById(registry.challenges),
     storylines: indexById(registry.storylines),
+    venues: indexById(registry.venues),
   };
 
   registry.validation = validateContentRegistry(registry);

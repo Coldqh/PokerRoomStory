@@ -1,6 +1,6 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.2.0";
-import { normalizeClubProgress } from "./progression.js?v=2.2.0";
-import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.2.0";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.3.0";
+import { normalizeClubProgress } from "./progression.js?v=2.3.0";
+import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.3.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },
@@ -49,6 +49,7 @@ export function createNewCareer() {
     clubProgress: {},
     storyProgress: {},
     life: createInitialLifeState(),
+    city: { activeVenueId: null, visitedVenueIds: [] },
   };
 }
 
@@ -72,6 +73,7 @@ export function normalizeCareer(career = {}) {
     clubProgress: normalizeClubProgress(null, career.clubProgress ?? base.clubProgress),
     storyProgress: career.storyProgress && typeof career.storyProgress === "object" ? career.storyProgress : {},
     life: normalizeLifeState(career.life ?? base.life),
+    city: normalizeCityState(career.city ?? base.city),
   };
 }
 
@@ -383,6 +385,13 @@ function formatReward({ xp, reputation }) {
   if (xp) parts.push(`XP +${xp}`);
   if (reputation) parts.push(`Rep +${reputation}`);
   return parts.join(" · ") || "без награды";
+}
+
+function normalizeCityState(city = {}) {
+  return {
+    activeVenueId: typeof city.activeVenueId === "string" ? city.activeVenueId : null,
+    visitedVenueIds: safeArray(city.visitedVenueIds),
+  };
 }
 
 function safeArray(value, fallback = []) {

@@ -1,10 +1,10 @@
-import { canEnterTable, getClubContext } from "../../engine/world.js?v=1.8.1";
-import { getClubRoomState } from "../../engine/club.js?v=1.8.1";
-import { getClubGoals } from "../../engine/clubGoals.js?v=1.8.1";
-import { getClubStorylines } from "../../engine/storylines.js?v=1.8.1";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.8.1";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.8.1";
-import { stableIndex } from "./common.js?v=1.8.1";
+import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=1.9.1";
+import { getClubRoomState } from "../../engine/club.js?v=1.9.1";
+import { getClubGoals } from "../../engine/clubGoals.js?v=1.9.1";
+import { getClubStorylines } from "../../engine/storylines.js?v=1.9.1";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=1.9.1";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=1.9.1";
+import { stableIndex } from "./common.js?v=1.9.1";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -15,9 +15,11 @@ export function renderClubScreen(state) {
   const levelInfo = getClubLevelInfo(state.content, state.career, state.activeClubId);
   const goals = getClubGoals(state.content, state.career, state.activeClubId).slice(0, 5);
   const storylines = getClubStorylines(state.content, state.career, state.activeClubId).slice(0, 1);
+  const cityClubs = getCityClubs(state.content, club.cityId);
 
   return `
     <section class="club-lobby-shell">
+      ${renderClubSelector(state, club, cityClubs)}
       ${renderStorylinePanel(storylines)}
       <section class="room-lobby-layout club-lobby-main-grid">
         <article class="panel-soft room-lobby-panel club-lobby-home-panel">
@@ -42,6 +44,41 @@ export function renderClubScreen(state) {
       </section>
     </section>
   `;
+}
+
+
+function renderClubSelector(state, activeClub, clubs = []) {
+  if (clubs.length <= 1) return "";
+  return `
+    <section class="club-location-strip" aria-label="Club locations">
+      <div class="club-location-head">
+        <span>Locations</span>
+        <strong>Клубы города</strong>
+      </div>
+      <div class="club-location-list">
+        ${clubs.map((club) => renderClubSelectorItem(state, activeClub, club)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderClubSelectorItem(state, activeClub, club) {
+  const access = canEnterClub(state.player, state.career, club);
+  const active = activeClub?.id === club.id;
+  const tables = club.tables?.length ?? 0;
+  const label = active ? "Текущий" : access.ok ? "Открыт" : "Закрыт";
+  return `
+    <button class="club-location-card ${active ? "active" : ""} ${access.ok ? "open" : "locked"}" type="button" data-action="select-club" data-id="${escapeHtml(club.id)}" ${access.ok ? "" : "disabled"}>
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(club.name)}</strong>
+      <em>${escapeHtml(club.tier ?? "Club")} · ${tables} tables</em>
+      ${access.ok ? "" : `<small>${escapeHtml(access.reason)}</small>`}
+    </button>
+  `;
+}
+
+function getCityClubs(content, cityId) {
+  return (content?.clubs ?? []).filter((club) => club.cityId === cityId);
 }
 
 function renderStorylinePanel(storylines = []) {
@@ -276,6 +313,10 @@ function getTableMoodLabel(table) {
     loose: "Лузовая игра",
     regular: "Регулярский стол",
     back_room: "Закрытый стол",
+    underground_entry: "Входной регулярский",
+    deep_stack: "Deep stack",
+    pressure: "Pressure table",
+    owners_table: "Стол владельца",
   };
   return labels[table?.tableMood] ?? "Обычный стол";
 }

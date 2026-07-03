@@ -21,6 +21,7 @@ export function applyStorylineProgress({ content, career = {}, clubId, table = n
   const completedNow = [];
   let xpReward = 0;
   let reputationReward = 0;
+  let nextCareer = { ...career };
 
   for (const story of storylines) {
     const saved = progress[story.id] ?? createStorySave();
@@ -33,11 +34,12 @@ export function applyStorylineProgress({ content, career = {}, clubId, table = n
     }
 
     const current = Math.max(0, Math.round(Number(saved.current ?? 0) || 0));
-    const nextCurrent = getNextStepValue(step, current, { career, clubId, table, tableState, result, player });
+    const nextCurrent = getNextStepValue(step, current, { career: nextCareer, clubId, table, tableState, result, player });
     const stepCompleted = nextCurrent >= step.target;
     const completedSteps = [...new Set([...(saved.completedSteps ?? []), ...(stepCompleted ? [step.id] : [])])];
     const nextStepIndex = stepCompleted ? saved.stepIndex + 1 : saved.stepIndex;
     const storyCompleted = nextStepIndex >= story.steps.length;
+    const unlock = stepCompleted ? (step.unlocks ?? (storyCompleted ? story.unlocks : null)) : null;
 
     progress[story.id] = {
       ...saved,
@@ -46,7 +48,7 @@ export function applyStorylineProgress({ content, career = {}, clubId, table = n
       stepIndex: Math.min(nextStepIndex, story.steps.length - 1),
       completedSteps,
       completed: storyCompleted,
-      unlocked: storyCompleted ? (step.unlocks ?? story.unlocks ?? saved.unlocked ?? null) : (saved.unlocked ?? null),
+      unlocked: storyCompleted ? (unlock ?? saved.unlocked ?? null) : (saved.unlocked ?? null),
       updatedAt: new Date().toISOString(),
     };
 
@@ -58,13 +60,15 @@ export function applyStorylineProgress({ content, career = {}, clubId, table = n
     reputationReward += Math.max(0, Math.round(Number(reward.reputation ?? 0) || 0));
     messages.push(`Story: ${story.title} · ${step.title} · ${formatStoryReward(reward)}`);
     if (step.completeMessage) messages.push(step.completeMessage);
-    const unlock = step.unlocks ?? (storyCompleted ? story.unlocks : null);
-    if (unlock?.clubLabel) messages.push(`Новая локация: ${unlock.clubLabel}`);
+    if (unlock) {
+      nextCareer = applyStoryUnlock(content, nextCareer, unlock);
+      if (unlock.clubLabel) messages.push(`Новая локация: ${unlock.clubLabel}`);
+    }
   }
 
   return {
     career: {
-      ...career,
+      ...nextCareer,
       storyProgress: progress,
     },
     messages,
@@ -115,6 +119,34 @@ function getNextStepValue(step, current, { career, clubId, table, result, player
   if (step.type === "room_mastery_level") return Math.max(current, getClubMasteryLevel(career, clubId));
 
   return current;
+}
+
+function applyStoryUnlock(content, career = {}, unlock = {}) {
+  const unlockedCountries = new Set(career.unlockedCountries ?? []);
+  const unlockedCities = new Set(career.unlockedCities ?? []);
+  const unlockedClubs = new Set(career.unlockedClubs ?? []);
+  const unlockedTables = new Set(career.unlockedTables ?? []);
+
+  if (unlock.countryId) unlockedCountries.add(unlock.countryId);
+  if (unlock.cityId) unlockedCities.add(unlock.cityId);
+  if (unlock.clubId) {
+    const club = content?.byId?.clubs?.[unlock.clubId];
+    unlockedClubs.add(unlock.clubId);
+    if (club?.cityId) unlockedCities.add(club.cityId);
+    for (const tableId of club?.tables ?? []) {
+      const table = content?.byId?.tables?.[tableId];
+      if (!table?.unlockRequirement) unlockedTables.add(tableId);
+    }
+  }
+  for (const tableId of unlock.tableIds ?? []) unlockedTables.add(tableId);
+
+  return {
+    ...career,
+    unlockedCountries: [...unlockedCountries],
+    unlockedCities: [...unlockedCities],
+    unlockedClubs: [...unlockedClubs],
+    unlockedTables: [...unlockedTables],
+  };
 }
 
 function getClubMasteryLevel(career = {}, clubId) {

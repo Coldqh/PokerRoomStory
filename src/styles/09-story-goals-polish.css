@@ -345,3 +345,86 @@
     border-radius: 22px 22px 14px 14px;
   }
 }
+
+
+.club-location-strip {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(245, 196, 111, 0.16);
+  border-radius: 22px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.club-location-head,
+.club-location-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.club-location-head span,
+.club-location-card span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.club-location-head strong {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.club-location-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.club-location-card {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.club-location-card.active {
+  border-color: rgba(245, 196, 111, 0.34);
+  background: rgba(245, 196, 111, 0.08);
+}
+
+.club-location-card.locked {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.club-location-card strong {
+  color: #fff;
+  font-size: 0.94rem;
+}
+
+.club-location-card em,
+.club-location-card small {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.club-location-card.open span,
+.club-location-card.active span {
+  color: #f5c46f;
+}
+
+@media (min-width: 760px) {
+  .club-location-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

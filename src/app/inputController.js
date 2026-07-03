@@ -1,5 +1,6 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=1.4.3";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.4.3";
+import { clearSave, importSaveText } from "../engine/save.js?v=1.9.1";
+import { getClubTables } from "../engine/selectors.js?v=1.9.1";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=1.9.1";
 
 export const inputController = {
   handleClick(event) {
@@ -42,8 +43,27 @@ export const inputController = {
       "open-opponent-read",
       "close-opponent-read",
       "top-up-table-stack",
+      "select-club",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
+
+    if (action === "select-club") {
+      const club = this.content.byId.clubs[id];
+      if (!club) return;
+      const tables = getClubTables(this.content, id);
+      this.menuOpen = false;
+      this.setState({
+        activeClubId: id,
+        activeTableId: tables[0]?.id ?? this.state.activeTableId,
+        currentScreen: "club",
+        system: {
+          ...this.state.system,
+          notice: null,
+          buyInModal: null,
+        },
+      });
+      return;
+    }
 
     if (action === "select-table") {
       this.menuOpen = false;

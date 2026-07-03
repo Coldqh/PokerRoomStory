@@ -1,5 +1,5 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.1.0";
-import { normalizeClubProgress } from "./progression.js?v=1.1.0";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=1.9.1";
+import { normalizeClubProgress } from "./progression.js?v=1.9.1";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },
@@ -46,6 +46,7 @@ export function createNewCareer() {
     unlockedGlossary: ["TERM_POKER_BANKROLL"],
     unlockedCollections: [],
     clubProgress: {},
+    storyProgress: {},
   };
 }
 
@@ -67,6 +68,7 @@ export function normalizeCareer(career = {}) {
     unlockedGlossary: safeArray(career.unlockedGlossary, base.unlockedGlossary),
     unlockedCollections: safeArray(career.unlockedCollections),
     clubProgress: normalizeClubProgress(null, career.clubProgress ?? base.clubProgress),
+    storyProgress: career.storyProgress && typeof career.storyProgress === "object" ? career.storyProgress : {},
   };
 }
 
@@ -186,20 +188,39 @@ export function applyChallenges({ content, career, player, tableState, result, u
 export function updateCareerUnlocks(player, career, content) {
   const normalizedCareer = ensureActiveChallenges(content, career);
   const unlockedTables = new Set(normalizedCareer.unlockedTables);
+  const unlockedClubs = new Set(normalizedCareer.unlockedClubs);
+  const unlockedCities = new Set(normalizedCareer.unlockedCities);
+
+  for (const club of content.clubs ?? []) {
+    const req = club.unlockRequirement;
+    const alreadyUnlocked = unlockedClubs.has(club.id);
+    const bankrollOk = !req?.bankroll || player.bankroll >= req.bankroll;
+    const reputationOk = !req?.reputation || player.reputation >= req.reputation;
+    if (!req || alreadyUnlocked || (bankrollOk && reputationOk)) {
+      unlockedClubs.add(club.id);
+      if (club.cityId) unlockedCities.add(club.cityId);
+    }
+  }
 
   for (const table of content.tables) {
     const req = table.unlockRequirement;
-    if (!req) {
+    const clubUnlocked = unlockedClubs.has(table.clubId);
+    if (!req && clubUnlocked) {
       unlockedTables.add(table.id);
       continue;
     }
 
-    const bankrollOk = !req.bankroll || player.bankroll >= req.bankroll;
-    const reputationOk = !req.reputation || player.reputation >= req.reputation;
-    if (bankrollOk && reputationOk) unlockedTables.add(table.id);
+    const bankrollOk = !req?.bankroll || player.bankroll >= req.bankroll;
+    const reputationOk = !req?.reputation || player.reputation >= req.reputation;
+    if (clubUnlocked && bankrollOk && reputationOk) unlockedTables.add(table.id);
   }
 
-  return ensureActiveChallenges(content, { ...normalizedCareer, unlockedTables: [...unlockedTables] });
+  return ensureActiveChallenges(content, {
+    ...normalizedCareer,
+    unlockedCities: [...unlockedCities],
+    unlockedClubs: [...unlockedClubs],
+    unlockedTables: [...unlockedTables],
+  });
 }
 
 export function getXpProgress(player) {
@@ -238,8 +259,8 @@ export function getRankProgress(player) {
 }
 
 export function getActiveChallenges(content, career, limit = ACTIVE_CHALLENGE_LIMIT) {
-  const ids = getActiveChallengeIds(content, career, limit);
-  return ids.map((id) => content.byId?.challenges?.[id] ?? (content.challenges ?? []).find((challenge) => challenge.id === id)).filter(Boolean);
+  const normalized = normalizeCareer(career);
+  return getActiveChallengeIds(content, normalized, limit).map((id) => content.byId?.challenges?.[id] ?? (content.challenges ?? []).find((challenge) => challenge.id === id)).filter(Boolean);
 }
 
 export function getCompletedChallenges(content, career) {
@@ -259,7 +280,7 @@ export function getChallengeDifficultyLabel(difficulty) {
 }
 
 export function getChallengeProgress(challenge, context = {}) {
-  const { player = {}, tableState = {}, result = {}, unlockConditions = [] } = context;
+  const { player = {}, result = {}, unlockConditions = [] } = context;
   const goal = challenge.goal ?? {};
 
   if (goal.condition) {
@@ -267,34 +288,57 @@ export function getChallengeProgress(challenge, context = {}) {
     return { current: completed ? 1 : 0, target: 1, completed };
   }
 
+  if (challenge.type === "unlock") {
+    const completed = (unlockConditions ?? []).includes(challenge.unlockKey);
+    return { current: completed ? 1 : 0, target: 1, completed };
+  }
+  if (challenge.type === "win_hand") {
+    const completed = result?.winner === "player";
+    return { current: completed ? 1 : 0, target: 1, completed };
+  }
+  if (challenge.type === "reach_showdown") {
+    const completed = Boolean(result?.showdown);
+    return { current: completed ? 1 : 0, target: 1, completed };
+  }
+  if (challenge.type === "fold_count") {
+    const target = Math.max(1, safeNumber(challenge.target, 1));
+    const current = safeNumber(player?.foldsMade, 0);
+    return { current: Math.min(current, target), target, completed: current >= target };
+  }
+  if (challenge.type === "big_pot") {
+    const target = Math.max(1, safeNumber(challenge.target, 1));
+    const current = result?.winner === "player" ? safeNumber(result?.pot, 0) : 0;
+    return { current: Math.min(current, target), target, completed: current >= target };
+  }
+  if (challenge.type === "hands_played") {
+    const target = Math.max(1, safeNumber(challenge.target, 1));
+    const current = safeNumber(player?.handsPlayed, 0);
+    return { current: Math.min(current, target), target, completed: current >= target };
+  }
+
   const target = Math.max(1, safeNumber(goal.target, 1));
-  const current = getGoalCurrentValue(goal, { player, tableState, result, unlockConditions });
+  const current = getGoalCurrentValue(goal, { player, result, unlockConditions });
   return { current: Math.min(current, target), target, completed: current >= target };
 }
 
 function getActiveChallengeIds(content, career, limit = ACTIVE_CHALLENGE_LIMIT) {
   const normalizedCareer = normalizeCareer(career);
-  const all = content.challenges ?? [];
-  const knownIds = new Set(all.map((challenge) => challenge.id));
-  const completed = new Set(normalizedCareer.completedChallenges);
-  const active = [];
+  const completed = new Set(normalizedCareer.completedChallenges ?? []);
+  const knownIds = new Set((content.challenges ?? []).map((challenge) => challenge.id));
+  const existing = (normalizedCareer.activeChallenges ?? []).filter((id) => knownIds.has(id) && !completed.has(id));
+  const selected = [...existing];
 
-  for (const id of normalizedCareer.activeChallenges ?? []) {
-    if (active.length >= limit) break;
-    if (!knownIds.has(id) || completed.has(id) || active.includes(id)) continue;
-    active.push(id);
+  for (const challenge of content.challenges ?? []) {
+    if (selected.length >= limit) break;
+    if (completed.has(challenge.id) || selected.includes(challenge.id)) continue;
+    selected.push(challenge.id);
   }
 
-  for (const challenge of all) {
-    if (active.length >= limit) break;
-    if (completed.has(challenge.id) || active.includes(challenge.id)) continue;
-    active.push(challenge.id);
-  }
-
-  return active.slice(0, limit);
+  return selected.slice(0, limit);
 }
 
-function getGoalCurrentValue(goal, { player, result }) {
+function getGoalCurrentValue(goal, { player, result, unlockConditions }) {
+  if (goal.condition) return unlockConditions.includes(goal.condition) ? 1 : 0;
   if (goal.stat) return safeNumber(player?.[goal.stat], 0);
   if (goal.resultStat === "pot") return safeNumber(result?.pot, 0);
   if (goal.resultStat === "bankrollDeltaPositive") return Math.max(0, safeNumber(result?.bankrollDelta, 0));
@@ -319,34 +363,33 @@ function hasPlayerFlushSuit(result, suit) {
 }
 
 function getRank(player) {
-  const safe = { bankroll: safeNumber(player?.bankroll, 0), reputation: safeNumber(player?.reputation, 0) };
   let rank = RANKS[0].id;
-  for (const entry of RANKS) {
-    if (safe.reputation >= entry.minRep && safe.bankroll >= entry.minBankroll) rank = entry.id;
+  for (const candidate of RANKS) {
+    if (player.reputation >= candidate.minRep && player.bankroll >= candidate.minBankroll) rank = candidate.id;
   }
   return rank;
 }
 
+function formatReward({ xp, reputation }) {
+  const parts = [];
+  if (xp) parts.push(`XP +${xp}`);
+  if (reputation) parts.push(`Rep +${reputation}`);
+  return parts.join(" · ") || "без награды";
+}
+
 function safeArray(value, fallback = []) {
-  return Array.isArray(value) ? value : [...fallback];
+  return Array.isArray(value) ? value : fallback;
 }
 
 function safeNumber(value, fallback = 0) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
+  const next = Number(value);
+  return Number.isFinite(next) ? next : fallback;
 }
 
 function clamp01(value) {
-  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+  return Math.max(0, Math.min(1, value));
 }
 
 function clampPercent(value) {
-  return Math.round(Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0)));
-}
-
-function formatReward(reward = {}) {
-  const parts = [];
-  if (reward.xp) parts.push(`XP +${reward.xp}`);
-  if (reward.reputation) parts.push(`Rep +${reward.reputation}`);
-  return parts.length ? parts.join(" · ") : "без награды";
+  return Math.max(0, Math.min(100, Math.round(value)));
 }

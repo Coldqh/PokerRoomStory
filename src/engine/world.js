@@ -1,4 +1,4 @@
-import { getClubNpcs, getClubTables } from "./selectors.js?v=1.1.0";
+import { getClubNpcs, getClubTables } from "./selectors.js?v=1.9.1";
 
 export function getClubContext(content, clubId) {
   const club = content.byId.clubs[clubId];
@@ -10,6 +10,19 @@ export function getClubContext(content, clubId) {
   const npcs = getClubNpcs(content, clubId);
 
   return { club, city, country, tables, npcs };
+}
+
+export function canEnterClub(player, career = {}, club) {
+  if (!club) return { ok: false, reason: "Клуб не найден." };
+  const unlocked = new Set(career?.unlockedClubs ?? []);
+  if (unlocked.has(club.id) || !club.unlockRequirement) return { ok: true, reason: null };
+
+  const bankroll = Number(player?.bankroll ?? 0);
+  const reputation = Number(player?.reputation ?? 0);
+  const req = club.unlockRequirement ?? {};
+  if (req.bankroll && bankroll < req.bankroll) return { ok: false, reason: `Нужно минимум $${req.bankroll} банкролла.` };
+  if (req.reputation && reputation < req.reputation) return { ok: false, reason: `Нужно ${req.reputation} репутации.` };
+  return { ok: true, reason: null };
 }
 
 export function canEnterTable(player, table) {

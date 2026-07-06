@@ -1,7 +1,7 @@
-import { getLifeView } from "../../engine/life.js?v=2.6.0";
-import { getBusinessView } from "../../engine/businesses.js?v=2.6.0";
-import { getVenueById } from "../../engine/venues.js?v=2.6.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.6.0";
+import { getLifeView } from "../../engine/life.js?v=2.6.1";
+import { getBusinessView } from "../../engine/businesses.js?v=2.6.1";
+import { getVenueById } from "../../engine/venues.js?v=2.6.1";
+import { escapeHtml, progressBar } from "../components.js?v=2.6.1";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -11,6 +11,7 @@ export function renderLifeScreen(state) {
   const assets = view.assets.filter((entry) => entry.owned);
   const businesses = getBusinessView(state.career, state.player).owned;
   const dailyBusinessProfit = businesses.reduce((sum, row) => sum + Number(row.dailyProfit ?? 0), 0);
+  const lockedAtTable = Boolean(state.tableSession?.tableId);
   return `
     <section class="life-screen">
       <article class="life-hero panel-soft">
@@ -33,6 +34,13 @@ export function renderLifeScreen(state) {
         ${renderLifeMeter("Stress", life.needs.stress, `${life.needs.stress}/100`)}
       </section>
 
+      ${lockedAtTable ? `
+        <section class="life-warning-panel panel-soft">
+          <span>Location</span>
+          <p>Ты сейчас за столом. Сначала встань из-за стола.</p>
+        </section>
+      ` : ""}
+
       <section class="life-home-panel panel-soft">
         <div>
           <span>Current home</span>
@@ -46,7 +54,7 @@ export function renderLifeScreen(state) {
           </div>
           <p>Rest: ${escapeHtml(formatEffect(view.currentHousing.restEffect))}</p>
         </div>
-        <button class="primary" data-action="life-action" data-id="rest:home" ${view.canRest ? "" : "disabled"}>Отдохнуть дома</button>
+        <button class="primary" data-action="life-action" data-id="rest:home" ${view.canRest && !lockedAtTable ? "" : "disabled"}>Отдохнуть дома</button>
         <button data-action="screen" data-id="locations">Выйти в город</button>
       </section>
 
@@ -63,7 +71,7 @@ export function renderLifeScreen(state) {
         <article class="life-section panel-soft">
           <header><span>Inventory</span><strong>Инвентарь</strong></header>
           <div class="life-list compact">
-            ${view.inventory.length ? view.inventory.map(renderInventoryItem).join("") : `<div class="life-empty">Пусто</div>`}
+            ${view.inventory.length ? view.inventory.map((entry) => renderInventoryItem(entry, lockedAtTable)).join("") : `<div class="life-empty">Пусто</div>`}
           </div>
         </article>
 
@@ -105,11 +113,11 @@ function renderLifeMeter(label, percent, value) {
   `;
 }
 
-function renderInventoryItem(entry) {
+function renderInventoryItem(entry, lockedAtTable = false) {
   return `
     <div class="life-row">
       <div><strong>${escapeHtml(entry.item.name)} x${escapeHtml(String(entry.qty))}</strong><span>${escapeHtml(formatEffect(entry.item.effect))}</span></div>
-      <button class="small-button" data-action="life-action" data-id="use:${escapeHtml(entry.item.id)}">Использовать</button>
+      <button class="small-button" data-action="life-action" data-id="use:${escapeHtml(entry.item.id)}" ${lockedAtTable ? "disabled" : ""}>Использовать</button>
     </div>
   `;
 }

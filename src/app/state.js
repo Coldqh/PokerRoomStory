@@ -1,10 +1,10 @@
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=2.6.0";
-import { normalizeClubNpcState } from "../engine/club.js?v=2.6.0";
-import { createInitialTableState } from "../engine/poker.js?v=2.6.0";
-import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=2.6.0";
-import { getDefaultStartLocation } from "../engine/selectors.js?v=2.6.0";
-import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=2.6.0";
-import { getRuntimeStatus } from "../engine/update.js?v=2.6.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=2.6.1";
+import { normalizeClubNpcState } from "../engine/club.js?v=2.6.1";
+import { createInitialTableState } from "../engine/poker.js?v=2.6.1";
+import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=2.6.1";
+import { getDefaultStartLocation } from "../engine/selectors.js?v=2.6.1";
+import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=2.6.1";
+import { getRuntimeStatus } from "../engine/update.js?v=2.6.1";
 
 export const stateController = {
   createInitialState() {

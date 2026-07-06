@@ -1,5 +1,5 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.6.0";
-import { escapeHtml } from "../components.js?v=2.6.0";
+import { getCityMapView } from "../../engine/locations.js?v=2.6.1";
+import { escapeHtml } from "../components.js?v=2.6.1";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
@@ -27,6 +27,7 @@ export function renderCityMapScreen(state) {
           <span>City ecosystem</span>
           <h2>Город</h2>
           <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Объекты города: клубы, дом, магазины, кафе, работа, жильё, машины.</p>
+          ${state.tableSession?.tableId ? `<p class="venue-warning">Ты сейчас за столом. Сначала встань из-за стола.</p>` : ""}
         </div>
         <div class="city-map-summary">
           <div><span>Объекты</span><strong>${escapeHtml(String(view.summary.total))}</strong></div>
@@ -36,26 +37,26 @@ export function renderCityMapScreen(state) {
       </article>
 
       <section class="city-venue-map" aria-label="Объекты города">
-        ${VENUE_GROUPS.map((group) => renderVenueGroup(group, view.venues)).join("")}
+        ${VENUE_GROUPS.map((group) => renderVenueGroup(group, view.venues, Boolean(state.tableSession?.tableId))).join("")}
       </section>
     </section>
   `;
 }
 
-function renderVenueGroup(group, venues) {
+function renderVenueGroup(group, venues, lockedAtTable = false) {
   const entries = venues.filter((entry) => (entry.venue?.category ?? "") === group.id);
   if (!entries.length) return "";
   return `
     <section class="city-venue-group">
       <header><span>City layer</span><strong>${escapeHtml(group.title)}</strong></header>
       <div class="city-venue-grid">
-        ${entries.map(renderVenueCard).join("")}
+        ${entries.map((entry) => renderVenueCard(entry, lockedAtTable)).join("")}
       </div>
     </section>
   `;
 }
 
-function renderVenueCard(entry) {
+function renderVenueCard(entry, lockedAtTable = false) {
   const venue = entry.venue;
   const locked = !entry.access.ok;
   const meta = getVenueMeta(entry);
@@ -72,7 +73,7 @@ function renderVenueCard(entry) {
         ${meta.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
         ${locked ? `<span>${escapeHtml(entry.access.reason)}</span>` : ""}
       </div>
-      <button class="${entry.current ? "small-button" : "primary"}" data-action="select-venue" data-id="${escapeHtml(venue.id)}" ${locked ? "disabled" : ""}>${escapeHtml(entry.actionLabel)}</button>
+      <button class="${entry.current ? "small-button" : "primary"}" data-action="select-venue" data-id="${escapeHtml(venue.id)}" ${locked || lockedAtTable ? "disabled" : ""}>${escapeHtml(lockedAtTable ? "За столом" : entry.actionLabel)}</button>
     </article>
   `;
 }
@@ -91,7 +92,7 @@ function getVenueMeta(entry) {
   if (venue.type === "asset_store") return [`${venue.assetIds?.length ?? 0} вещи`];
   if (venue.type === "business_broker") return [`${venue.businessIds?.length ?? 0} бизнесов`];
   if (venue.type === "home") return ["отдых", "инвентарь"];
-  return [venue.id];
+  return [];
 }
 
 function typeLabel(type) {

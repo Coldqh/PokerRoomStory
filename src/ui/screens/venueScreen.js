@@ -1,5 +1,5 @@
-import { getVenueView } from "../../engine/venues.js?v=2.6.0";
-import { escapeHtml } from "../components.js?v=2.6.0";
+import { getVenueView } from "../../engine/venues.js?v=2.6.1";
+import { escapeHtml } from "../components.js?v=2.6.1";
 
 export function renderVenueScreen(state) {
   const venueId = state.activeVenueId ?? state.career?.city?.activeVenueId;
@@ -13,7 +13,7 @@ export function renderVenueScreen(state) {
         <div>
           <span>${escapeHtml(typeLabel(venue.type))}</span>
           <h2>${escapeHtml(venue.name)}</h2>
-          <p>${escapeHtml(view.country?.name ?? "Country")} · ${escapeHtml(view.city?.name ?? "City")} · ${escapeHtml(venue.id)}</p>
+          <p>${escapeHtml(formatVenueLocation(view))}</p>
         </div>
         <div class="venue-actions-top">
           <button data-action="screen" data-id="locations">Карта</button>
@@ -39,21 +39,23 @@ function renderMissingVenue() {
 
 function renderVenueBody(view, state) {
   const venue = view.venue;
-  if (venue.type === "poker_club") return renderPokerClubVenue(view);
-  if (venue.type === "store") return renderRows("Товары", view.rows.map(renderStoreRow));
-  if (["cafe", "restaurant"].includes(venue.type)) return renderRows("Меню", view.rows.map(renderCafeRow));
-  if (venue.type === "job_site") return renderRows("Смены", view.rows.map(renderJobRow));
-  if (venue.type === "real_estate_agency") return renderRows("Жильё", view.rows.map(renderHousingRow));
-  if (venue.type === "car_dealer") return renderRows("Машины", view.rows.map(renderVehicleRow));
-  if (venue.type === "asset_store") return renderRows("Имущество", view.rows.map(renderAssetRow));
-  if (venue.type === "business_broker") return renderRows("Бизнесы", view.rows.map(renderBusinessRow));
-  if (venue.type === "home") return renderRows("Дом", view.rows.map(renderHomeRow));
+  const lockedAtTable = isSeatedAtTable(state);
+  if (venue.type === "poker_club") return renderPokerClubVenue(view, lockedAtTable);
+  const warning = lockedAtTable ? renderLocationLockNotice() : "";
+  if (venue.type === "store") return warning + renderRows("Товары", view.rows.map((row) => renderStoreRow(row, lockedAtTable)));
+  if (["cafe", "restaurant"].includes(venue.type)) return warning + renderRows("Меню", view.rows.map((row) => renderCafeRow(row, lockedAtTable)));
+  if (venue.type === "job_site") return warning + renderRows("Смены", view.rows.map((row) => renderJobRow(row, lockedAtTable)));
+  if (venue.type === "real_estate_agency") return warning + renderRows("Жильё", view.rows.map((row) => renderHousingRow(row, lockedAtTable)));
+  if (venue.type === "car_dealer") return warning + renderRows("Машины", view.rows.map((row) => renderVehicleRow(row, lockedAtTable)));
+  if (venue.type === "asset_store") return warning + renderRows("Имущество", view.rows.map((row) => renderAssetRow(row, lockedAtTable)));
+  if (venue.type === "business_broker") return warning + renderRows("Бизнесы", view.rows.map((row) => renderBusinessRow(row, lockedAtTable)));
+  if (venue.type === "home") return warning + renderRows("Дом", view.rows.map((row) => renderHomeRow(row, lockedAtTable)));
   return renderRows("Действия", [`<div class="life-empty">Действий нет.</div>`]);
 }
 
-function renderPokerClubVenue(view) {
+function renderPokerClubVenue(view, lockedAtTable = false) {
   const club = view.club;
-  const locked = !view.status.access.ok;
+  const locked = !view.status.access.ok || lockedAtTable;
   return `
     <article class="venue-section panel-soft">
       <header><span>Poker club</span><strong>${escapeHtml(club?.name ?? "Клуб")}</strong></header>
@@ -62,7 +64,7 @@ function renderPokerClubVenue(view) {
         <div><span>Status</span><strong>${escapeHtml(view.status.statusLabel)}</strong></div>
         <div><span>Tier</span><strong>${escapeHtml(club?.tier ?? "—")}</strong></div>
       </div>
-      ${locked ? `<p class="venue-warning">${escapeHtml(view.status.access.reason)}</p>` : ""}
+      ${locked ? `<p class="venue-warning">${escapeHtml(lockedAtTable ? "Сначала встань из-за стола." : view.status.access.reason)}</p>` : ""}
       <button class="primary" data-action="select-club" data-id="${escapeHtml(club?.id ?? "")}" ${locked ? "disabled" : ""}>Войти в клуб</button>
     </article>
   `;
@@ -79,34 +81,34 @@ function renderRows(title, rows) {
   `;
 }
 
-function renderStoreRow(row) {
+function renderStoreRow(row, lockedAtTable = false) {
   return `
     <div class="life-row">
       <div><strong>${escapeHtml(row.item.name)}</strong><span>$${escapeHtml(String(row.item.price))} · ${escapeHtml(formatEffect(row.item.effect))} · Owned ${escapeHtml(String(row.ownedQty))}</span></div>
-      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Купить</button>
+      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Купить</button>
     </div>
   `;
 }
 
-function renderCafeRow(row) {
+function renderCafeRow(row, lockedAtTable = false) {
   return `
     <div class="life-row">
       <div><strong>${escapeHtml(row.order.name)}</strong><span>$${escapeHtml(String(row.order.price))} · ${escapeHtml(formatEffect(row.order.effect))} · ${escapeHtml(String(row.order.actionCost))} action</span></div>
-      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Заказать</button>
+      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Заказать</button>
     </div>
   `;
 }
 
-function renderJobRow(row) {
+function renderJobRow(row, lockedAtTable = false) {
   return `
     <div class="life-row">
       <div><strong>${escapeHtml(row.job.name)}</strong><span>+$${escapeHtml(String(row.job.pay))} · ${escapeHtml(formatEffect(row.job.effect))} · ${escapeHtml(String(row.job.actionCost))} action</span></div>
-      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Выйти</button>
+      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Выйти</button>
     </div>
   `;
 }
 
-function renderHousingRow(row) {
+function renderHousingRow(row, lockedAtTable = false) {
   const housing = row.housing;
   const buyText = housing.purchasePrice ? `$${housing.purchasePrice}` : "нельзя купить";
   const status = row.view?.current ? "Текущее" : row.view?.owned ? "Куплено" : "Доступно";
@@ -127,15 +129,15 @@ function renderHousingRow(row) {
         <p>Аренда $${escapeHtml(String(housing.rent))} / 7 дней · Отдых ${escapeHtml(formatEffect(housing.restEffect))} · Купить ${escapeHtml(String(buyText))}</p>
       </div>
       <div class="life-row-actions">
-        <button class="small-button" data-action="venue-action" data-id="rentHousing:${escapeHtml(housing.id)}" ${row.canRent ? "" : "disabled"}>Снять</button>
-        <button class="small-button" data-action="venue-action" data-id="moveHousing:${escapeHtml(housing.id)}" ${row.view?.canMove ? "" : "disabled"}>Переехать</button>
-        <button class="small-button" data-action="venue-action" data-id="buyHousing:${escapeHtml(housing.id)}" ${row.canBuy ? "" : "disabled"}>Купить</button>
+        <button class="small-button" data-action="venue-action" data-id="rentHousing:${escapeHtml(housing.id)}" ${row.canRent && !lockedAtTable ? "" : "disabled"}>Снять</button>
+        <button class="small-button" data-action="venue-action" data-id="moveHousing:${escapeHtml(housing.id)}" ${row.view?.canMove && !lockedAtTable ? "" : "disabled"}>Переехать</button>
+        <button class="small-button" data-action="venue-action" data-id="buyHousing:${escapeHtml(housing.id)}" ${row.canBuy && !lockedAtTable ? "" : "disabled"}>Купить</button>
       </div>
     </div>
   `;
 }
 
-function renderVehicleRow(row) {
+function renderVehicleRow(row, lockedAtTable = false) {
   const vehicle = row.vehicle;
   const meta = [
     vehicle.class,
@@ -149,21 +151,21 @@ function renderVehicleRow(row) {
         <strong>${escapeHtml(vehicle.name)}</strong>
         <span>$${escapeHtml(String(vehicle.price))} · ${escapeHtml(meta)} · ${escapeHtml(formatEffect(vehicle.effect))}</span>
       </div>
-      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Купить</button>
+      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Купить</button>
     </div>
   `;
 }
 
-function renderAssetRow(row) {
+function renderAssetRow(row, lockedAtTable = false) {
   return `
     <div class="life-row ${row.owned ? "current" : ""}">
       <div><strong>${escapeHtml(row.asset.name)}</strong><span>$${escapeHtml(String(row.asset.price))} · Status +${escapeHtml(String(row.asset.effect?.status ?? 0))}</span></div>
-      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Купить</button>
+      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Купить</button>
     </div>
   `;
 }
 
-function renderBusinessRow(row) {
+function renderBusinessRow(row, lockedAtTable = false) {
   const business = row.template;
   const owned = Boolean(row.owned);
   const status = owned ? `Lv.${row.owned.level} · Condition ${row.owned.condition}` : "Доступно";
@@ -185,15 +187,15 @@ function renderBusinessRow(row) {
         ${owned ? `<p>К сбору: $${escapeHtml(String(row.collectableProfit))} · дней ${escapeHtml(String(row.collectableDays))} · всего +$${escapeHtml(String(row.owned.totalProfit ?? 0))}</p>` : ""}
       </div>
       <div class="life-row-actions">
-        <button class="small-button" data-action="venue-action" data-id="buyBusiness:${escapeHtml(business.id)}" ${row.canBuy ? "" : "disabled"}>Купить</button>
-        <button class="small-button" data-action="venue-action" data-id="collectBusiness:${escapeHtml(business.id)}" ${row.canCollect ? "" : "disabled"}>Собрать</button>
-        <button class="small-button" data-action="venue-action" data-id="upgradeBusiness:${escapeHtml(business.id)}" ${row.canUpgrade ? "" : "disabled"}>Апгрейд $${escapeHtml(String(row.upgradeCost ?? 0))}</button>
+        <button class="small-button" data-action="venue-action" data-id="buyBusiness:${escapeHtml(business.id)}" ${row.canBuy && !lockedAtTable ? "" : "disabled"}>Купить</button>
+        <button class="small-button" data-action="venue-action" data-id="collectBusiness:${escapeHtml(business.id)}" ${row.canCollect && !lockedAtTable ? "" : "disabled"}>Собрать</button>
+        <button class="small-button" data-action="venue-action" data-id="upgradeBusiness:${escapeHtml(business.id)}" ${row.canUpgrade && !lockedAtTable ? "" : "disabled"}>Апгрейд $${escapeHtml(String(row.upgradeCost ?? 0))}</button>
       </div>
     </div>
   `;
 }
 
-function renderHomeRow(row) {
+function renderHomeRow(row, lockedAtTable = false) {
   if (row.kind === "home_rest") {
     return `
       <div class="life-row housing-row home-current-row">
@@ -211,15 +213,38 @@ function renderHomeRow(row) {
           </div>
           <p>${escapeHtml(formatEffect(row.housing.restEffect))}</p>
         </div>
-        <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse ? "" : "disabled"}>Отдохнуть</button>
+        <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Отдохнуть</button>
       </div>
     `;
   }
   return `
     <div class="life-row">
       <div><strong>${escapeHtml(row.entry.item.name)} x${escapeHtml(String(row.entry.qty))}</strong><span>${escapeHtml(formatEffect(row.entry.item.effect))}</span></div>
-      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}">Использовать</button>
+      <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${lockedAtTable ? "disabled" : ""}>Использовать</button>
     </div>
+  `;
+}
+
+function formatVenueLocation(view) {
+  const parts = [
+    view.country?.name ?? null,
+    view.city?.name ?? null,
+    view.venue?.district ?? null,
+    view.venue?.address ?? null,
+  ].filter(Boolean);
+  return parts.join(" · ") || "Город";
+}
+
+function isSeatedAtTable(state = {}) {
+  return Boolean(state.tableSession?.tableId);
+}
+
+function renderLocationLockNotice() {
+  return `
+    <article class="venue-section panel-soft venue-warning-panel">
+      <strong>Ты сейчас за столом.</strong>
+      <p>Сначала встань из-за стола.</p>
+    </article>
   `;
 }
 

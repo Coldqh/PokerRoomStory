@@ -1,10 +1,10 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.6.0";
-import { applyLifeAction } from "../engine/life.js?v=2.6.0";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.6.0";
-import { normalizePlayer } from "../engine/career.js?v=2.6.0";
-import { getClubTables } from "../engine/selectors.js?v=2.6.0";
-import { canEnterClub } from "../engine/world.js?v=2.6.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.6.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.6.1";
+import { applyLifeAction } from "../engine/life.js?v=2.6.1";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.6.1";
+import { normalizePlayer } from "../engine/career.js?v=2.6.1";
+import { getClubTables } from "../engine/selectors.js?v=2.6.1";
+import { canEnterClub } from "../engine/world.js?v=2.6.1";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.6.1";
 
 export const inputController = {
   handleClick(event) {
@@ -67,7 +67,10 @@ export const inputController = {
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
 
-
+    if (isLocationLockedAtTable(this.state, action, id)) {
+      this.setSystem({ notice: "Сначала встань из-за стола." });
+      return;
+    }
 
     if (action === "select-venue") {
       const venue = getVenueById(this.content, id);
@@ -372,6 +375,20 @@ export const inputController = {
       });
   }
 };
+
+function isLocationLockedAtTable(state = {}, action = "", id = "") {
+  const seated = Boolean(state.tableSession?.tableId);
+  if (!seated) return false;
+
+  if (["select-venue", "venue-action", "life-action", "select-club"].includes(action)) return true;
+
+  if (action === "select-table") {
+    const currentTableId = state.tableSession?.tableId ?? null;
+    return Boolean(id && currentTableId && id !== currentTableId);
+  }
+
+  return false;
+}
 
 function isModalBackdrop(target) {
   return Boolean(target?.classList?.contains("table-picker-backdrop")

@@ -430,3 +430,14 @@
 .city-venue-card .city-venue-meta span:nth-child(1) {
   max-width: 100%;
 }
+
+
+.venue-warning-panel {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.venue-warning-panel strong {
+  display: block;
+  color: #facc15;
+  margin-bottom: 4px;
+}

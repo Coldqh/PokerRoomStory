@@ -1,5 +1,5 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.6.2";
-import { escapeHtml } from "../components.js?v=2.6.2";
+import { getCityMapView } from "../../engine/locations.js?v=2.7.0";
+import { escapeHtml } from "../components.js?v=2.7.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },

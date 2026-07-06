@@ -1,10 +1,10 @@
-import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=2.6.2";
-import { getClubRoomState } from "../../engine/club.js?v=2.6.2";
-import { getClubGoals } from "../../engine/clubGoals.js?v=2.6.2";
-import { getClubStorylines } from "../../engine/storylines.js?v=2.6.2";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=2.6.2";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=2.6.2";
-import { stableIndex } from "./common.js?v=2.6.2";
+import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=2.7.0";
+import { getClubRoomState } from "../../engine/club.js?v=2.7.0";
+import { getClubGoals } from "../../engine/clubGoals.js?v=2.7.0";
+import { getClubStorylines } from "../../engine/storylines.js?v=2.7.0";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=2.7.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=2.7.0";
+import { stableIndex } from "./common.js?v=2.7.0";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -36,6 +36,7 @@ export function renderClubScreen(state) {
       </section>
       ${renderClubPickerModal(state, club, cityClubs)}
       ${renderTablePickerModal(state, tables)}
+      ${renderSessionSummaryModal(state)}
     </section>
   `;
 }
@@ -114,6 +115,44 @@ function renderClubSelectorItem(state, activeClub, club) {
       <em>${escapeHtml(club.tier ?? "Club")} · ${tables} tables · ${escapeHtml(routeLabel)}</em>
       ${access.ok ? "" : `<small>${escapeHtml(access.reason)}</small>`}
     </button>
+  `;
+}
+
+
+function renderSessionSummaryModal(state) {
+  const summary = state?.system?.sessionSummary;
+  if (!summary?.opened) return "";
+  const profit = Number(summary.profit ?? 0);
+  const profitText = `${profit >= 0 ? "+" : "-"}$${Math.abs(profit)}`;
+  return `
+    <div class="result-modal-layer" role="dialog" aria-modal="true" aria-label="Итог сессии">
+      <article class="result-modal panel-soft session-summary-modal">
+        <header class="result-modal-head">
+          <div>
+            <span>Итог сессии</span>
+            <strong>${escapeHtml(profitText)}</strong>
+          </div>
+          <button class="drawer-close" data-action="dismiss-session-summary" aria-label="Закрыть">×</button>
+        </header>
+        <section class="result-modal-grid">
+          <div><span>Рук</span><strong>${escapeHtml(String(summary.handsPlayed ?? 0))}</strong></div>
+          <div><span>Старт</span><strong>$${escapeHtml(String(summary.startStack ?? 0))}</strong></div>
+          <div><span>Финиш</span><strong>$${escapeHtml(String(summary.currentStack ?? 0))}</strong></div>
+          <div><span>Лучший банк</span><strong>$${escapeHtml(String(summary.biggestPotWon ?? 0))}</strong></div>
+          <div><span>Showdowns</span><strong>${escapeHtml(String(summary.showdowns ?? 0))}</strong></div>
+          <div><span>Folds</span><strong>${escapeHtml(String(summary.folds ?? 0))}</strong></div>
+        </section>
+        <div class="result-modal-clarity">
+          <span>Состояние</span>
+          <p>Hunger -${escapeHtml(String(summary.hungerSpent ?? 0))} · Thirst -${escapeHtml(String(summary.thirstSpent ?? 0))} · Energy -${escapeHtml(String(summary.energySpent ?? 0))} · Stress +${escapeHtml(String(summary.stressGained ?? 0))}</p>
+        </div>
+        <footer class="result-modal-actions">
+          <button class="primary" data-action="dismiss-session-summary">Вернуться в клуб</button>
+          <button data-action="screen" data-id="life">Пойти домой</button>
+          <button data-action="screen" data-id="locations">Открыть карту</button>
+        </footer>
+      </article>
+    </div>
   `;
 }
 

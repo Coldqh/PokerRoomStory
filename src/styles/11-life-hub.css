@@ -320,3 +320,7 @@
   font-weight: 700;
   line-height: 1.45;
 }
+
+.session-summary-modal .result-modal-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}

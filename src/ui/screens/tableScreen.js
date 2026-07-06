@@ -1,8 +1,8 @@
-import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=1.4.3";
-import { describeCards } from "../../engine/cards.js?v=1.4.3";
-import { getClubLevelInfo } from "../../engine/progression.js?v=1.4.3";
-import { escapeHtml, playingCards } from "../components.js?v=1.4.3";
-import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=1.4.3";
+import { getPhaseLabel, getAvailableActions, getActionMeta, getHandHint, getCurrentHandInfo } from "../../engine/poker.js?v=2.7.0";
+import { describeCards } from "../../engine/cards.js?v=2.7.0";
+import { getClubLevelInfo } from "../../engine/progression.js?v=2.7.0";
+import { escapeHtml, playingCards } from "../components.js?v=2.7.0";
+import { actionLabel, actionTitle, cleanEventText, initials, isPlayerWinner, isSeatWinner, shortName } from "./common.js?v=2.7.0";
 
 export function renderTableScreen(state) {
   const table = state.content.byId.tables[state.activeTableId];
@@ -158,12 +158,15 @@ function renderActionDock(actions, hand, actionMeta = {}, state = {}) {
   const table = state?.content?.byId?.tables?.[state?.activeTableId];
   const session = state?.tableSession?.tableId === table?.id ? state.tableSession : null;
   const lowStack = Boolean(session && table && Number(session.stack ?? 0) < Number(table.bigBlind ?? 0));
+  const waitingForNextHand = Boolean(session?.waitingForNextHand || hand?.observedHand || hand?.waitingHero || hand?.heroSeat?.waitingForNextHand);
+  const startLabel = waitingForNextHand ? "Дождаться следующей раздачи" : "Начать новую раздачу";
 
   if (!handStarted) {
     return `
       <div class="action-dock panel-soft start-only">
+        ${waitingForNextHand ? `<div class="table-stack-warning"><strong>Ты ждёшь следующей раздачи.</strong><span>Текущая рука уже идёт. Войдёшь со следующей.</span></div>` : ""}
         ${lowStack ? `<div class="table-stack-warning"><strong>Недостаточно стека.</strong><span>Добери фишки или выйди из стола.</span></div>` : ""}
-        <button class="start-hand-button" data-action="start-hand" ${animating || lowStack ? "disabled" : ""}>Начать новую раздачу</button>
+        <button class="start-hand-button" data-action="start-hand" ${animating || lowStack ? "disabled" : ""}>${escapeHtml(startLabel)}</button>
       </div>
     `;
   }
@@ -188,12 +191,14 @@ function renderCompactHandInfo(handInfo, hand, currentEvent, actionMeta = {}, se
   const targetBuyIn = getTableTopUpTarget(state, table, session);
   const canTopUp = Boolean(session && targetBuyIn > Number(session.stack ?? 0));
   const lowStack = Boolean(session && table && Number(session.stack ?? 0) < Number(table.bigBlind ?? 0));
+  const waitingForNextHand = Boolean(session?.waitingForNextHand || hand?.observedHand || hand?.waitingHero || hand?.heroSeat?.waitingForNextHand);
   return `
     ${session ? `
       <div class="info-block table-session-block">
         <span>Стек за столом</span>
         <strong>$${escapeHtml(String(session.stack ?? 0))}</strong>
         <p>${escapeHtml(table?.gameLabel ?? "NL Hold’em")} · Buy-in $${escapeHtml(String(session.buyIn ?? 0))}</p>
+        ${waitingForNextHand ? `<p>Ожидание следующей раздачи.</p>` : ""}
         ${lowStack ? `<p>Недостаточно стека. Добери фишки или выйди из стола.</p>` : ""}
         ${canTopUp ? `<button class="small-button" data-action="top-up-table-stack">Добрать стек</button>` : ""}
       </div>

@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=1.7.3";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=1.7.3";
-import { applyUnlocks } from "../engine/collections.js?v=1.7.3";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=2.7.0";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=2.7.0";
+import { applyUnlocks } from "../engine/collections.js?v=2.7.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,11 +9,12 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=1.7.3";
-import { getClubContext } from "../engine/world.js?v=1.7.3";
-import { applyClubProgression } from "../engine/progression.js?v=1.7.3";
-import { applyClubGoals } from "../engine/clubGoals.js?v=1.7.3";
-import { applyStorylineProgress } from "../engine/storylines.js?v=1.7.3";
+} from "../engine/poker.js?v=2.7.0";
+import { getClubContext } from "../engine/world.js?v=2.7.0";
+import { applyClubProgression } from "../engine/progression.js?v=2.7.0";
+import { applyClubGoals } from "../engine/clubGoals.js?v=2.7.0";
+import { applyStorylineProgress } from "../engine/storylines.js?v=2.7.0";
+import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=2.7.0";
 
 export const handFlow = {
   startHand() {
@@ -31,6 +32,7 @@ export const handFlow = {
       return;
     }
 
+    const startWarning = getPokerStartConditionWarning(this.state.career);
     const seatedPlayer = {
       ...this.state.player,
       bankroll: session.stack,
@@ -50,11 +52,15 @@ export const handFlow = {
     const timeline = [...buildStartHandTimeline(initialTableState, table), ...auto.timeline];
     this.setState({
       currentScreen: "table",
+      tableSession: {
+        ...session,
+        waitingForNextHand: false,
+      },
       system: {
         ...this.state.system,
         resultModalOpen: false,
         selectedBetTarget: null,
-        notice: null,
+        notice: startWarning,
       },
     }, { skipSave: true });
 
@@ -185,13 +191,24 @@ export const handFlow = {
     const totalRep = (result.reputationGain ?? 0) + combinedTaskResult.reputationReward;
     const progressLine = buildProgressLine({ xp: totalXp, reputation: totalRep, messages: [...unlockResult.messages, ...combinedTaskResult.messages, ...clubPatch.clubMessages, ...clubProgressResult.messages] });
     const rewardToast = buildRewardToast(this.content, combinedTaskResult, clubProgressResult);
-    const nextTableSession = this.state.tableSession?.tableId === this.state.activeTableId
+    const baseNextTableSession = this.state.tableSession?.tableId === this.state.activeTableId
       ? {
         ...this.state.tableSession,
         stack: Math.max(0, Math.round(settledTableState.heroSeat?.stack ?? ((this.state.tableSession.stack ?? 0) + (result.bankrollDelta ?? 0)))),
         handsPlayed: (this.state.tableSession.handsPlayed ?? 0) + 1,
+        waitingForNextHand: false,
       }
       : this.state.tableSession;
+    const sessionResult = applySessionHandResult({
+      career: careerAfterProgress,
+      tableSession: baseNextTableSession,
+      tableState,
+      settledTableState,
+      result,
+      table: activeTable,
+    });
+    const careerAfterSession = sessionResult.career;
+    const nextTableSession = sessionResult.tableSession;
     const log = [
       ...this.state.log,
       ...tableState.actionLog.slice(-5),
@@ -206,7 +223,7 @@ export const handFlow = {
 
     this.setState({
       player: playerAfterHand,
-      career: careerAfterProgress,
+      career: careerAfterSession,
       tableSession: nextTableSession,
       clubNpcState: clubPatch.clubNpcState,
       tableState: {

@@ -1,10 +1,10 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.6.2";
-import { applyLifeAction } from "../engine/life.js?v=2.6.2";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.6.2";
-import { normalizePlayer } from "../engine/career.js?v=2.6.2";
-import { getClubTables } from "../engine/selectors.js?v=2.6.2";
-import { canEnterClub } from "../engine/world.js?v=2.6.2";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.6.2";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.7.0";
+import { applyLifeAction } from "../engine/life.js?v=2.7.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.7.0";
+import { normalizePlayer } from "../engine/career.js?v=2.7.0";
+import { getClubTables } from "../engine/selectors.js?v=2.7.0";
+import { canEnterClub } from "../engine/world.js?v=2.7.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.7.0";
 
 export const inputController = {
   handleClick(event) {
@@ -50,6 +50,7 @@ export const inputController = {
       "import-save",
       "dismiss-notice",
       "dismiss-reward",
+      "dismiss-session-summary",
       "reset-save",
       "set-buyin",
       "confirm-buyin",
@@ -323,6 +324,11 @@ export const inputController = {
 
     if (action === "dismiss-result") {
       this.setSystem({ resultModalOpen: false });
+      return;
+    }
+
+    if (action === "dismiss-session-summary") {
+      this.setSystem({ sessionSummary: null });
       return;
     }
 

@@ -1,7 +1,7 @@
-import { getLifeView } from "../../engine/life.js?v=2.6.2";
-import { getBusinessView } from "../../engine/businesses.js?v=2.6.2";
-import { getVenueById } from "../../engine/venues.js?v=2.6.2";
-import { escapeHtml, progressBar } from "../components.js?v=2.6.2";
+import { getLifeView } from "../../engine/life.js?v=2.7.0";
+import { getBusinessView } from "../../engine/businesses.js?v=2.7.0";
+import { getVenueById } from "../../engine/venues.js?v=2.7.0";
+import { escapeHtml, progressBar } from "../components.js?v=2.7.0";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);

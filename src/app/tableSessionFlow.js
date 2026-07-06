@@ -1,8 +1,9 @@
-import { createInitialTableState } from "../engine/poker.js?v=2.6.2";
-import { getClubSnapshotForTable } from "../engine/club.js?v=2.6.2";
-import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.6.2";
-import { canEnterTable } from "../engine/world.js?v=2.6.2";
-import { getClubContext } from "../engine/world.js?v=2.6.2";
+import { createInitialTableState } from "../engine/poker.js?v=2.7.0";
+import { getClubSnapshotForTable } from "../engine/club.js?v=2.7.0";
+import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.7.0";
+import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=2.7.0";
+import { canEnterTable } from "../engine/world.js?v=2.7.0";
+import { getClubContext } from "../engine/world.js?v=2.7.0";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -95,9 +96,11 @@ export const tableSessionFlow = {
         tableId: table.id,
         buyIn: amount,
         stack: amount,
+        startStack: amount,
         handsPlayed: 0,
         seatedAt: Date.now(),
         waitingForNextHand: true,
+        sessionStats: createSessionStats({ tableSession: { buyIn: amount, stack: amount }, life: this.state.career?.life }),
       },
       tableState: observedTableState,
       system: {
@@ -106,6 +109,7 @@ export const tableSessionFlow = {
         resultModalOpen: false,
         selectedBetTarget: null,
         betAmountModal: null,
+        sessionSummary: null,
         notice: "Ты сел за стол. Текущая раздача уже идёт — войдёшь со следующей руки.",
       },
     });
@@ -172,6 +176,7 @@ export const tableSessionFlow = {
 
     const returnedStack = clampMoney(this.state.tableSession?.stack ?? 0);
     const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
+    const sessionSummary = this.state.tableSession ? buildSessionSummary({ tableSession: this.state.tableSession, returnedStack }) : null;
 
     this.setState({
       player: {
@@ -185,7 +190,8 @@ export const tableSessionFlow = {
         ...this.state.system,
         resultModalOpen: false,
         betAmountModal: null,
-        notice: null,
+        sessionSummary,
+        notice: sessionSummary ? "Сессия завершена." : null,
       },
     });
   }

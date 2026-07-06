@@ -12,7 +12,7 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.8.0";
+} from "./lifeContent.js?v=2.9.0";
 
 const MAX_NEED = LIFE_LIMITS.maxNeed;
 const MAX_FOCUS = LIFE_LIMITS.maxFocus;
@@ -181,7 +181,7 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   if (parsed.type === "cafe") {
     const order = getLifeCafeOrder(parsed.id);
     if (!order) return failWithLife(career, player, nextLife, "Заказ не найден.");
-    if (!hasActions(nextLife, order.actionCost)) return failWithLife(career, player, nextLife, "Нет действий на сегодня.");
+    if (!hasActions(nextLife, order.actionCost)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextPlayer.bankroll < order.price) return failWithLife(career, player, nextLife, "Недостаточно денег.");
     nextPlayer.bankroll -= order.price;
     nextLife.needs = applyNeedEffect(nextLife.needs, order.effect);
@@ -192,7 +192,7 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   if (parsed.type === "job") {
     const job = getLifeJob(parsed.id);
     if (!job) return failWithLife(career, player, nextLife, "Работа не найдена.");
-    if (!hasActions(nextLife, job.actionCost)) return failWithLife(career, player, nextLife, "Нет действий на сегодня.");
+    if (!hasActions(nextLife, job.actionCost)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextLife.needs.energy <= 0) return failWithLife(career, player, nextLife, "Нет энергии.");
     nextPlayer.bankroll += job.pay;
     nextLife.needs = applyNeedEffect(nextLife.needs, job.effect);
@@ -202,7 +202,7 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
 
   if (parsed.type === "rest") {
     const housing = getLifeHousing(nextLife.housingId);
-    if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Нет действий на сегодня.");
+    if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     nextLife.needs = applyNeedEffect(nextLife.needs, housing.restEffect);
     nextLife.sleptToday = true;
     nextLife.sleepDebt = Math.max(0, Number(nextLife.sleepDebt ?? 0) - 1);
@@ -215,6 +215,8 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     if (!housing) return failWithLife(career, player, nextLife, "Жильё не найдено.");
     if (!nextLife.ownedHousingIds.includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё не куплено.");
     if (nextLife.housingId === housing.id) return failWithLife(career, player, nextLife, "Это текущее жильё.");
+    if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
+    actionCost = 1;
     nextLife.housingId = housing.id;
     nextLife.rentAmount = 0;
     nextLife.rentDueDay = 9999;
@@ -225,6 +227,8 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     const housing = getLifeHousing(parsed.id);
     if (!housing) return failWithLife(career, player, nextLife, "Жильё не найдено.");
     if (nextLife.housingId === housing.id) return failWithLife(career, player, nextLife, "Это жильё уже выбрано.");
+    if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
+    actionCost = 1;
     if (nextLife.ownedHousingIds.includes(housing.id)) {
       nextLife.housingId = housing.id;
       nextLife.rentAmount = 0;
@@ -244,7 +248,9 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     const housing = getLifeHousing(parsed.id);
     if (!housing?.purchasePrice) return failWithLife(career, player, nextLife, "Покупка недоступна.");
     if (nextLife.ownedHousingIds.includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё уже куплено.");
+    if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextPlayer.bankroll < housing.purchasePrice) return failWithLife(career, player, nextLife, "Недостаточно денег.");
+    actionCost = 1;
     nextPlayer.bankroll -= housing.purchasePrice;
     nextLife.ownedHousingIds = normalizeHousingIds([...nextLife.ownedHousingIds, housing.id]);
     nextLife.housingId = housing.id;
@@ -257,7 +263,9 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     const asset = getLifeAsset(parsed.id);
     if (!asset) return failWithLife(career, player, nextLife, "Имущество не найдено.");
     if (nextLife.assetIds.includes(asset.id)) return failWithLife(career, player, nextLife, "Уже куплено.");
+    if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextPlayer.bankroll < asset.price) return failWithLife(career, player, nextLife, "Недостаточно денег.");
+    actionCost = 1;
     nextPlayer.bankroll -= asset.price;
     nextLife.assetIds = safeUniqueIds([...nextLife.assetIds, asset.id]);
     message = `Куплено: ${asset.name}. -$${asset.price}.`;
@@ -267,7 +275,9 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     const vehicle = getLifeVehicle(parsed.id);
     if (!vehicle) return failWithLife(career, player, nextLife, "Транспорт не найден.");
     if (nextLife.vehicleId === vehicle.id) return failWithLife(career, player, nextLife, "Транспорт уже выбран.");
+    if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextPlayer.bankroll < vehicle.price) return failWithLife(career, player, nextLife, "Недостаточно денег.");
+    actionCost = 1;
     nextPlayer.bankroll -= vehicle.price;
     nextLife.vehicleId = vehicle.id;
     message = `Куплено: ${vehicle.name}. -$${vehicle.price}.`;
@@ -297,10 +307,29 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   };
 }
 
+export function getLifeActionsLeft(career = {}) {
+  const life = normalizeLifeState(career.life);
+  return roundOne(Math.max(0, life.actionsPerDay - Number(life.actionsToday ?? life.actionsUsed ?? 0)));
+}
+
+export function hasLifeActions(career = {}, cost = 0) {
+  return hasActions(normalizeLifeState(career.life), cost);
+}
+
 export function spendLifeActionCost({ career = {}, player = {}, cost = 0, slept = false, message = null } = {}) {
   const life = normalizeLifeState(career.life);
   const nextPlayer = { ...player, bankroll: money(player.bankroll), xp: money(player.xp) };
-  const result = spendActionsAndAdvance(life, nextPlayer, Number(cost) || 0, { slept });
+  const cleanCost = roundOne(Math.max(0, Number(cost) || 0));
+  if (cleanCost > 0 && !hasActions(life, cleanCost)) {
+    return {
+      ok: false,
+      career: { ...career, life },
+      player: nextPlayer,
+      messages: ["Недостаточно действий сегодня."],
+      message: "Недостаточно действий сегодня.",
+    };
+  }
+  const result = spendActionsAndAdvance(life, nextPlayer, cleanCost, { slept });
   const messages = [message, ...result.messages].filter(Boolean);
   const nextLife = {
     ...result.life,

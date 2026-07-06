@@ -1,4 +1,4 @@
-import { normalizeLifeState, spendLifeActionCost } from "./life.js?v=2.8.0";
+import { getLifeActionsLeft, normalizeLifeState, spendLifeActionCost } from "./life.js?v=2.9.0";
 
 const MAX_NEED = 100;
 const HAND_ACTION_COST = 0.1;
@@ -90,6 +90,21 @@ export function applySessionHandResult({ career = {}, player = {}, tableSession 
     message: "Рука: -0.1 действия.",
   });
 
+  if (!timeResult.ok) {
+    return {
+      career: { ...career, life: normalizeLifeState(nextLife) },
+      player,
+      tableSession: {
+        ...tableSession,
+        handsPlayed: stats.handsPlayed,
+        stack: currentStack,
+        sessionStats: stats,
+      },
+      impact,
+      message: [formatNeedImpactMessage(impact), timeResult.message].filter(Boolean).join(" "),
+    };
+  }
+
   return {
     career: timeResult.career,
     player: timeResult.player,
@@ -129,6 +144,7 @@ export function buildSessionSummary({ tableSession = {}, returnedStack = null } 
 
 export function getPokerStartConditionWarning(career = {}) {
   const life = normalizeLifeState(career.life);
+  if (getLifeActionsLeft({ life }) < HAND_ACTION_COST) return "Недостаточно действий сегодня.";
   if (life.needs.energy < 15) return "Ты вымотан. Лучше отдохнуть перед новой раздачей.";
   if (life.needs.hunger < 10 || life.needs.thirst < 10) return "Состояние плохое. Сходи поесть или выпить.";
   if (life.needs.stress >= 90) return "Стресс критический. Есть риск тильта.";

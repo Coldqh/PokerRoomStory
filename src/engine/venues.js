@@ -1,4 +1,4 @@
-import { applyLifeAction, getLifeView } from "./life.js?v=2.8.0";
+import { applyLifeAction, getLifeView, hasLifeActions, spendLifeActionCost } from "./life.js?v=2.9.0";
 import {
   getLifeAsset,
   getLifeCafeOrder,
@@ -6,10 +6,11 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.8.0";
-import { getClubTables } from "./selectors.js?v=2.8.0";
-import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=2.8.0";
-import { canEnterClub } from "./world.js?v=2.8.0";
+} from "./lifeContent.js?v=2.9.0";
+import { getClubTables } from "./selectors.js?v=2.9.0";
+import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=2.9.0";
+import { canEnterClub } from "./world.js?v=2.9.0";
+import { applyJobAction, getJobRowsForVenue } from "./jobs.js?v=2.9.0";
 
 export function getCityVenues(content, cityId = null) {
   return (content?.venues ?? [])
@@ -88,9 +89,37 @@ export function applyVenueAction({ content, venueId, actionId, career = {}, play
     return { career, player, ok: false, message: "Действие недоступно здесь.", nextScreen: null };
   }
 
-  const result = isBusinessAction(actionId)
-    ? applyBusinessAction({ actionId, career, player })
-    : applyLifeAction({ actionId, career, player });
+  if (isJobAction(actionId)) {
+    const jobResult = applyJobAction({ actionId, career, player });
+    if (!jobResult.ok) return jobResult;
+    return {
+      ...jobResult,
+      career: markVenueVisited(jobResult.career, venue.id),
+    };
+  }
+
+  if (isBusinessAction(actionId)) {
+    const actionCost = getBusinessVenueActionCost(actionId);
+    if (actionCost > 0 && !hasLifeActions(career, actionCost)) {
+      return { career, player, ok: false, message: "Недостаточно действий сегодня.", nextScreen: null };
+    }
+
+    const businessResult = applyBusinessAction({ actionId, career, player });
+    if (!businessResult.ok) return businessResult;
+
+    const timeResult = actionCost > 0
+      ? spendLifeActionCost({ career: businessResult.career, player: businessResult.player, cost: actionCost, message: `${businessResult.message} -${actionCost} action.` })
+      : businessResult;
+    if (!timeResult.ok) return timeResult;
+
+    return {
+      ...timeResult,
+      message: timeResult.message || businessResult.message,
+      career: markVenueVisited(timeResult.career, venue.id),
+    };
+  }
+
+  const result = applyLifeAction({ actionId, career, player });
   if (!result.ok) return result;
 
   return {
@@ -101,6 +130,7 @@ export function applyVenueAction({ content, venueId, actionId, career = {}, play
 
 function getVenueRows(venue, lifeView, career = {}, player = {}) {
   if (!venue) return [];
+  const canSpendMajorAction = Number(lifeView.actionsLeft ?? 0) >= 1;
   if (venue.type === "store") {
     return (venue.inventoryIds ?? []).map((id) => {
       const item = getLifeItem(id);
@@ -118,18 +148,19 @@ function getVenueRows(venue, lifeView, career = {}, player = {}) {
   }
 
   if (venue.type === "job_site") {
-    return (venue.jobIds ?? []).map((id) => {
-      const job = getLifeJob(id);
-      const viewJob = lifeView.jobs.find((entry) => entry.id === id);
-      return job ? { kind: "job", actionId: `job:${id}`, job, canUse: Boolean(viewJob?.canWork) } : null;
-    }).filter(Boolean);
+    return getJobRowsForVenue({
+      venueId: venue.id,
+      jobIds: venue.jobIds ?? [],
+      career,
+      player,
+    });
   }
 
   if (venue.type === "real_estate_agency") {
     return (venue.housingIds ?? []).map((id) => {
       const housing = getLifeHousing(id);
       const viewHousing = lifeView.housing.find((entry) => entry.id === id);
-      return housing ? { kind: "housing", housing, view: viewHousing, canRent: Boolean(viewHousing?.canRent), canBuy: Boolean(viewHousing?.canBuy) } : null;
+      return housing ? { kind: "housing", housing, view: viewHousing, canRent: Boolean(viewHousing?.canRent && canSpendMajorAction), canMove: Boolean(viewHousing?.canMove && canSpendMajorAction), canBuy: Boolean(viewHousing?.canBuy && canSpendMajorAction) } : null;
     }).filter(Boolean);
   }
 
@@ -137,7 +168,7 @@ function getVenueRows(venue, lifeView, career = {}, player = {}) {
     return (venue.vehicleIds ?? []).map((id) => {
       const vehicle = getLifeVehicle(id);
       const viewVehicle = lifeView.vehicles.find((entry) => entry.id === id);
-      return vehicle ? { kind: "vehicle", actionId: `buyVehicle:${id}`, vehicle, canUse: Boolean(viewVehicle?.canBuy), owned: Boolean(viewVehicle?.owned) } : null;
+      return vehicle ? { kind: "vehicle", actionId: `buyVehicle:${id}`, vehicle, canUse: Boolean(viewVehicle?.canBuy && canSpendMajorAction), owned: Boolean(viewVehicle?.owned) } : null;
     }).filter(Boolean);
   }
 
@@ -145,12 +176,12 @@ function getVenueRows(venue, lifeView, career = {}, player = {}) {
     return (venue.assetIds ?? []).map((id) => {
       const asset = getLifeAsset(id);
       const viewAsset = lifeView.assets.find((entry) => entry.id === id);
-      return asset ? { kind: "asset", actionId: `buyAsset:${id}`, asset, canUse: Boolean(viewAsset?.canBuy), owned: Boolean(viewAsset?.owned) } : null;
+      return asset ? { kind: "asset", actionId: `buyAsset:${id}`, asset, canUse: Boolean(viewAsset?.canBuy && canSpendMajorAction), owned: Boolean(viewAsset?.owned) } : null;
     }).filter(Boolean);
   }
 
   if (venue.type === "business_broker") {
-    return getBusinessBrokerRows(venue.businessIds ?? [], career, player).map((entry) => ({ kind: "business", ...entry }));
+    return getBusinessBrokerRows(venue.businessIds ?? [], career, player).map((entry) => ({ kind: "business", ...entry, canBuy: Boolean(entry.canBuy && canSpendMajorAction), canUpgrade: Boolean(entry.canUpgrade && canSpendMajorAction) }));
   }
 
   if (venue.type === "home") {
@@ -168,13 +199,24 @@ function isVenueActionAllowed(venue, actionId = "", career = {}) {
   const [type, id = null] = String(actionId).split(":");
   if (venue?.type === "store") return type === "buy" && (venue.inventoryIds ?? []).includes(id);
   if (["cafe", "restaurant"].includes(venue?.type)) return type === "cafe" && (venue.orderIds ?? []).includes(id);
-  if (venue?.type === "job_site") return type === "job" && (venue.jobIds ?? []).includes(id);
+  if (venue?.type === "job_site") return (["takeJob", "workJob", "quitJob", "job"].includes(type)) && (venue.jobIds ?? []).includes(id);
   if (venue?.type === "real_estate_agency") return ["rentHousing", "buyHousing", "moveHousing"].includes(type) && (venue.housingIds ?? []).includes(id);
   if (venue?.type === "car_dealer") return type === "buyVehicle" && (venue.vehicleIds ?? []).includes(id);
   if (venue?.type === "asset_store") return type === "buyAsset" && (venue.assetIds ?? []).includes(id);
   if (venue?.type === "business_broker") return isBusinessAction(`${type}:${id}`) && (venue.businessIds ?? []).includes(id);
   if (venue?.type === "home") return type === "rest" || type === "use";
   return false;
+}
+
+function isJobAction(actionId = "") {
+  const type = String(actionId).split(":")[0];
+  return ["takeJob", "workJob", "quitJob"].includes(type);
+}
+
+function getBusinessVenueActionCost(actionId = "") {
+  const type = String(actionId).split(":")[0];
+  if (type === "buyBusiness" || type === "upgradeBusiness") return 1;
+  return 0;
 }
 
 function isBusinessAction(actionId = "") {

@@ -1,11 +1,11 @@
-import { createInitialTableState } from "../engine/poker.js?v=2.8.0";
-import { getClubSnapshotForTable } from "../engine/club.js?v=2.8.0";
-import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.8.0";
-import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=2.8.0";
-import { spendLifeActionCost } from "../engine/life.js?v=2.8.0";
-import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=2.8.0";
-import { canEnterTable } from "../engine/world.js?v=2.8.0";
-import { getClubContext } from "../engine/world.js?v=2.8.0";
+import { createInitialTableState } from "../engine/poker.js?v=2.9.0";
+import { getClubSnapshotForTable } from "../engine/club.js?v=2.9.0";
+import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.9.0";
+import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=2.9.0";
+import { spendLifeActionCost } from "../engine/life.js?v=2.9.0";
+import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=2.9.0";
+import { canEnterTable } from "../engine/world.js?v=2.9.0";
+import { getClubContext } from "../engine/world.js?v=2.9.0";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -96,6 +96,10 @@ export const tableSessionFlow = {
       cost: 1,
       message: `Переход: ${table.name ?? "стол"}.`,
     });
+    if (!travel.ok) {
+      this.setSystem({ notice: travel.message });
+      return;
+    }
 
     this.setState({
       player: travel.player,
@@ -199,6 +203,10 @@ export const tableSessionFlow = {
       cost: 1,
       message: "Переход: клуб.",
     });
+    if (!travel.ok) {
+      this.setSystem({ notice: travel.message });
+      return;
+    }
 
     this.setState({
       player: travel.player,

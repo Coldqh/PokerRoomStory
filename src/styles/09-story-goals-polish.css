@@ -429,7 +429,7 @@
   }
 }
 
-/* v2.8.0 — clean club lobby + modal pickers */
+/* v2.9.0 — clean club lobby + modal pickers */
 .club-lobby-clean-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

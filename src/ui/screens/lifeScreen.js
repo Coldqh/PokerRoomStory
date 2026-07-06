@@ -1,7 +1,8 @@
-import { getLifeView } from "../../engine/life.js?v=2.8.0";
-import { getBusinessView } from "../../engine/businesses.js?v=2.8.0";
-import { getVenueById } from "../../engine/venues.js?v=2.8.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.8.0";
+import { getLifeView } from "../../engine/life.js?v=2.9.0";
+import { getBusinessView } from "../../engine/businesses.js?v=2.9.0";
+import { getCurrentJobView } from "../../engine/jobs.js?v=2.9.0";
+import { getVenueById } from "../../engine/venues.js?v=2.9.0";
+import { escapeHtml, progressBar } from "../components.js?v=2.9.0";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -10,6 +11,7 @@ export function renderLifeScreen(state) {
   const vehicle = view.vehicles.find((entry) => entry.owned);
   const assets = view.assets.filter((entry) => entry.owned);
   const businesses = getBusinessView(state.career, state.player).owned;
+  const currentJob = getCurrentJobView(state.career, state.player);
   const dailyBusinessProfit = businesses.reduce((sum, row) => sum + Number(row.dailyProfit ?? 0), 0);
   const lockedAtTable = Boolean(state.tableSession?.tableId);
   return `
@@ -76,6 +78,20 @@ export function renderLifeScreen(state) {
         </article>
 
 
+
+
+        <article class="life-section panel-soft">
+          <header><span>Employment</span><strong>Работа</strong></header>
+          ${currentJob ? `
+            <div class="life-summary-list">
+              <div><span>Должность</span><strong>${escapeHtml(currentJob.stage.title)}</strong></div>
+              <div><span>Компания</span><strong>${escapeHtml(currentJob.job.companyName)}</strong></div>
+              <div><span>Смена</span><strong>$${escapeHtml(String(currentJob.stage.wage))} · ${escapeHtml(formatActionNumber(currentJob.job.actionCost))} actions</strong></div>
+              <div><span>Опыт</span><strong>${escapeHtml(String(currentJob.xp))} XP${currentJob.nextStage ? ` · до ${escapeHtml(currentJob.nextStage.title)} @ ${escapeHtml(String(currentJob.nextStage.minXp))}` : " · максимум"}</strong></div>
+            </div>
+          ` : `<div class="life-empty">Нет постоянной работы</div>`}
+          <p class="life-empty">Устроиться, выйти на смену или уволиться — во вкладке «Местонахождение».</p>
+        </article>
 
         <article class="life-section panel-soft">
           <header><span>Business</span><strong>Бизнесы</strong></header>

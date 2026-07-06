@@ -1,11 +1,11 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.8.0";
-import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=2.8.0";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.8.0";
-import { normalizePlayer } from "../engine/career.js?v=2.8.0";
-import { getClubTables } from "../engine/selectors.js?v=2.8.0";
-import { canEnterClub } from "../engine/world.js?v=2.8.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.8.0";
-import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=2.8.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.9.0";
+import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=2.9.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.9.0";
+import { normalizePlayer } from "../engine/career.js?v=2.9.0";
+import { getClubTables } from "../engine/selectors.js?v=2.9.0";
+import { canEnterClub } from "../engine/world.js?v=2.9.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.9.0";
+import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=2.9.0";
 
 export const inputController = {
   handleClick(event) {
@@ -93,6 +93,10 @@ export const inputController = {
       const visited = new Set(this.state.career?.city?.visitedVenueIds ?? []);
       visited.add(venue.id);
       const travel = spendLocationAction(this.state, `Переход: ${venue.name}.`);
+      if (!travel.ok) {
+        this.setSystem({ notice: travel.message });
+        return;
+      }
       this.setState({
         activeVenueId: venue.id,
         player: normalizePlayer(travel.player),
@@ -192,6 +196,10 @@ export const inputController = {
       const tables = getClubTables(this.content, id);
       const clubVenueId = (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id ?? this.state.activeVenueId;
       const travel = spendLocationAction(this.state, `Переход: ${club.name}.`);
+      if (!travel.ok) {
+        this.setSystem({ notice: travel.message, clubPickerOpen: true });
+        return;
+      }
       this.menuOpen = false;
       this.setState({
         activeClubId: id,
@@ -297,6 +305,10 @@ export const inputController = {
 
     if (action === "go-home") {
       const travel = spendLocationAction(this.state, "Переход: дом.");
+      if (!travel.ok) {
+        this.setSystem({ notice: travel.message });
+        return;
+      }
       this.setState({
         activeVenueId: "VENUE_RU_MOS_HOME_CHEAP_ROOM",
         player: normalizePlayer(travel.player),
@@ -316,6 +328,10 @@ export const inputController = {
 
     if (action === "go-city") {
       const travel = spendLocationAction(this.state, "Переход: город.");
+      if (!travel.ok) {
+        this.setSystem({ notice: travel.message });
+        return;
+      }
       this.setState({
         player: normalizePlayer(travel.player),
         career: travel.career,

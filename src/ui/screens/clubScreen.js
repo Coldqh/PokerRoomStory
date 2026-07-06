@@ -1,10 +1,10 @@
-import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=2.7.0";
-import { getClubRoomState } from "../../engine/club.js?v=2.7.0";
-import { getClubGoals } from "../../engine/clubGoals.js?v=2.7.0";
-import { getClubStorylines } from "../../engine/storylines.js?v=2.7.0";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=2.7.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=2.7.0";
-import { stableIndex } from "./common.js?v=2.7.0";
+import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=2.7.4";
+import { getClubRoomState } from "../../engine/club.js?v=2.7.4";
+import { getClubGoals } from "../../engine/clubGoals.js?v=2.7.4";
+import { getClubStorylines } from "../../engine/storylines.js?v=2.7.4";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=2.7.4";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=2.7.4";
+import { stableIndex } from "./common.js?v=2.7.4";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -58,24 +58,13 @@ function renderClubActions(state, activeClub, clubs = [], tables = []) {
       </article>
       <article class="club-action-card map-action">
         <div>
-          <span>City map</span>
-          <strong>Карта локаций</strong>
-          <p>Посмотри путь по Москве: текущий клуб, закрытые комнаты и прогресс маршрутов.</p>
+          <span>City</span>
+          <strong>Выйти в город</strong>
+          <p>Покинь клуб, чтобы перейти к магазинам, работе, дому или другому клубу.</p>
         </div>
         <em>Москва · ${clubCount} клуба</em>
-        <button class="small-button club-action-button" type="button" data-action="screen" data-id="locations">Вернуться на карту</button>
+        <button class="small-button club-action-button" type="button" data-action="go-city">Выйти в город</button>
       </article>
-      ${hasClubPicker ? `
-        <article class="club-action-card secondary-action">
-          <div>
-            <span>Quick switch</span>
-            <strong>Быстрый выбор клуба</strong>
-            <p>Текущий клуб: ${escapeHtml(activeClub.name)}. Полная прогрессия теперь на карте.</p>
-          </div>
-          <em>${clubCount} клуба в городе</em>
-          <button class="small-button club-action-button" type="button" data-action="open-club-picker">Выбрать клуб</button>
-        </article>
-      ` : ""}
     </section>
   `;
 }
@@ -147,9 +136,9 @@ function renderSessionSummaryModal(state) {
           <p>Hunger -${escapeHtml(String(summary.hungerSpent ?? 0))} · Thirst -${escapeHtml(String(summary.thirstSpent ?? 0))} · Energy -${escapeHtml(String(summary.energySpent ?? 0))} · Stress +${escapeHtml(String(summary.stressGained ?? 0))}</p>
         </div>
         <footer class="result-modal-actions">
-          <button class="primary" data-action="dismiss-session-summary">Вернуться в клуб</button>
-          <button data-action="screen" data-id="life">Пойти домой</button>
-          <button data-action="screen" data-id="locations">Открыть карту</button>
+          <button class="primary" data-action="dismiss-session-summary">Остаться в клубе</button>
+          <button data-action="go-home">Пойти домой</button>
+          <button data-action="go-city">Выйти в город</button>
         </footer>
       </article>
     </div>

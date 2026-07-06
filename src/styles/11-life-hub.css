@@ -10,9 +10,9 @@
   gap: 16px;
   align-items: stretch;
   padding: 20px;
-  border: 1px solid rgba(245, 196, 111, 0.18);
+  border: 1px solid rgba(220, 38, 38, 0.18);
   background:
-    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.12), transparent 34%),
+    radial-gradient(circle at 12% 0%, rgba(220, 38, 38, 0.12), transparent 34%),
     linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
 }
 
@@ -74,7 +74,7 @@
 
 .life-day-card strong {
   margin-top: 6px;
-  color: #f5c46f;
+  color: #ef4444;
   font-size: 2rem;
   line-height: 1;
 }
@@ -112,8 +112,8 @@
 }
 
 .life-warning-panel {
-  border-color: rgba(245, 196, 111, 0.28);
-  background: rgba(245, 196, 111, 0.07);
+  border-color: rgba(220, 38, 38, 0.28);
+  background: rgba(220, 38, 38, 0.07);
 }
 
 .life-section header {
@@ -141,8 +141,8 @@
 }
 
 .life-row.current {
-  border-color: rgba(245, 196, 111, 0.36);
-  background: rgba(245, 196, 111, 0.08);
+  border-color: rgba(220, 38, 38, 0.36);
+  background: rgba(220, 38, 38, 0.08);
 }
 
 .life-row span {
@@ -257,10 +257,10 @@
   align-items: center;
   min-height: 22px;
   padding: 3px 8px;
-  border: 1px solid rgba(245, 196, 111, 0.24);
+  border: 1px solid rgba(220, 38, 38, 0.24);
   border-radius: 999px;
-  color: #f5c46f;
-  background: rgba(245, 196, 111, 0.08);
+  color: #ef4444;
+  background: rgba(220, 38, 38, 0.08);
   font-size: 0.68rem;
   font-style: normal;
   font-weight: 850;
@@ -300,7 +300,7 @@
 }
 
 .home-current-row {
-  border-color: rgba(245, 196, 111, 0.24);
+  border-color: rgba(220, 38, 38, 0.24);
 }
 
 .business-row {
@@ -323,4 +323,17 @@
 
 .session-summary-modal .result-modal-grid {
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.life-row-note {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.location-state-note {
+  border: 1px solid rgba(220, 38, 38, 0.22);
+  background: rgba(220, 38, 38, 0.07);
+  color: rgba(255, 255, 255, 0.74);
 }

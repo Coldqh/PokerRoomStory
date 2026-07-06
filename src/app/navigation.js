@@ -1,8 +1,6 @@
 export const navigationController = {
   resolveScreen(screenId) {
-    const seated = Boolean(this.state.tableSession?.tableId);
-    if (seated && screenId === "club") return "table";
-    if (!seated && screenId === "table") return "club";
+    if (["locations", "venue", "club", "table"].includes(screenId)) return "location";
     return screenId;
   },
 

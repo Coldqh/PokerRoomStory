@@ -1,21 +1,20 @@
-import { renderLifeScreen } from "./lifeScreen.js?v=2.7.0";
-import { renderCityMapScreen } from "./cityMapScreen.js?v=2.7.0";
-import { renderVenueScreen } from "./venueScreen.js?v=2.7.0";
-import { renderClubScreen } from "./clubScreen.js?v=2.7.0";
-import { renderTableScreen } from "./tableScreen.js?v=2.7.0";
-import { renderCareerScreen } from "./careerScreen.js?v=2.7.0";
-import { renderTasksScreen } from "./tasksScreen.js?v=2.7.0";
-import { renderNpcScreen } from "./npcScreen.js?v=2.7.0";
-import { renderGlossaryScreen } from "./glossaryScreen.js?v=2.7.0";
-import { renderCollectionsScreen } from "./collectionsScreen.js?v=2.7.0";
-import { renderSettingsScreen } from "./settingsScreen.js?v=2.7.0";
-import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=2.7.0";
+import { renderLifeScreen } from "./lifeScreen.js?v=2.7.4";
+import { renderLocationScreen } from "./locationScreen.js?v=2.7.4";
+import { renderCityMapScreen } from "./cityMapScreen.js?v=2.7.4";
+import { renderVenueScreen } from "./venueScreen.js?v=2.7.4";
+import { renderClubScreen } from "./clubScreen.js?v=2.7.4";
+import { renderTableScreen } from "./tableScreen.js?v=2.7.4";
+import { renderCareerScreen } from "./careerScreen.js?v=2.7.4";
+import { renderTasksScreen } from "./tasksScreen.js?v=2.7.4";
+import { renderNpcScreen } from "./npcScreen.js?v=2.7.4";
+import { renderGlossaryScreen } from "./glossaryScreen.js?v=2.7.4";
+import { renderCollectionsScreen } from "./collectionsScreen.js?v=2.7.4";
+import { renderSettingsScreen } from "./settingsScreen.js?v=2.7.4";
+import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=2.7.4";
 
 export const SCREENS = [
   { id: "life", label: "Жизнь" },
-  { id: "locations", label: "Карта" },
-  { id: "club", label: "Клуб" },
-  { id: "table", label: "Стол" },
+  { id: "location", label: "Местонахождение" },
   { id: "career", label: "Карьера" },
   { id: "tasks", label: "Задания" },
   { id: "npcs", label: "Игроки" },
@@ -25,23 +24,21 @@ export const SCREENS = [
 ];
 
 export function getVisibleScreens(state = {}) {
-  const seated = Boolean(state.tableSession?.tableId);
-  return SCREENS.filter((screen) => {
-    if (screen.id === "table") return seated;
-    if (screen.id === "club") return !seated;
-    return true;
-  });
+  const legacyScreen = state?.tableSession
+    ? { id: "table", label: "Стол", hiddenFromNav: true }
+    : { id: "club", label: "Клуб", hiddenFromNav: true };
+  return [...SCREENS, legacyScreen];
 }
 
 export function renderScreen(state) {
-  const seated = Boolean(state.tableSession?.tableId);
-  const currentScreen = seated && state.currentScreen === "club" ? "table" : !seated && state.currentScreen === "table" ? "club" : state.currentScreen;
+  const currentScreen = state.currentScreen;
   let screen = "";
   if (currentScreen === "life") screen = renderLifeScreen(state);
-  else if (currentScreen === "locations") screen = renderCityMapScreen(state);
-  else if (currentScreen === "venue") screen = renderVenueScreen(state);
-  else if (currentScreen === "club") screen = renderClubScreen(state);
-  else if (currentScreen === "table") screen = renderTableScreen(state);
+  else if (currentScreen === "location") screen = renderLocationScreen(state);
+  else if (currentScreen === "locations") screen = renderCityMapScreen({ ...state, currentScreen: "location" });
+  else if (currentScreen === "venue") screen = renderVenueScreen({ ...state, currentScreen: "location" });
+  else if (currentScreen === "club") screen = renderClubScreen({ ...state, currentScreen: "location" });
+  else if (currentScreen === "table") screen = renderTableScreen({ ...state, currentScreen: "location" });
   else if (currentScreen === "career") screen = renderCareerScreen(state);
   else if (currentScreen === "tasks") screen = renderTasksScreen(state);
   else if (currentScreen === "npcs") screen = renderNpcScreen(state);

@@ -9,9 +9,9 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   padding: 20px;
-  border: 1px solid rgba(245, 196, 111, 0.18);
+  border: 1px solid rgba(220, 38, 38, 0.18);
   background:
-    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.14), transparent 34%),
+    radial-gradient(circle at 12% 0%, rgba(220, 38, 38, 0.14), transparent 34%),
     linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
 }
 
@@ -57,7 +57,7 @@
 .city-map-summary strong {
   display: block;
   margin-top: 5px;
-  color: #f5c46f;
+  color: #ef4444;
   font-size: 1.2rem;
 }
 
@@ -84,12 +84,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle at 0% 0%, rgba(245, 196, 111, 0.12), transparent 30%);
+  background: radial-gradient(circle at 0% 0%, rgba(220, 38, 38, 0.12), transparent 30%);
   opacity: 0.7;
 }
 
 .city-club-card.is-current {
-  border-color: rgba(245, 196, 111, 0.34);
+  border-color: rgba(220, 38, 38, 0.34);
 }
 
 .city-club-card.status-completed {
@@ -106,10 +106,10 @@
   place-items: center;
   width: 44px;
   height: 44px;
-  border: 1px solid rgba(245, 196, 111, 0.24);
+  border: 1px solid rgba(220, 38, 38, 0.24);
   border-radius: 16px;
-  background: rgba(245, 196, 111, 0.08);
-  color: #f5c46f;
+  background: rgba(220, 38, 38, 0.08);
+  color: #ef4444;
   font-weight: 950;
   z-index: 1;
 }
@@ -135,10 +135,10 @@
 }
 
 .city-club-head em {
-  border: 1px solid rgba(245, 196, 111, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.2);
   border-radius: 999px;
   padding: 5px 9px;
-  color: #f5c46f;
+  color: #ef4444;
   font-size: 0.72rem;
   font-style: normal;
   font-weight: 900;
@@ -283,7 +283,7 @@
   inset: 0;
   pointer-events: none;
   opacity: 0.7;
-  background: radial-gradient(circle at 0% 0%, rgba(245, 196, 111, 0.11), transparent 34%);
+  background: radial-gradient(circle at 0% 0%, rgba(220, 38, 38, 0.11), transparent 34%);
 }
 
 .city-venue-card > * {
@@ -292,7 +292,7 @@
 }
 
 .city-venue-card.is-current {
-  border-color: rgba(245, 196, 111, 0.36);
+  border-color: rgba(220, 38, 38, 0.36);
 }
 
 .city-venue-card.is-locked {
@@ -314,10 +314,10 @@
 }
 
 .city-venue-head em {
-  border: 1px solid rgba(245, 196, 111, 0.18);
+  border: 1px solid rgba(220, 38, 38, 0.18);
   border-radius: 999px;
   padding: 5px 8px;
-  color: #f5c46f;
+  color: #ef4444;
   font-size: 0.7rem;
   font-style: normal;
   font-weight: 900;
@@ -350,9 +350,9 @@
   gap: 16px;
   align-items: center;
   padding: 20px;
-  border: 1px solid rgba(245, 196, 111, 0.18);
+  border: 1px solid rgba(220, 38, 38, 0.18);
   background:
-    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.12), transparent 34%),
+    radial-gradient(circle at 12% 0%, rgba(220, 38, 38, 0.12), transparent 34%),
     linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
 }
 
@@ -433,11 +433,11 @@
 
 
 .venue-warning-panel {
-  border-color: rgba(245, 158, 11, 0.35);
+  border-color: rgba(220, 38, 38, 0.35);
 }
 
 .venue-warning-panel strong {
   display: block;
-  color: #facc15;
+  color: #ef4444;
   margin-bottom: 4px;
 }

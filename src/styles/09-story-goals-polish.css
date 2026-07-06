@@ -21,11 +21,11 @@
 
 .club-story-cutscene {
   width: 100%;
-  border: 1px solid rgba(245, 196, 111, 0.24);
+  border: 1px solid rgba(220, 38, 38, 0.24);
   border-radius: 24px;
   padding: 18px;
   background:
-    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.18), transparent 32%),
+    radial-gradient(circle at 12% 0%, rgba(220, 38, 38, 0.18), transparent 32%),
     linear-gradient(145deg, rgba(17, 19, 25, 0.98), rgba(9, 10, 14, 0.96));
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
 }
@@ -62,7 +62,7 @@
 .club-goals-head em,
 .club-goal-card-head em,
 .table-picker-dialog-head em {
-  color: #f5c46f;
+  color: #ef4444;
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 800;
@@ -103,7 +103,7 @@
 
 .club-story-scene > span {
   display: block;
-  color: rgba(245, 196, 111, 0.88);
+  color: rgba(220, 38, 38, 0.88);
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -153,7 +153,7 @@
 
 .club-story-progress-line b,
 .club-goal-reward {
-  color: #f5c46f;
+  color: #ef4444;
   font-size: 0.78rem;
   font-weight: 900;
 }
@@ -167,10 +167,10 @@
 }
 
 .story-character-chip {
-  border: 1px solid rgba(245, 196, 111, 0.22);
+  border: 1px solid rgba(220, 38, 38, 0.22);
   border-radius: 999px;
   padding: 7px 10px;
-  background: rgba(245, 196, 111, 0.08);
+  background: rgba(220, 38, 38, 0.08);
   color: rgba(255, 255, 255, 0.88);
   font-size: 0.75rem;
   font-weight: 800;
@@ -203,7 +203,7 @@
 .club-table-focus-card em {
   display: block;
   margin-top: 8px;
-  color: rgba(245, 196, 111, 0.82);
+  color: rgba(220, 38, 38, 0.82);
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 800;
@@ -246,7 +246,7 @@
   width: min(1060px, calc(100vw - 28px));
   max-height: min(82vh, 860px);
   overflow: auto;
-  border: 1px solid rgba(245, 196, 111, 0.24);
+  border: 1px solid rgba(220, 38, 38, 0.24);
   border-radius: 24px;
   padding: 16px;
   background: linear-gradient(145deg, rgba(18, 20, 27, 0.98), rgba(8, 9, 13, 0.98));
@@ -275,10 +275,10 @@
   display: inline-flex;
   min-width: 42px;
   justify-content: center;
-  border: 1px solid rgba(245, 196, 111, 0.22);
+  border: 1px solid rgba(220, 38, 38, 0.22);
   border-radius: 999px;
   padding: 5px 9px;
-  background: rgba(245, 196, 111, 0.08);
+  background: rgba(220, 38, 38, 0.08);
 }
 
 .club-goals-grid {
@@ -350,7 +350,7 @@
 .club-location-strip {
   display: grid;
   gap: 10px;
-  border: 1px solid rgba(245, 196, 111, 0.16);
+  border: 1px solid rgba(220, 38, 38, 0.16);
   border-radius: 22px;
   padding: 14px;
   background: rgba(255, 255, 255, 0.035);
@@ -396,8 +396,8 @@
 }
 
 .club-location-card.active {
-  border-color: rgba(245, 196, 111, 0.34);
-  background: rgba(245, 196, 111, 0.08);
+  border-color: rgba(220, 38, 38, 0.34);
+  background: rgba(220, 38, 38, 0.08);
 }
 
 .club-location-card.locked {
@@ -420,7 +420,7 @@
 
 .club-location-card.open span,
 .club-location-card.active span {
-  color: #f5c46f;
+  color: #ef4444;
 }
 
 @media (min-width: 760px) {
@@ -429,7 +429,7 @@
   }
 }
 
-/* v2.7.0 — clean club lobby + modal pickers */
+/* v2.7.4 — clean club lobby + modal pickers */
 .club-lobby-clean-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -453,14 +453,14 @@
   border-radius: 20px;
   padding: 16px;
   background:
-    radial-gradient(circle at 10% 0%, rgba(245, 196, 111, 0.11), transparent 30%),
+    radial-gradient(circle at 10% 0%, rgba(220, 38, 38, 0.11), transparent 30%),
     rgba(255, 255, 255, 0.045);
 }
 
 .club-action-card.primary-action {
-  border-color: rgba(245, 196, 111, 0.24);
+  border-color: rgba(220, 38, 38, 0.24);
   background:
-    radial-gradient(circle at 12% 0%, rgba(245, 196, 111, 0.18), transparent 34%),
+    radial-gradient(circle at 12% 0%, rgba(220, 38, 38, 0.18), transparent 34%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
 }
 
@@ -489,7 +489,7 @@
 }
 
 .club-action-card em {
-  color: #f5c46f;
+  color: #ef4444;
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 900;
@@ -522,7 +522,7 @@
   width: min(1060px, calc(100vw - 28px));
   max-height: min(82vh, 860px);
   overflow: auto;
-  border: 1px solid rgba(245, 196, 111, 0.24);
+  border: 1px solid rgba(220, 38, 38, 0.24);
   border-radius: 24px;
   padding: 16px;
   background: linear-gradient(145deg, rgba(18, 20, 27, 0.98), rgba(8, 9, 13, 0.98));

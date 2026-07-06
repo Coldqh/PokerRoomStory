@@ -1,6 +1,6 @@
-import { APP_VERSION } from "../config/appMeta.js?v=1.1.0";
-import { renderScreen, getVisibleScreens } from "../ui/screens.js?v=1.1.0";
-import { escapeHtml } from "../ui/components.js?v=1.1.0";
+import { APP_VERSION } from "../config/appMeta.js?v=2.7.4";
+import { renderScreen, getVisibleScreens } from "../ui/screens.js?v=2.7.4";
+import { escapeHtml } from "../ui/components.js?v=2.7.4";
 
 export const renderShell = {
   render() {
@@ -43,7 +43,7 @@ export const renderShell = {
 
   renderSideDrawer(displayState = this.state) {
     const player = displayState.player;
-    const screens = getVisibleScreens(displayState);
+    const screens = getVisibleScreens(displayState).filter((screen) => !screen.hiddenFromNav);
     return `
       <button class="drawer-backdrop" data-action="close-menu" aria-label="Закрыть меню"></button>
       <aside class="side-drawer panel-soft" aria-label="Главное меню">
@@ -140,6 +140,8 @@ function winRate(player) {
 
 function navIcon(id) {
   const icons = {
+    life: "●",
+    location: "⌖",
     club: "⌂",
     table: "♣",
     career: "♕",

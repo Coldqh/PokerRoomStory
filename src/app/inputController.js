@@ -1,10 +1,11 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.7.0";
-import { applyLifeAction } from "../engine/life.js?v=2.7.0";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.7.0";
-import { normalizePlayer } from "../engine/career.js?v=2.7.0";
-import { getClubTables } from "../engine/selectors.js?v=2.7.0";
-import { canEnterClub } from "../engine/world.js?v=2.7.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.7.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.7.4";
+import { applyLifeAction } from "../engine/life.js?v=2.7.4";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.7.4";
+import { normalizePlayer } from "../engine/career.js?v=2.7.4";
+import { getClubTables } from "../engine/selectors.js?v=2.7.4";
+import { canEnterClub } from "../engine/world.js?v=2.7.4";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.7.4";
+import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=2.7.4";
 
 export const inputController = {
   handleClick(event) {
@@ -30,8 +31,14 @@ export const inputController = {
     }
 
     if (action === "screen") {
+      if (this.state.tableSession?.tableId && ["locations", "venue", "club"].includes(id)) {
+        this.setSystem({ notice: "Сначала встань из-за стола." });
+        return;
+      }
       this.menuOpen = false;
+      const locationPatch = getScreenLocationPatch(this.state, this.content, id);
       this.setState({
+        ...locationPatch,
         currentScreen: this.resolveScreen(id),
         system: {
           ...this.state.system,
@@ -65,6 +72,8 @@ export const inputController = {
       "life-action",
       "select-venue",
       "venue-action",
+      "go-home",
+      "go-city",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
 
@@ -85,7 +94,8 @@ export const inputController = {
       visited.add(venue.id);
       this.setState({
         activeVenueId: venue.id,
-        currentScreen: "venue",
+        playerLocation: venue.type === "home" ? createHomeLocation(this.content) : createVenueLocation(this.content, venue.id),
+        currentScreen: "location",
         career: {
           ...this.state.career,
           city: {
@@ -107,7 +117,7 @@ export const inputController = {
     if (action === "venue-action") {
       const result = applyVenueAction({
         content: this.content,
-        venueId: this.state.activeVenueId ?? this.state.career?.city?.activeVenueId,
+        venueId: getActionVenueId(this.state),
         actionId: id,
         career: this.state.career,
         player: this.state.player,
@@ -119,7 +129,7 @@ export const inputController = {
       this.setState({
         career: result.career,
         player: normalizePlayer(result.player),
-        currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : this.state.currentScreen,
+        currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : "location",
         log: [...(this.state.log ?? []), result.message].slice(-100),
         system: {
           ...this.state.system,
@@ -140,7 +150,7 @@ export const inputController = {
       this.setState({
         career: result.career,
         player: normalizePlayer(result.player),
-        currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : this.state.currentScreen,
+        currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : "location",
         log: [...(this.state.log ?? []), result.message].slice(-100),
         system: {
           ...this.state.system,
@@ -191,7 +201,8 @@ export const inputController = {
           },
         },
         activeTableId: tables[0]?.id ?? this.state.activeTableId,
-        currentScreen: "club",
+        playerLocation: createClubLocation(this.content, id),
+        currentScreen: "location",
         system: {
           ...this.state.system,
           notice: null,
@@ -207,7 +218,7 @@ export const inputController = {
       this.menuOpen = false;
       this.setSystem({ tablePickerOpen: false, clubPickerOpen: false });
       if (this.state.tableSession?.tableId === id) {
-        this.setState({ activeTableId: id, currentScreen: "table" });
+        this.setState({ activeTableId: id, playerLocation: createTableLocation(this.content, this.state.activeClubId, id), currentScreen: "location" });
       } else {
         this.openBuyInModal(id);
       }
@@ -276,6 +287,37 @@ export const inputController = {
 
     if (action === "toggle-speed") {
       this.toggleAnimationSpeed();
+      return;
+    }
+
+    if (action === "go-home") {
+      this.setState({
+        activeVenueId: "VENUE_RU_MOS_HOME_CHEAP_ROOM",
+        playerLocation: createHomeLocation(this.content),
+        currentScreen: "location",
+        system: {
+          ...this.state.system,
+          sessionSummary: null,
+          tablePickerOpen: false,
+          clubPickerOpen: false,
+          notice: null,
+        },
+      });
+      return;
+    }
+
+    if (action === "go-city") {
+      this.setState({
+        playerLocation: createCityLocation(this.content, this.state.playerLocation?.cityId ?? this.content?.byId?.clubs?.[this.state.activeClubId]?.cityId),
+        currentScreen: "location",
+        system: {
+          ...this.state.system,
+          sessionSummary: null,
+          tablePickerOpen: false,
+          clubPickerOpen: false,
+          notice: null,
+        },
+      });
       return;
     }
 
@@ -382,11 +424,37 @@ export const inputController = {
   }
 };
 
+function getActionVenueId(state = {}) {
+  if (["home", "venue"].includes(state.playerLocation?.type) && state.playerLocation?.venueId) {
+    return state.playerLocation.venueId;
+  }
+  return state.activeVenueId ?? state.career?.city?.activeVenueId;
+}
+
+function getScreenLocationPatch(state = {}, content = null, screenId = "") {
+  if (screenId === "location") {
+    return {};
+  }
+  if (screenId === "locations") {
+    return { playerLocation: createCityLocation(content, state.playerLocation?.cityId ?? content?.byId?.clubs?.[state.activeClubId]?.cityId) };
+  }
+  if (screenId === "club") {
+    return { playerLocation: createClubLocation(content, state.activeClubId) };
+  }
+  if (screenId === "table") {
+    return { playerLocation: createTableLocation(content, state.activeClubId, state.tableSession?.tableId ?? state.activeTableId) };
+  }
+  if (screenId === "venue") {
+    return { playerLocation: createVenueLocation(content, state.activeVenueId ?? state.career?.city?.activeVenueId) };
+  }
+  return {};
+}
+
 function isLocationLockedAtTable(state = {}, action = "", id = "") {
   const seated = Boolean(state.tableSession?.tableId);
   if (!seated) return false;
 
-  if (["select-venue", "venue-action", "life-action", "select-club"].includes(action)) return true;
+  if (["select-venue", "venue-action", "life-action", "select-club", "go-home", "go-city"].includes(action)) return true;
 
   if (action === "select-table") {
     const currentTableId = state.tableSession?.tableId ?? null;

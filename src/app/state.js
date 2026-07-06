@@ -1,11 +1,12 @@
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=2.7.0";
-import { normalizeClubNpcState } from "../engine/club.js?v=2.7.0";
-import { createInitialTableState } from "../engine/poker.js?v=2.7.0";
-import { isObservedWaitingTable } from "../engine/tablePresence.js?v=2.7.0";
-import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=2.7.0";
-import { getDefaultStartLocation } from "../engine/selectors.js?v=2.7.0";
-import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=2.7.0";
-import { getRuntimeStatus } from "../engine/update.js?v=2.7.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=2.7.4";
+import { normalizeClubNpcState } from "../engine/club.js?v=2.7.4";
+import { createInitialTableState } from "../engine/poker.js?v=2.7.4";
+import { isObservedWaitingTable } from "../engine/tablePresence.js?v=2.7.4";
+import { createHomeLocation, normalizePlayerLocation } from "../engine/locationState.js?v=2.7.4";
+import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=2.7.4";
+import { getDefaultStartLocation } from "../engine/selectors.js?v=2.7.4";
+import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=2.7.4";
+import { getRuntimeStatus } from "../engine/update.js?v=2.7.4";
 
 export const stateController = {
   createInitialState() {
@@ -18,10 +19,11 @@ export const stateController = {
       career: ensureActiveChallenges(this.content, createNewCareer()),
       knownNpcIds: [],
       clubNpcState: normalizeClubNpcState(this.content, {}, startLocation.clubId),
-      currentScreen: "life",
+      currentScreen: "location",
       activeClubId: startLocation.clubId,
       activeVenueId: saved?.activeVenueId ?? saved?.career?.city?.activeVenueId ?? "VENUE_RU_MOS_HOME_CHEAP_ROOM",
       activeTableId: startLocation.tableId,
+      playerLocation: createHomeLocation(this.content),
       tableSession: null,
       tableState: createInitialTableState(),
       log: [`Patch v${APP_VERSION} · life hub.`],
@@ -43,6 +45,12 @@ export const stateController = {
       clubNpcState: normalizeClubNpcState(this.content, savedPayload.clubNpcState, savedPayload.activeClubId ?? base.activeClubId),
       settings: { ...createDefaultSettings(), ...(savedPayload.settings ?? {}) },
       tableSession: normalizeTableSession(savedPayload.tableSession, this.content, savedPayload.activeTableId ?? base.activeTableId),
+      playerLocation: normalizePlayerLocation(this.content, savedPayload.playerLocation, {
+        tableSession: normalizeTableSession(savedPayload.tableSession, this.content, savedPayload.activeTableId ?? base.activeTableId),
+        activeClubId: savedPayload.activeClubId ?? base.activeClubId,
+        activeVenueId: savedPayload.activeVenueId ?? base.activeVenueId,
+        cityId: this.content?.byId?.clubs?.[savedPayload.activeClubId ?? base.activeClubId]?.cityId,
+      }),
       tableState: loadedTable.tableState,
       system: {
         ...base.system,
@@ -161,6 +169,7 @@ function normalizeTableSession(session, content, activeTableId = null) {
     handsPlayed: Number(session.handsPlayed ?? 0),
     seatedAt: Number(session.seatedAt ?? Date.now()),
     waitingForNextHand: Boolean(session.waitingForNextHand),
+    sessionStats: session.sessionStats && typeof session.sessionStats === "object" ? session.sessionStats : null,
   };
 }
 

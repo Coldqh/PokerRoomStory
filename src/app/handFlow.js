@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=2.7.0";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=2.7.0";
-import { applyUnlocks } from "../engine/collections.js?v=2.7.0";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=2.7.4";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=2.7.4";
+import { applyUnlocks } from "../engine/collections.js?v=2.7.4";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,12 +9,13 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=2.7.0";
-import { getClubContext } from "../engine/world.js?v=2.7.0";
-import { applyClubProgression } from "../engine/progression.js?v=2.7.0";
-import { applyClubGoals } from "../engine/clubGoals.js?v=2.7.0";
-import { applyStorylineProgress } from "../engine/storylines.js?v=2.7.0";
-import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=2.7.0";
+} from "../engine/poker.js?v=2.7.4";
+import { getClubContext } from "../engine/world.js?v=2.7.4";
+import { applyClubProgression } from "../engine/progression.js?v=2.7.4";
+import { applyClubGoals } from "../engine/clubGoals.js?v=2.7.4";
+import { applyStorylineProgress } from "../engine/storylines.js?v=2.7.4";
+import { createTableLocation } from "../engine/locationState.js?v=2.7.4";
+import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=2.7.4";
 
 export const handFlow = {
   startHand() {
@@ -51,7 +52,8 @@ export const handFlow = {
     const auto = advanceUntilPlayerOrEnd({ tableState: initialTableState, table });
     const timeline = [...buildStartHandTimeline(initialTableState, table), ...auto.timeline];
     this.setState({
-      currentScreen: "table",
+      currentScreen: "location",
+      playerLocation: createTableLocation(this.content, this.state.activeClubId, this.state.activeTableId),
       tableSession: {
         ...session,
         waitingForNextHand: false,

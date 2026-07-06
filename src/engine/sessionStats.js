@@ -1,4 +1,4 @@
-import { normalizeLifeState } from "./life.js?v=2.7.0";
+import { normalizeLifeState } from "./life.js?v=2.7.4";
 
 const MAX_NEED = 100;
 

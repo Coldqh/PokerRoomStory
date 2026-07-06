@@ -1,9 +1,10 @@
-import { createInitialTableState } from "../engine/poker.js?v=2.7.0";
-import { getClubSnapshotForTable } from "../engine/club.js?v=2.7.0";
-import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.7.0";
-import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=2.7.0";
-import { canEnterTable } from "../engine/world.js?v=2.7.0";
-import { getClubContext } from "../engine/world.js?v=2.7.0";
+import { createInitialTableState } from "../engine/poker.js?v=2.7.4";
+import { getClubSnapshotForTable } from "../engine/club.js?v=2.7.4";
+import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.7.4";
+import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=2.7.4";
+import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=2.7.4";
+import { canEnterTable } from "../engine/world.js?v=2.7.4";
+import { getClubContext } from "../engine/world.js?v=2.7.4";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -91,7 +92,8 @@ export const tableSessionFlow = {
       },
       activeClubId: table.clubId ?? this.state.activeClubId,
       activeTableId: table.id,
-      currentScreen: "table",
+      playerLocation: createTableLocation(this.content, table.clubId ?? this.state.activeClubId, table.id),
+      currentScreen: "location",
       tableSession: {
         tableId: table.id,
         buyIn: amount,
@@ -185,7 +187,8 @@ export const tableSessionFlow = {
       },
       tableSession: null,
       tableState: createInitialTableState(),
-      currentScreen: "club",
+      playerLocation: createClubLocation(this.content, this.state.activeClubId),
+      currentScreen: "location",
       system: {
         ...this.state.system,
         resultModalOpen: false,

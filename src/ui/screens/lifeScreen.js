@@ -1,7 +1,7 @@
-import { getLifeView } from "../../engine/life.js?v=2.7.0";
-import { getBusinessView } from "../../engine/businesses.js?v=2.7.0";
-import { getVenueById } from "../../engine/venues.js?v=2.7.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.7.0";
+import { getLifeView } from "../../engine/life.js?v=2.7.4";
+import { getBusinessView } from "../../engine/businesses.js?v=2.7.4";
+import { getVenueById } from "../../engine/venues.js?v=2.7.4";
+import { escapeHtml, progressBar } from "../components.js?v=2.7.4";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -54,8 +54,7 @@ export function renderLifeScreen(state) {
           </div>
           <p>Rest: ${escapeHtml(formatEffect(view.currentHousing.restEffect))}</p>
         </div>
-        <button class="primary" data-action="life-action" data-id="rest:home" ${view.canRest && !lockedAtTable ? "" : "disabled"}>Отдохнуть дома</button>
-        <button data-action="screen" data-id="locations">Выйти в город</button>
+        <button data-action="screen" data-id="location">Открыть местонахождение</button>
       </section>
 
       ${view.warnings.length ? `
@@ -82,7 +81,7 @@ export function renderLifeScreen(state) {
           <div class="life-list compact">
             ${businesses.length ? businesses.slice(0, 6).map(renderBusinessItem).join("") : `<div class="life-empty">Нет бизнесов</div>`}
           </div>
-          <button class="small-button" data-action="select-venue" data-id="VENUE_RU_MOS_BUSINESS_BROKER_001">Business Broker</button>
+          <p class="life-empty">Управление бизнесом — во вкладке «Местонахождение».</p>
         </article>
 
         <article class="life-section panel-soft">
@@ -113,11 +112,11 @@ function renderLifeMeter(label, percent, value) {
   `;
 }
 
-function renderInventoryItem(entry, lockedAtTable = false) {
+function renderInventoryItem(entry) {
   return `
     <div class="life-row">
       <div><strong>${escapeHtml(entry.item.name)} x${escapeHtml(String(entry.qty))}</strong><span>${escapeHtml(formatEffect(entry.item.effect))}</span></div>
-      <button class="small-button" data-action="life-action" data-id="use:${escapeHtml(entry.item.id)}" ${lockedAtTable ? "disabled" : ""}>Использовать</button>
+      <span class="life-row-note">Использовать дома</span>
     </div>
   `;
 }
@@ -126,7 +125,7 @@ function renderBusinessItem(row) {
   return `
     <div class="life-row">
       <div><strong>${escapeHtml(row.template.name)}</strong><span>Lv.${escapeHtml(String(row.owned.level))} · Profit $${escapeHtml(String(row.dailyProfit))}/день · к сбору $${escapeHtml(String(row.collectableProfit))}</span></div>
-      <button class="small-button" data-action="select-venue" data-id="VENUE_RU_MOS_BUSINESS_BROKER_001">Управлять</button>
+      <span class="life-row-note">Business Broker</span>
     </div>
   `;
 }

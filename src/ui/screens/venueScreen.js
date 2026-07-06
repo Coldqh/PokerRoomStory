@@ -1,5 +1,5 @@
-import { getVenueView } from "../../engine/venues.js?v=2.7.0";
-import { escapeHtml } from "../components.js?v=2.7.0";
+import { getVenueView } from "../../engine/venues.js?v=2.7.4";
+import { escapeHtml } from "../components.js?v=2.7.4";
 
 export function renderVenueScreen(state) {
   const venueId = state.activeVenueId ?? state.career?.city?.activeVenueId;
@@ -16,7 +16,7 @@ export function renderVenueScreen(state) {
           <p>${escapeHtml(formatVenueLocation(view))}</p>
         </div>
         <div class="venue-actions-top">
-          <button data-action="screen" data-id="locations">Карта</button>
+          <button data-action="go-city">Назад в город</button>
           <button data-action="screen" data-id="life">Жизнь</button>
         </div>
       </article>
@@ -31,7 +31,7 @@ function renderMissingVenue() {
     <section class="venue-screen">
       <article class="panel-soft venue-empty">
         <strong>Объект не найден.</strong>
-        <button data-action="screen" data-id="locations">Карта</button>
+        <button data-action="go-city">Назад в город</button>
       </article>
     </section>
   `;

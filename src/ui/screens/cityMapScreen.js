@@ -1,5 +1,5 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.7.0";
-import { escapeHtml } from "../components.js?v=2.7.0";
+import { getCityMapView } from "../../engine/locations.js?v=2.7.4";
+import { escapeHtml } from "../components.js?v=2.7.4";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
@@ -24,9 +24,9 @@ export function renderCityMapScreen(state) {
     <section class="city-map-screen">
       <article class="panel-soft city-map-hero">
         <div>
-          <span>City ecosystem</span>
+          <span>Местонахождение</span>
           <h2>Город</h2>
-          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Объекты города: клубы, дом, магазины, кафе, работа, жильё, машины.</p>
+          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Ты в городе. Выбери, куда идти дальше: дом, клуб, магазин, кафе, работа, жильё или машины.</p>
           ${state.tableSession?.tableId ? `<p class="venue-warning">Ты сейчас за столом. Сначала встань из-за стола.</p>` : ""}
         </div>
         <div class="city-map-summary">

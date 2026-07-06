@@ -1,6 +1,6 @@
-import { APP_VERSION } from "../config/appMeta.js?v=2.9.0";
-import { renderScreen, getVisibleScreens } from "../ui/screens.js?v=2.9.0";
-import { escapeHtml } from "../ui/components.js?v=2.9.0";
+import { APP_VERSION } from "../config/appMeta.js?v=3.0.0";
+import { renderScreen, getVisibleScreens } from "../ui/screens.js?v=3.0.0";
+import { escapeHtml } from "../ui/components.js?v=3.0.0";
 
 export const renderShell = {
   render() {

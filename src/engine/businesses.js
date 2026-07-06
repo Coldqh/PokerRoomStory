@@ -1,4 +1,4 @@
-import { BUSINESS_LIMITS, BUSINESS_TEMPLATES, getBusinessTemplate, getBusinessTemplates } from "./businessContent.js?v=2.9.0";
+import { BUSINESS_LIMITS, BUSINESS_TEMPLATES, getBusinessTemplate, getBusinessTemplates } from "./businessContent.js?v=3.0.0";
 
 const MAX_LEVEL = BUSINESS_LIMITS.maxLevel;
 
@@ -136,7 +136,7 @@ function normalizeOwnedBusiness(template, raw = {}) {
   };
 }
 
-function getBusinessDailyProfit(template, owned = null) {
+export function getBusinessDailyProfit(template, owned = null) {
   const level = owned?.level ?? 1;
   const condition = owned?.condition ?? template.condition ?? 50;
   const conditionFactor = 0.75 + condition / 200;

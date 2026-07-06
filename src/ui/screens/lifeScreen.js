@@ -1,8 +1,8 @@
-import { getLifeView } from "../../engine/life.js?v=2.9.0";
-import { getBusinessView } from "../../engine/businesses.js?v=2.9.0";
-import { getCurrentJobView } from "../../engine/jobs.js?v=2.9.0";
-import { getVenueById } from "../../engine/venues.js?v=2.9.0";
-import { escapeHtml, progressBar } from "../components.js?v=2.9.0";
+import { getLifeView } from "../../engine/life.js?v=3.0.0";
+import { getBusinessView } from "../../engine/businesses.js?v=3.0.0";
+import { getCurrentJobView } from "../../engine/jobs.js?v=3.0.0";
+import { getVenueById } from "../../engine/venues.js?v=3.0.0";
+import { escapeHtml, progressBar } from "../components.js?v=3.0.0";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -68,6 +68,7 @@ export function renderLifeScreen(state) {
       ` : ""}
 
       ${life.lastMessage ? `<section class="life-last-message panel-soft"><span>Result</span><p>${escapeHtml(life.lastMessage)}</p></section>` : ""}
+      ${renderDaySummary(life.daySummary)}
 
       <section class="life-overview-grid">
         <article class="life-section panel-soft">
@@ -115,6 +116,18 @@ export function renderLifeScreen(state) {
           </div>
         </article>
       </section>
+    </section>
+  `;
+}
+
+function renderDaySummary(summary) {
+  if (!summary?.lines?.length) return "";
+  return `
+    <section class="life-day-summary panel-soft">
+      <header><span>Daily simulation</span><strong>Итог дня ${escapeHtml(String(summary.day ?? ""))}</strong></header>
+      <div class="life-summary-list day-summary-list">
+        ${summary.lines.slice(0, 10).map((line) => `<div><span>•</span><strong>${escapeHtml(line)}</strong></div>`).join("")}
+      </div>
     </section>
   `;
 }

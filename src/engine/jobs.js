@@ -1,5 +1,5 @@
-import { normalizeLifeState, spendLifeActionCost } from "./life.js?v=2.9.0";
-import { JOBS, getJobById, getJobsForVenue } from "./jobContent.js?v=2.9.0";
+import { normalizeLifeState, spendLifeActionCost } from "./life.js?v=3.0.0";
+import { JOBS, getJobById, getJobsForVenue } from "./jobContent.js?v=3.0.0";
 
 export function createInitialJobsState() {
   return {
@@ -8,6 +8,8 @@ export function createInitialJobsState() {
     totalShiftsWorked: 0,
     firedFromIds: [],
     lastWorkedDay: null,
+    currentJobStartedDay: null,
+    missedWorkDays: 0,
     lastMessage: null,
   };
 }
@@ -26,6 +28,8 @@ export function normalizeJobsState(jobs = {}) {
     totalShiftsWorked: Math.max(0, Math.round(Number(jobs.totalShiftsWorked ?? 0) || 0)),
     firedFromIds: Array.isArray(jobs.firedFromIds) ? [...new Set(jobs.firedFromIds.map(String).filter((id) => getJobById(id)))] : [],
     lastWorkedDay: Number.isFinite(Number(jobs.lastWorkedDay)) ? Math.max(1, Math.round(Number(jobs.lastWorkedDay))) : null,
+    currentJobStartedDay: Number.isFinite(Number(jobs.currentJobStartedDay)) ? Math.max(1, Math.round(Number(jobs.currentJobStartedDay))) : null,
+    missedWorkDays: Math.max(0, Math.round(Number(jobs.missedWorkDays ?? 0) || 0)),
     lastMessage: typeof jobs.lastMessage === "string" ? jobs.lastMessage : null,
   };
 }
@@ -96,6 +100,8 @@ export function applyJobAction({ actionId = "", career = {}, player = {} } = {})
         jobs: normalizeJobsState({
           ...jobsState,
           currentJobId: job.id,
+          currentJobStartedDay: normalizeLifeState(career.life).day,
+          missedWorkDays: 0,
           lastMessage: `Текущая работа: ${job.title}.`,
         }),
       },
@@ -109,7 +115,7 @@ export function applyJobAction({ actionId = "", career = {}, player = {} } = {})
       ok: true,
       career: {
         ...career,
-        jobs: normalizeJobsState({ ...jobsState, currentJobId: null, lastMessage: `Уволился: ${job.title}.` }),
+        jobs: normalizeJobsState({ ...jobsState, currentJobId: null, currentJobStartedDay: null, missedWorkDays: 0, lastMessage: `Уволился: ${job.title}.` }),
       },
       player: nextPlayer,
       message: `Уволился: ${job.title}.`,
@@ -134,6 +140,8 @@ export function applyJobAction({ actionId = "", career = {}, player = {} } = {})
         jobXpById: { ...jobsState.jobXpById, [job.id]: xp + 1 },
         totalShiftsWorked: jobsState.totalShiftsWorked + 1,
         lastWorkedDay: life.day,
+        currentJobStartedDay: jobsState.currentJobStartedDay ?? life.day,
+        missedWorkDays: 0,
         lastMessage: `Смена: ${stage.title}.`,
       }),
     };

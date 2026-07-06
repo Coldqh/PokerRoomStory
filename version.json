@@ -1,6 +1,6 @@
 {
-  "version": "2.9.0",
-  "appVersion": "2.9.0",
-  "buildId": "prs-2.9.0-20260706-jobs-employment",
-  "message": "v2.9.0 — Jobs / Employment Layer"
+  "version": "3.0.0",
+  "appVersion": "3.0.0",
+  "buildId": "prs-3.0.0-20260706-day-simulation",
+  "message": "v3.0.0 — Daily World Simulation / Consequence Director"
 }

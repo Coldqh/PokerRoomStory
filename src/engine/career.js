@@ -1,8 +1,8 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.9.0";
-import { normalizeClubProgress } from "./progression.js?v=2.9.0";
-import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.9.0";
-import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=2.9.0";
-import { createInitialJobsState, normalizeJobsState } from "./jobs.js?v=2.9.0";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=3.0.0";
+import { normalizeClubProgress } from "./progression.js?v=3.0.0";
+import { createInitialLifeState, normalizeLifeState } from "./life.js?v=3.0.0";
+import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=3.0.0";
+import { createInitialJobsState, normalizeJobsState } from "./jobs.js?v=3.0.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },

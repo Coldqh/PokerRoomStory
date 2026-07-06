@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=2.7.4";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=2.7.4";
-import { applyUnlocks } from "../engine/collections.js?v=2.7.4";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=2.8.0";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=2.8.0";
+import { applyUnlocks } from "../engine/collections.js?v=2.8.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,13 +9,13 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=2.7.4";
-import { getClubContext } from "../engine/world.js?v=2.7.4";
-import { applyClubProgression } from "../engine/progression.js?v=2.7.4";
-import { applyClubGoals } from "../engine/clubGoals.js?v=2.7.4";
-import { applyStorylineProgress } from "../engine/storylines.js?v=2.7.4";
-import { createTableLocation } from "../engine/locationState.js?v=2.7.4";
-import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=2.7.4";
+} from "../engine/poker.js?v=2.8.0";
+import { getClubContext } from "../engine/world.js?v=2.8.0";
+import { applyClubProgression } from "../engine/progression.js?v=2.8.0";
+import { applyClubGoals } from "../engine/clubGoals.js?v=2.8.0";
+import { applyStorylineProgress } from "../engine/storylines.js?v=2.8.0";
+import { createTableLocation } from "../engine/locationState.js?v=2.8.0";
+import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=2.8.0";
 
 export const handFlow = {
   startHand() {
@@ -203,6 +203,7 @@ export const handFlow = {
       : this.state.tableSession;
     const sessionResult = applySessionHandResult({
       career: careerAfterProgress,
+      player: playerAfterHand,
       tableSession: baseNextTableSession,
       tableState,
       settledTableState,
@@ -210,6 +211,7 @@ export const handFlow = {
       table: activeTable,
     });
     const careerAfterSession = sessionResult.career;
+    const playerAfterSession = normalizePlayer(sessionResult.player ?? playerAfterHand);
     const nextTableSession = sessionResult.tableSession;
     const log = [
       ...this.state.log,
@@ -224,7 +226,7 @@ export const handFlow = {
     ].slice(-100);
 
     this.setState({
-      player: playerAfterHand,
+      player: playerAfterSession,
       career: careerAfterSession,
       tableSession: nextTableSession,
       clubNpcState: clubPatch.clubNpcState,

@@ -1,6 +1,7 @@
-import { normalizeLifeState } from "./life.js?v=2.7.4";
+import { normalizeLifeState, spendLifeActionCost } from "./life.js?v=2.8.0";
 
 const MAX_NEED = 100;
+const HAND_ACTION_COST = 0.1;
 
 export function createSessionStats({ tableSession = {}, life = {} } = {}) {
   const normalizedLife = normalizeLifeState(life);
@@ -20,6 +21,7 @@ export function createSessionStats({ tableSession = {}, life = {} } = {}) {
     thirstSpent: 0,
     energySpent: 0,
     stressGained: 0,
+    actionSpent: 0,
   };
 }
 
@@ -44,10 +46,11 @@ export function normalizeSessionStats(stats = {}, tableSession = {}, life = {}) 
     thirstSpent: int(stats.thirstSpent, base.thirstSpent, 0, 99999),
     energySpent: int(stats.energySpent, base.energySpent, 0, 99999),
     stressGained: int(stats.stressGained, base.stressGained, 0, 99999),
+    actionSpent: number(stats.actionSpent, base.actionSpent, 0, 99999),
   };
 }
 
-export function applySessionHandResult({ career = {}, tableSession = {}, tableState = {}, settledTableState = {}, result = {}, table = {} } = {}) {
+export function applySessionHandResult({ career = {}, player = {}, tableSession = {}, tableState = {}, settledTableState = {}, result = {}, table = {} } = {}) {
   if (!tableSession) return { career, tableSession, impact: null, message: null };
 
   const life = normalizeLifeState(career.life);
@@ -77,10 +80,19 @@ export function applySessionHandResult({ career = {}, tableSession = {}, tableSt
     thirstSpent: previousStats.thirstSpent + Math.abs(Math.min(0, impact.thirst)),
     energySpent: previousStats.energySpent + Math.abs(Math.min(0, impact.energy)),
     stressGained: previousStats.stressGained + Math.max(0, impact.stress),
+    actionSpent: previousStats.actionSpent + HAND_ACTION_COST,
   }, { ...tableSession, stack: currentStack }, nextLife);
 
-  return {
+  const timeResult = spendLifeActionCost({
     career: { ...career, life: normalizeLifeState(nextLife) },
+    player,
+    cost: HAND_ACTION_COST,
+    message: "Рука: -0.1 действия.",
+  });
+
+  return {
+    career: timeResult.career,
+    player: timeResult.player,
     tableSession: {
       ...tableSession,
       handsPlayed: stats.handsPlayed,
@@ -88,7 +100,7 @@ export function applySessionHandResult({ career = {}, tableSession = {}, tableSt
       sessionStats: stats,
     },
     impact,
-    message: formatNeedImpactMessage(impact),
+    message: [formatNeedImpactMessage(impact), timeResult.message].filter(Boolean).join(" "),
   };
 }
 
@@ -111,6 +123,7 @@ export function buildSessionSummary({ tableSession = {}, returnedStack = null } 
     thirstSpent: stats.thirstSpent,
     energySpent: stats.energySpent,
     stressGained: stats.stressGained,
+    actionSpent: number(stats.actionSpent, 0, 0, 99999),
   };
 }
 
@@ -159,6 +172,11 @@ function signed(value) {
 
 function money(value) {
   return Math.round(Number(value) || 0);
+}
+
+function number(value, fallback, min, max) {
+  const clean = Number.isFinite(Number(value)) ? Number(value) : fallback;
+  return Math.round(clamp(clean, min, max) * 10) / 10;
 }
 
 function int(value, fallback, min, max) {

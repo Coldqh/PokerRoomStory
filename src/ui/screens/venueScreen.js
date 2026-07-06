@@ -1,5 +1,5 @@
-import { getVenueView } from "../../engine/venues.js?v=2.7.4";
-import { escapeHtml } from "../components.js?v=2.7.4";
+import { getVenueView } from "../../engine/venues.js?v=2.8.0";
+import { escapeHtml } from "../components.js?v=2.8.0";
 
 export function renderVenueScreen(state) {
   const venueId = state.activeVenueId ?? state.career?.city?.activeVenueId;
@@ -211,9 +211,9 @@ function renderHomeRow(row, lockedAtTable = false) {
             <small>до ${escapeHtml(String(row.housing.capacity ?? 1))} чел.</small>
             <small>${escapeHtml(row.housing.repair ?? "ремонт")}</small>
           </div>
-          <p>${escapeHtml(formatEffect(row.housing.restEffect))}</p>
+          <p>${escapeHtml(formatEffect(row.housing.restEffect))} · 1 action · отмечает сон</p>
         </div>
-        <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Отдохнуть</button>
+        <button class="small-button" data-action="venue-action" data-id="${escapeHtml(row.actionId)}" ${row.canUse && !lockedAtTable ? "" : "disabled"}>Сон / отдых</button>
       </div>
     `;
   }

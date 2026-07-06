@@ -1,10 +1,10 @@
-import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=2.7.4";
-import { getClubRoomState } from "../../engine/club.js?v=2.7.4";
-import { getClubGoals } from "../../engine/clubGoals.js?v=2.7.4";
-import { getClubStorylines } from "../../engine/storylines.js?v=2.7.4";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=2.7.4";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=2.7.4";
-import { stableIndex } from "./common.js?v=2.7.4";
+import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=2.8.0";
+import { getClubRoomState } from "../../engine/club.js?v=2.8.0";
+import { getClubGoals } from "../../engine/clubGoals.js?v=2.8.0";
+import { getClubStorylines } from "../../engine/storylines.js?v=2.8.0";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=2.8.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=2.8.0";
+import { stableIndex } from "./common.js?v=2.8.0";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);
@@ -130,6 +130,7 @@ function renderSessionSummaryModal(state) {
           <div><span>Лучший банк</span><strong>$${escapeHtml(String(summary.biggestPotWon ?? 0))}</strong></div>
           <div><span>Showdowns</span><strong>${escapeHtml(String(summary.showdowns ?? 0))}</strong></div>
           <div><span>Folds</span><strong>${escapeHtml(String(summary.folds ?? 0))}</strong></div>
+          <div><span>Actions</span><strong>${escapeHtml(formatActionNumber(summary.actionSpent ?? 0))}</strong></div>
         </section>
         <div class="result-modal-clarity">
           <span>Состояние</span>
@@ -143,6 +144,11 @@ function renderSessionSummaryModal(state) {
       </article>
     </div>
   `;
+}
+
+function formatActionNumber(value) {
+  const number = Math.round((Number(value) || 0) * 10) / 10;
+  return Number.isInteger(number) ? String(number) : number.toFixed(1);
 }
 
 function getCityClubs(content, cityId) {

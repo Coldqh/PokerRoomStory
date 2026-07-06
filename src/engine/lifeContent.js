@@ -1,7 +1,7 @@
 export const LIFE_LIMITS = {
   maxNeed: 100,
   maxFocus: 3,
-  actionsPerDay: 3,
+  actionsPerDay: 6,
   rentIntervalDays: 7,
 };
 

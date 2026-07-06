@@ -1,4 +1,4 @@
-import { BUSINESS_LIMITS, BUSINESS_TEMPLATES, getBusinessTemplate, getBusinessTemplates } from "./businessContent.js?v=2.7.4";
+import { BUSINESS_LIMITS, BUSINESS_TEMPLATES, getBusinessTemplate, getBusinessTemplates } from "./businessContent.js?v=2.8.0";
 
 const MAX_LEVEL = BUSINESS_LIMITS.maxLevel;
 

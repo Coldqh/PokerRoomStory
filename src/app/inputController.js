@@ -1,11 +1,11 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.7.4";
-import { applyLifeAction } from "../engine/life.js?v=2.7.4";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.7.4";
-import { normalizePlayer } from "../engine/career.js?v=2.7.4";
-import { getClubTables } from "../engine/selectors.js?v=2.7.4";
-import { canEnterClub } from "../engine/world.js?v=2.7.4";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.7.4";
-import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=2.7.4";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.8.0";
+import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=2.8.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.8.0";
+import { normalizePlayer } from "../engine/career.js?v=2.8.0";
+import { getClubTables } from "../engine/selectors.js?v=2.8.0";
+import { canEnterClub } from "../engine/world.js?v=2.8.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.8.0";
+import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=2.8.0";
 
 export const inputController = {
   handleClick(event) {
@@ -92,21 +92,23 @@ export const inputController = {
       }
       const visited = new Set(this.state.career?.city?.visitedVenueIds ?? []);
       visited.add(venue.id);
+      const travel = spendLocationAction(this.state, `Переход: ${venue.name}.`);
       this.setState({
         activeVenueId: venue.id,
+        player: normalizePlayer(travel.player),
         playerLocation: venue.type === "home" ? createHomeLocation(this.content) : createVenueLocation(this.content, venue.id),
         currentScreen: "location",
         career: {
-          ...this.state.career,
+          ...travel.career,
           city: {
-            ...(this.state.career?.city ?? {}),
+            ...(travel.career?.city ?? {}),
             activeVenueId: venue.id,
             visitedVenueIds: [...visited],
           },
         },
         system: {
           ...this.state.system,
-          notice: null,
+          notice: travel.message || null,
           tablePickerOpen: false,
           clubPickerOpen: false,
         },
@@ -188,16 +190,19 @@ export const inputController = {
         return;
       }
       const tables = getClubTables(this.content, id);
+      const clubVenueId = (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id ?? this.state.activeVenueId;
+      const travel = spendLocationAction(this.state, `Переход: ${club.name}.`);
       this.menuOpen = false;
       this.setState({
         activeClubId: id,
-        activeVenueId: (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id ?? this.state.activeVenueId,
+        activeVenueId: clubVenueId,
+        player: normalizePlayer(travel.player),
         career: {
-          ...this.state.career,
+          ...travel.career,
           city: {
-            ...(this.state.career?.city ?? {}),
-            activeVenueId: (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id ?? this.state.career?.city?.activeVenueId ?? null,
-            visitedVenueIds: [...new Set([...(this.state.career?.city?.visitedVenueIds ?? []), (this.content.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === id)?.id].filter(Boolean))],
+            ...(travel.career?.city ?? {}),
+            activeVenueId: clubVenueId ?? travel.career?.city?.activeVenueId ?? null,
+            visitedVenueIds: [...new Set([...(travel.career?.city?.visitedVenueIds ?? []), clubVenueId].filter(Boolean))],
           },
         },
         activeTableId: tables[0]?.id ?? this.state.activeTableId,
@@ -205,7 +210,7 @@ export const inputController = {
         currentScreen: "location",
         system: {
           ...this.state.system,
-          notice: null,
+          notice: travel.message || null,
           buyInModal: null,
           clubPickerOpen: false,
           tablePickerOpen: false,
@@ -291,8 +296,11 @@ export const inputController = {
     }
 
     if (action === "go-home") {
+      const travel = spendLocationAction(this.state, "Переход: дом.");
       this.setState({
         activeVenueId: "VENUE_RU_MOS_HOME_CHEAP_ROOM",
+        player: normalizePlayer(travel.player),
+        career: travel.career,
         playerLocation: createHomeLocation(this.content),
         currentScreen: "location",
         system: {
@@ -300,14 +308,17 @@ export const inputController = {
           sessionSummary: null,
           tablePickerOpen: false,
           clubPickerOpen: false,
-          notice: null,
+          notice: travel.message || null,
         },
       });
       return;
     }
 
     if (action === "go-city") {
+      const travel = spendLocationAction(this.state, "Переход: город.");
       this.setState({
+        player: normalizePlayer(travel.player),
+        career: travel.career,
         playerLocation: createCityLocation(this.content, this.state.playerLocation?.cityId ?? this.content?.byId?.clubs?.[this.state.activeClubId]?.cityId),
         currentScreen: "location",
         system: {
@@ -315,7 +326,7 @@ export const inputController = {
           sessionSummary: null,
           tablePickerOpen: false,
           clubPickerOpen: false,
-          notice: null,
+          notice: travel.message || null,
         },
       });
       return;
@@ -423,6 +434,15 @@ export const inputController = {
       });
   }
 };
+
+function spendLocationAction(state = {}, message = "Переход.") {
+  return spendLifeActionCost({
+    career: state.career,
+    player: state.player,
+    cost: 1,
+    message,
+  });
+}
 
 function getActionVenueId(state = {}) {
   if (["home", "venue"].includes(state.playerLocation?.type) && state.playerLocation?.venueId) {

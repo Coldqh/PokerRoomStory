@@ -12,7 +12,7 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.7.4";
+} from "./lifeContent.js?v=2.8.0";
 
 const MAX_NEED = LIFE_LIMITS.maxNeed;
 const MAX_FOCUS = LIFE_LIMITS.maxFocus;
@@ -24,7 +24,10 @@ export function createInitialLifeState() {
   return {
     day: 1,
     actionsToday: 0,
+    actionsUsed: 0,
     actionsPerDay: ACTIONS_PER_DAY,
+    sleptToday: false,
+    sleepDebt: 0,
     needs: {
       hunger: 70,
       thirst: 70,
@@ -58,13 +61,18 @@ export function normalizeLifeState(life = {}) {
   const ownedHousingIds = normalizeHousingIds(life.ownedHousingIds);
   const ownsCurrentHousing = ownedHousingIds.includes(housing.id);
   const rentAmount = ownsCurrentHousing ? 0 : clampInt(life.rentAmount ?? housing.rent, housing.rent, 0, 999999);
+  const rawActions = Number.isFinite(Number(life.actionsUsed)) ? life.actionsUsed : life.actionsToday;
+  const actionsUsed = clampNumber(rawActions, base.actionsUsed, 0, ACTIONS_PER_DAY);
 
   return {
     ...base,
     ...life,
     day: clampInt(life.day, base.day, 1, 9999),
-    actionsToday: clampInt(life.actionsToday, base.actionsToday, 0, ACTIONS_PER_DAY),
+    actionsToday: actionsUsed,
+    actionsUsed,
     actionsPerDay: ACTIONS_PER_DAY,
+    sleptToday: Boolean(life.sleptToday),
+    sleepDebt: clampInt(life.sleepDebt, base.sleepDebt, 0, 999),
     needs: {
       hunger: clampInt(needs.hunger, base.needs.hunger, 0, MAX_NEED),
       thirst: clampInt(needs.thirst, base.needs.thirst, 0, MAX_NEED),
@@ -89,7 +97,8 @@ export function getLifeView(career = {}, player = {}) {
   const currentHousing = getLifeHousing(life.housingId);
   const ownsCurrentHousing = life.ownedHousingIds.includes(currentHousing.id);
   const daysUntilRent = life.rentAmount > 0 ? Math.max(0, life.rentDueDay - life.day) : null;
-  const actionsLeft = Math.max(0, life.actionsPerDay - life.actionsToday);
+  const actionsUsed = Number(life.actionsUsed ?? life.actionsToday ?? 0);
+  const actionsLeft = roundOne(Math.max(0, life.actionsPerDay - actionsUsed));
   const bankroll = money(player.bankroll);
   const warnings = [];
 
@@ -98,6 +107,8 @@ export function getLifeView(career = {}, player = {}) {
   if (life.needs.energy < 25) warnings.push("Мало энергии.");
   if (life.needs.stress >= 80) warnings.push("Стресс высокий.");
   if (life.rentAmount > 0 && bankroll < life.rentAmount && daysUntilRent <= 1) warnings.push("Аренда близко, денег может не хватить.");
+  if (!life.sleptToday && actionsUsed >= life.actionsPerDay * 0.7) warnings.push("Сон не отмечен. При смене дня будет штраф.");
+  if (life.sleepDebt > 0) warnings.push(`Недосып: ${life.sleepDebt}. Energy ниже, stress выше.`);
 
   return {
     life,
@@ -123,6 +134,7 @@ export function getLifeView(career = {}, player = {}) {
     assets: LIFE_ASSETS.map((asset) => ({ ...asset, owned: life.assetIds.includes(asset.id), canBuy: bankroll >= asset.price && !life.assetIds.includes(asset.id) })),
     vehicles: LIFE_VEHICLES.map((vehicle) => ({ ...vehicle, owned: life.vehicleId === vehicle.id, canBuy: bankroll >= vehicle.price && life.vehicleId !== vehicle.id })),
     actionsLeft,
+    actionsUsed: roundOne(actionsUsed),
     daysUntilRent,
     warnings,
     canRest: actionsLeft >= 1,
@@ -192,8 +204,10 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     const housing = getLifeHousing(nextLife.housingId);
     if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Нет действий на сегодня.");
     nextLife.needs = applyNeedEffect(nextLife.needs, housing.restEffect);
+    nextLife.sleptToday = true;
+    nextLife.sleepDebt = Math.max(0, Number(nextLife.sleepDebt ?? 0) - 1);
     actionCost = 1;
-    message = `Отдых: ${housing.name}. ${formatEffect(housing.restEffect)}.`;
+    message = `Сон / отдых: ${housing.name}. ${formatEffect(housing.restEffect)}.`;
   }
 
   if (parsed.type === "moveHousing") {
@@ -267,8 +281,7 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   }
 
   if (actionCost > 0) {
-    nextLife.actionsToday += actionCost;
-    const dayResult = advanceDayIfNeeded(nextLife, nextPlayer);
+    const dayResult = spendActionsAndAdvance(nextLife, nextPlayer, actionCost, { slept: parsed.type === "rest" });
     nextLife = dayResult.life;
     Object.assign(nextPlayer, dayResult.player);
     message = [message, ...dayResult.messages].filter(Boolean).join(" ");
@@ -284,16 +297,56 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   };
 }
 
-function advanceDayIfNeeded(life, player) {
+export function spendLifeActionCost({ career = {}, player = {}, cost = 0, slept = false, message = null } = {}) {
+  const life = normalizeLifeState(career.life);
+  const nextPlayer = { ...player, bankroll: money(player.bankroll), xp: money(player.xp) };
+  const result = spendActionsAndAdvance(life, nextPlayer, Number(cost) || 0, { slept });
+  const messages = [message, ...result.messages].filter(Boolean);
+  const nextLife = {
+    ...result.life,
+    lastMessage: messages.join(" ") || result.life.lastMessage,
+  };
+
+  return {
+    ok: true,
+    career: { ...career, life: normalizeLifeState(nextLife) },
+    player: result.player,
+    messages,
+    message: messages.join(" "),
+  };
+}
+
+function spendActionsAndAdvance(life, player, cost, options = {}) {
   const messages = [];
-  let nextLife = { ...life, needs: { ...life.needs } };
-  const nextPlayer = { ...player };
+  let nextLife = { ...normalizeLifeState(life), needs: { ...normalizeLifeState(life).needs } };
+  const nextPlayer = { ...player, bankroll: money(player.bankroll), xp: money(player.xp) };
+  const cleanCost = roundOne(Math.max(0, Number(cost) || 0));
+
+  if (options.slept) {
+    nextLife.sleptToday = true;
+    nextLife.sleepDebt = Math.max(0, Number(nextLife.sleepDebt ?? 0) - 1);
+  }
+
+  nextLife.actionsToday = roundOne(Number(nextLife.actionsToday ?? nextLife.actionsUsed ?? 0) + cleanCost);
+  nextLife.actionsUsed = nextLife.actionsToday;
 
   while (nextLife.actionsToday >= nextLife.actionsPerDay) {
-    nextLife.actionsToday -= nextLife.actionsPerDay;
+    const sleptPreviousDay = Boolean(nextLife.sleptToday);
+    nextLife.actionsToday = roundOne(nextLife.actionsToday - nextLife.actionsPerDay);
+    nextLife.actionsUsed = nextLife.actionsToday;
     nextLife.day += 1;
-    nextLife.needs = applyNeedEffect(nextLife.needs, { hunger: -20, thirst: -25, energy: 20, stress: -2 });
+
+    if (sleptPreviousDay) {
+      nextLife.needs = applyNeedEffect(nextLife.needs, { hunger: -20, thirst: -25, energy: 20, stress: -2 });
+      nextLife.sleepDebt = Math.max(0, Number(nextLife.sleepDebt ?? 0) - 1);
+    } else {
+      nextLife.needs = applyNeedEffect(nextLife.needs, { hunger: -20, thirst: -25, energy: -25, stress: 15 });
+      nextLife.sleepDebt = clampInt(Number(nextLife.sleepDebt ?? 0) + 1, 0, 0, 999);
+      messages.push("Сон пропущен. Energy -25 · Stress +15.");
+    }
+
     messages.push(`День ${nextLife.day}.`);
+    nextLife.sleptToday = false;
 
     if (nextLife.needs.hunger <= 0) nextLife.needs.stress = clamp(nextLife.needs.stress + 15, 0, MAX_NEED);
     if (nextLife.needs.thirst <= 0) nextLife.needs.energy = clamp(nextLife.needs.energy - 20, 0, MAX_NEED);
@@ -323,7 +376,8 @@ function parseLifeAction(actionId = "") {
 }
 
 function hasActions(life, cost) {
-  return life.actionsToday + cost <= life.actionsPerDay;
+  const safe = normalizeLifeState(life);
+  return Number(safe.actionsToday ?? safe.actionsUsed ?? 0) + Number(cost ?? 0) <= safe.actionsPerDay + 0.0001;
 }
 
 function applyNeedEffect(needs, effect = {}) {
@@ -393,6 +447,14 @@ function failWithLife(career, player, life, message) {
 
 function money(value) {
   return Math.max(0, Math.round(Number(value) || 0));
+}
+
+function roundOne(value) {
+  return Math.round((Number(value) || 0) * 10) / 10;
+}
+
+function clampNumber(value, fallback, min, max) {
+  return roundOne(clamp(Number.isFinite(Number(value)) ? Number(value) : fallback, min, max));
 }
 
 function clampInt(value, fallback, min, max) {

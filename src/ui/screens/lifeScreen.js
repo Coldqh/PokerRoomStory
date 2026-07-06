@@ -1,7 +1,7 @@
-import { getLifeView } from "../../engine/life.js?v=2.7.4";
-import { getBusinessView } from "../../engine/businesses.js?v=2.7.4";
-import { getVenueById } from "../../engine/venues.js?v=2.7.4";
-import { escapeHtml, progressBar } from "../components.js?v=2.7.4";
+import { getLifeView } from "../../engine/life.js?v=2.8.0";
+import { getBusinessView } from "../../engine/businesses.js?v=2.8.0";
+import { getVenueById } from "../../engine/venues.js?v=2.8.0";
+import { escapeHtml, progressBar } from "../components.js?v=2.8.0";
 
 export function renderLifeScreen(state) {
   const view = getLifeView(state.career, state.player);
@@ -19,11 +19,12 @@ export function renderLifeScreen(state) {
           <span>Life status</span>
           <h2>Жизнь</h2>
           <p>День ${escapeHtml(String(life.day))} · Bankroll $${escapeHtml(String(Math.round(state.player?.bankroll ?? 0)))} · Debt $${escapeHtml(String(life.debt))}</p>
+          <p>${life.sleptToday ? "Сон отмечен" : "Сон не отмечен"} · Недосып ${escapeHtml(String(life.sleepDebt ?? 0))}</p>
         </div>
         <div class="life-day-card">
           <span>Actions</span>
-          <strong>${escapeHtml(String(view.actionsLeft))}/${escapeHtml(String(life.actionsPerDay))}</strong>
-          <p>${life.rentAmount > 0 ? `Rent $${escapeHtml(String(life.rentAmount))} через ${escapeHtml(String(view.daysUntilRent))} дн.` : "Жильё куплено · аренды нет"}</p>
+          <strong>${escapeHtml(formatActionNumber(view.actionsLeft))}/${escapeHtml(formatActionNumber(life.actionsPerDay))}</strong>
+          <p>Used ${escapeHtml(formatActionNumber(view.actionsUsed ?? life.actionsToday ?? 0))} · ${life.rentAmount > 0 ? `Rent $${escapeHtml(String(life.rentAmount))} через ${escapeHtml(String(view.daysUntilRent))} дн.` : "Жильё куплено · аренды нет"}</p>
         </div>
       </article>
 
@@ -128,6 +129,11 @@ function renderBusinessItem(row) {
       <span class="life-row-note">Business Broker</span>
     </div>
   `;
+}
+
+function formatActionNumber(value) {
+  const number = Math.round((Number(value) || 0) * 10) / 10;
+  return Number.isInteger(number) ? String(number) : number.toFixed(1);
 }
 
 function formatEffect(effect = {}) {

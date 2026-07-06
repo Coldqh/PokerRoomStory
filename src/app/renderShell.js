@@ -1,6 +1,6 @@
-import { APP_VERSION } from "../config/appMeta.js?v=2.7.4";
-import { renderScreen, getVisibleScreens } from "../ui/screens.js?v=2.7.4";
-import { escapeHtml } from "../ui/components.js?v=2.7.4";
+import { APP_VERSION } from "../config/appMeta.js?v=2.8.0";
+import { renderScreen, getVisibleScreens } from "../ui/screens.js?v=2.8.0";
+import { escapeHtml } from "../ui/components.js?v=2.8.0";
 
 export const renderShell = {
   render() {
@@ -141,6 +141,7 @@ function winRate(player) {
 function navIcon(id) {
   const icons = {
     life: "●",
+    location: "⌖",
     location: "⌖",
     club: "⌂",
     table: "♣",

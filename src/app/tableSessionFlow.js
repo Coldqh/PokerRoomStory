@@ -1,10 +1,11 @@
-import { createInitialTableState } from "../engine/poker.js?v=2.7.4";
-import { getClubSnapshotForTable } from "../engine/club.js?v=2.7.4";
-import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.7.4";
-import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=2.7.4";
-import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=2.7.4";
-import { canEnterTable } from "../engine/world.js?v=2.7.4";
-import { getClubContext } from "../engine/world.js?v=2.7.4";
+import { createInitialTableState } from "../engine/poker.js?v=2.8.0";
+import { getClubSnapshotForTable } from "../engine/club.js?v=2.8.0";
+import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.8.0";
+import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=2.8.0";
+import { spendLifeActionCost } from "../engine/life.js?v=2.8.0";
+import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=2.8.0";
+import { canEnterTable } from "../engine/world.js?v=2.8.0";
+import { getClubContext } from "../engine/world.js?v=2.8.0";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -85,11 +86,20 @@ export const tableSessionFlow = {
       clubSnapshot: getClubSnapshotForTable(this.content, this.state.clubNpcState, context.club?.id ?? this.state.activeClubId, table.id),
     });
 
+    const playerAfterBuyIn = {
+      ...this.state.player,
+      bankroll: bankroll - amount,
+    };
+    const travel = spendLifeActionCost({
+      career: this.state.career,
+      player: playerAfterBuyIn,
+      cost: 1,
+      message: `Переход: ${table.name ?? "стол"}.`,
+    });
+
     this.setState({
-      player: {
-        ...this.state.player,
-        bankroll: bankroll - amount,
-      },
+      player: travel.player,
+      career: travel.career,
       activeClubId: table.clubId ?? this.state.activeClubId,
       activeTableId: table.id,
       playerLocation: createTableLocation(this.content, table.clubId ?? this.state.activeClubId, table.id),
@@ -112,7 +122,7 @@ export const tableSessionFlow = {
         selectedBetTarget: null,
         betAmountModal: null,
         sessionSummary: null,
-        notice: "Ты сел за стол. Текущая раздача уже идёт — войдёшь со следующей руки.",
+        notice: ["Ты сел за стол. Текущая раздача уже идёт — войдёшь со следующей руки.", travel.message].filter(Boolean).join(" "),
       },
     });
   },
@@ -179,12 +189,20 @@ export const tableSessionFlow = {
     const returnedStack = clampMoney(this.state.tableSession?.stack ?? 0);
     const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
     const sessionSummary = this.state.tableSession ? buildSessionSummary({ tableSession: this.state.tableSession, returnedStack }) : null;
+    const playerAfterReturn = {
+      ...this.state.player,
+      bankroll: bankroll + returnedStack,
+    };
+    const travel = spendLifeActionCost({
+      career: this.state.career,
+      player: playerAfterReturn,
+      cost: 1,
+      message: "Переход: клуб.",
+    });
 
     this.setState({
-      player: {
-        ...this.state.player,
-        bankroll: bankroll + returnedStack,
-      },
+      player: travel.player,
+      career: travel.career,
       tableSession: null,
       tableState: createInitialTableState(),
       playerLocation: createClubLocation(this.content, this.state.activeClubId),
@@ -194,7 +212,7 @@ export const tableSessionFlow = {
         resultModalOpen: false,
         betAmountModal: null,
         sessionSummary,
-        notice: sessionSummary ? "Сессия завершена." : null,
+        notice: [sessionSummary ? "Сессия завершена." : null, travel.message].filter(Boolean).join(" ") || null,
       },
     });
   }

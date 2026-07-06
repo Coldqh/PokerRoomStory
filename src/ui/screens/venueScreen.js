@@ -1,5 +1,5 @@
-import { getVenueView } from "../../engine/venues.js?v=2.6.1";
-import { escapeHtml } from "../components.js?v=2.6.1";
+import { getVenueView } from "../../engine/venues.js?v=2.6.2";
+import { escapeHtml } from "../components.js?v=2.6.2";
 
 export function renderVenueScreen(state) {
   const venueId = state.activeVenueId ?? state.career?.city?.activeVenueId;

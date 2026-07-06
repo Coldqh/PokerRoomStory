@@ -1,10 +1,11 @@
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=2.6.1";
-import { normalizeClubNpcState } from "../engine/club.js?v=2.6.1";
-import { createInitialTableState } from "../engine/poker.js?v=2.6.1";
-import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=2.6.1";
-import { getDefaultStartLocation } from "../engine/selectors.js?v=2.6.1";
-import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=2.6.1";
-import { getRuntimeStatus } from "../engine/update.js?v=2.6.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, normalizeCareer, normalizePlayer } from "../engine/career.js?v=2.6.2";
+import { normalizeClubNpcState } from "../engine/club.js?v=2.6.2";
+import { createInitialTableState } from "../engine/poker.js?v=2.6.2";
+import { isObservedWaitingTable } from "../engine/tablePresence.js?v=2.6.2";
+import { getSaveInfo, loadSave, saveGame } from "../engine/save.js?v=2.6.2";
+import { getDefaultStartLocation } from "../engine/selectors.js?v=2.6.2";
+import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=2.6.2";
+import { getRuntimeStatus } from "../engine/update.js?v=2.6.2";
 
 export const stateController = {
   createInitialState() {
@@ -57,7 +58,7 @@ export const stateController = {
     if (!tableState) return { tableState: createInitialTableState(), notice: null };
 
     const phase = tableState.phase ?? "idle";
-    const activeHand = !["idle", "finished", "folded"].includes(phase);
+    const activeHand = !["idle", "finished", "folded"].includes(phase) && !isObservedWaitingTable(tableState);
     const saveVersion = saveMeta?.appVersion ?? "0.0.0";
     const cameFromUnsafeTimeline = activeHand && isVersionBefore(saveVersion, "1.1.0");
     const currentActor = getPlainSeatById(tableState, tableState.currentActorId);
@@ -159,6 +160,7 @@ function normalizeTableSession(session, content, activeTableId = null) {
     stack,
     handsPlayed: Number(session.handsPlayed ?? 0),
     seatedAt: Number(session.seatedAt ?? Date.now()),
+    waitingForNextHand: Boolean(session.waitingForNextHand),
   };
 }
 

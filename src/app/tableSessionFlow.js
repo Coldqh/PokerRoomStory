@@ -1,5 +1,8 @@
-import { createInitialTableState } from "../engine/poker.js?v=1.5.0";
-import { canEnterTable } from "../engine/world.js?v=1.5.0";
+import { createInitialTableState } from "../engine/poker.js?v=2.6.2";
+import { getClubSnapshotForTable } from "../engine/club.js?v=2.6.2";
+import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=2.6.2";
+import { canEnterTable } from "../engine/world.js?v=2.6.2";
+import { getClubContext } from "../engine/world.js?v=2.6.2";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -65,12 +68,27 @@ export const tableSessionFlow = {
     }
 
     const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
+    const context = getClubContext(this.content, table.clubId ?? this.state.activeClubId);
+    const seatedPlayer = {
+      ...this.state.player,
+      bankroll: amount,
+      tableStack: amount,
+    };
+    const observedTableState = createObservedTableState({
+      content: this.content,
+      table,
+      club: context.club,
+      player: seatedPlayer,
+      previousTableState: this.state.tableState,
+      clubSnapshot: getClubSnapshotForTable(this.content, this.state.clubNpcState, context.club?.id ?? this.state.activeClubId, table.id),
+    });
 
     this.setState({
       player: {
         ...this.state.player,
         bankroll: bankroll - amount,
       },
+      activeClubId: table.clubId ?? this.state.activeClubId,
       activeTableId: table.id,
       currentScreen: "table",
       tableSession: {
@@ -79,15 +97,16 @@ export const tableSessionFlow = {
         stack: amount,
         handsPlayed: 0,
         seatedAt: Date.now(),
+        waitingForNextHand: true,
       },
-      tableState: createInitialTableState(),
+      tableState: observedTableState,
       system: {
         ...this.state.system,
         buyInModal: null,
         resultModalOpen: false,
         selectedBetTarget: null,
         betAmountModal: null,
-        notice: null,
+        notice: "Ты сел за стол. Текущая раздача уже идёт — войдёшь со следующей руки.",
       },
     });
   },
@@ -129,6 +148,15 @@ export const tableSessionFlow = {
         buyIn: clampMoney((session.buyIn ?? 0) + amount),
         stack: currentStack + amount,
       },
+      tableState: isObservedWaitingTable(this.state.tableState)
+        ? {
+          ...this.state.tableState,
+          heroSeat: {
+            ...(this.state.tableState.heroSeat ?? {}),
+            stack: currentStack + amount,
+          },
+        }
+        : this.state.tableState,
       system: {
         ...this.state.system,
         notice: null,
@@ -180,7 +208,7 @@ function getTopUpTarget({ table, currentStack }) {
 }
 
 function isTableHandInProgress(tableState) {
-  if (!tableState) return false;
+  if (!tableState || isObservedWaitingTable(tableState)) return false;
   return !["idle", "finished", "folded"].includes(tableState.phase ?? "idle") || Boolean(tableState.animation?.isPlaying);
 }
 

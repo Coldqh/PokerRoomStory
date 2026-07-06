@@ -1,10 +1,10 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=2.6.1";
-import { applyLifeAction } from "../engine/life.js?v=2.6.1";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.6.1";
-import { normalizePlayer } from "../engine/career.js?v=2.6.1";
-import { getClubTables } from "../engine/selectors.js?v=2.6.1";
-import { canEnterClub } from "../engine/world.js?v=2.6.1";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.6.1";
+import { clearSave, importSaveText } from "../engine/save.js?v=2.6.2";
+import { applyLifeAction } from "../engine/life.js?v=2.6.2";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=2.6.2";
+import { normalizePlayer } from "../engine/career.js?v=2.6.2";
+import { getClubTables } from "../engine/selectors.js?v=2.6.2";
+import { canEnterClub } from "../engine/world.js?v=2.6.2";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=2.6.2";
 
 export const inputController = {
   handleClick(event) {

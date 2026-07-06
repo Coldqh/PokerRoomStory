@@ -1,21 +1,21 @@
-import { countries, cities } from "./countryCity.js?v=2.6.1";
-import { clubs } from "./club.js?v=2.6.1";
-import { tables } from "./tables.js?v=2.6.1";
-import { archetypes } from "./archetypes.js?v=2.6.1";
-import { npcs } from "./npcs.js?v=2.6.1";
-import { glossaryTerms } from "./glossary.js?v=2.6.1";
-import { collections } from "./collections.js?v=2.6.1";
-import { challenges } from "./challenges.js?v=2.6.1";
-import { learningObjects } from "./learning.js?v=2.6.1";
-import { eventTemplates } from "./events.js?v=2.6.1";
-import { storylines } from "./storylines.js?v=2.6.1";
-import { venues } from "./venues.js?v=2.6.1";
+import { countries, cities } from "./countryCity.js?v=2.6.2";
+import { clubs } from "./club.js?v=2.6.2";
+import { tables } from "./tables.js?v=2.6.2";
+import { archetypes } from "./archetypes.js?v=2.6.2";
+import { npcs } from "./npcs.js?v=2.6.2";
+import { glossaryTerms } from "./glossary.js?v=2.6.2";
+import { collections } from "./collections.js?v=2.6.2";
+import { challenges } from "./challenges.js?v=2.6.2";
+import { learningObjects } from "./learning.js?v=2.6.2";
+import { eventTemplates } from "./events.js?v=2.6.2";
+import { storylines } from "./storylines.js?v=2.6.2";
+import { venues } from "./venues.js?v=2.6.2";
 
 export const russiaRiverRoomPack = {
   meta: {
     id: "PACK_CORE_V0_1",
     name: "Core v0.1 — First Local Room",
-    version: "2.6.1",
+    version: "2.6.2",
   },
   countries,
   cities,

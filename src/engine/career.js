@@ -1,7 +1,7 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.6.1";
-import { normalizeClubProgress } from "./progression.js?v=2.6.1";
-import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.6.1";
-import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=2.6.1";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=2.6.2";
+import { normalizeClubProgress } from "./progression.js?v=2.6.2";
+import { createInitialLifeState, normalizeLifeState } from "./life.js?v=2.6.2";
+import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=2.6.2";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },

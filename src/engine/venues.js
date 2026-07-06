@@ -1,4 +1,4 @@
-import { applyLifeAction, getLifeView } from "./life.js?v=2.6.1";
+import { applyLifeAction, getLifeView } from "./life.js?v=2.6.2";
 import {
   getLifeAsset,
   getLifeCafeOrder,
@@ -6,10 +6,10 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=2.6.1";
-import { getClubTables } from "./selectors.js?v=2.6.1";
-import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=2.6.1";
-import { canEnterClub } from "./world.js?v=2.6.1";
+} from "./lifeContent.js?v=2.6.2";
+import { getClubTables } from "./selectors.js?v=2.6.2";
+import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=2.6.2";
+import { canEnterClub } from "./world.js?v=2.6.2";
 
 export function getCityVenues(content, cityId = null) {
   return (content?.venues ?? [])

@@ -1,11 +1,12 @@
-import { createInitialTableState } from "../engine/poker.js?v=3.0.0";
-import { getClubSnapshotForTable } from "../engine/club.js?v=3.0.0";
-import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=3.0.0";
-import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=3.0.0";
-import { spendLifeActionCost } from "../engine/life.js?v=3.0.0";
-import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=3.0.0";
-import { canEnterTable } from "../engine/world.js?v=3.0.0";
-import { getClubContext } from "../engine/world.js?v=3.0.0";
+import { createInitialTableState } from "../engine/poker.js?v=3.2.1";
+import { getClubSnapshotForTable } from "../engine/club.js?v=3.2.1";
+import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=3.2.1";
+import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=3.2.1";
+import { clearPendingCityGoalBankrollReward, getPendingCityGoalBankrollReward } from "../engine/cityGoals.js?v=3.2.1";
+import { spendLifeActionCost } from "../engine/life.js?v=3.2.1";
+import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=3.2.1";
+import { canEnterTable } from "../engine/world.js?v=3.2.1";
+import { getClubContext } from "../engine/world.js?v=3.2.1";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -191,17 +192,19 @@ export const tableSessionFlow = {
     }
 
     const returnedStack = clampMoney(this.state.tableSession?.stack ?? 0);
+    const pendingGoalReward = getPendingCityGoalBankrollReward(this.state.career);
     const bankroll = clampMoney(this.state.player?.bankroll ?? 0);
     const sessionSummary = this.state.tableSession ? buildSessionSummary({ tableSession: this.state.tableSession, returnedStack }) : null;
     const playerAfterReturn = {
       ...this.state.player,
-      bankroll: bankroll + returnedStack,
+      bankroll: bankroll + returnedStack + pendingGoalReward,
     };
+    const careerAfterPendingReward = pendingGoalReward > 0 ? clearPendingCityGoalBankrollReward(this.state.career) : this.state.career;
     const travel = spendLifeActionCost({
-      career: this.state.career,
+      career: careerAfterPendingReward,
       player: playerAfterReturn,
       cost: 1,
-      message: "Переход: клуб.",
+      message: ["Переход: клуб.", pendingGoalReward > 0 ? `Цели Москвы: +$${pendingGoalReward} после выхода из-за стола.` : null].filter(Boolean).join(" "),
     });
     if (!travel.ok) {
       this.setSystem({ notice: travel.message });

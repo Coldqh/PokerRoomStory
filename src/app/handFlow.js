@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=3.0.0";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=3.0.0";
-import { applyUnlocks } from "../engine/collections.js?v=3.0.0";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=3.2.1";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=3.2.1";
+import { applyUnlocks } from "../engine/collections.js?v=3.2.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,13 +9,14 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=3.0.0";
-import { getClubContext } from "../engine/world.js?v=3.0.0";
-import { applyClubProgression } from "../engine/progression.js?v=3.0.0";
-import { applyClubGoals } from "../engine/clubGoals.js?v=3.0.0";
-import { applyStorylineProgress } from "../engine/storylines.js?v=3.0.0";
-import { createTableLocation } from "../engine/locationState.js?v=3.0.0";
-import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=3.0.0";
+} from "../engine/poker.js?v=3.2.1";
+import { getClubContext } from "../engine/world.js?v=3.2.1";
+import { applyClubProgression } from "../engine/progression.js?v=3.2.1";
+import { applyClubGoals } from "../engine/clubGoals.js?v=3.2.1";
+import { applyStorylineProgress } from "../engine/storylines.js?v=3.2.1";
+import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.2.1";
+import { createTableLocation } from "../engine/locationState.js?v=3.2.1";
+import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=3.2.1";
 
 export const handFlow = {
   startHand() {
@@ -216,6 +217,14 @@ export const handFlow = {
     });
     const careerAfterSession = sessionResult.career;
     const playerAfterSession = normalizePlayer(sessionResult.player ?? playerAfterHand);
+    const cityGoalResult = applyCityGoalProgress({
+      content: this.content,
+      career: careerAfterSession,
+      player: playerAfterSession,
+      deferBankrollRewards: Boolean(sessionResult.tableSession),
+    });
+    const playerAfterGoals = normalizePlayer(cityGoalResult.player ?? playerAfterSession);
+    const careerAfterGoals = cityGoalResult.career;
     const nextTableSession = sessionResult.tableSession;
     const log = [
       ...this.state.log,
@@ -226,12 +235,13 @@ export const handFlow = {
       ...combinedTaskResult.messages,
       ...clubPatch.clubMessages,
       ...clubProgressResult.messages,
+      ...cityGoalResult.messages,
       progressLine,
     ].slice(-100);
 
     this.setState({
-      player: playerAfterSession,
-      career: careerAfterSession,
+      player: playerAfterGoals,
+      career: careerAfterGoals,
       tableSession: nextTableSession,
       clubNpcState: clubPatch.clubNpcState,
       tableState: {
@@ -241,7 +251,7 @@ export const handFlow = {
       log,
       system: {
         ...this.state.system,
-        rewardToast,
+        rewardToast: cityGoalResult.rewardToast ?? rewardToast,
         resultModalOpen: true,
       },
     });

@@ -1,8 +1,9 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=3.0.0";
-import { normalizeClubProgress } from "./progression.js?v=3.0.0";
-import { createInitialLifeState, normalizeLifeState } from "./life.js?v=3.0.0";
-import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=3.0.0";
-import { createInitialJobsState, normalizeJobsState } from "./jobs.js?v=3.0.0";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=3.1.0";
+import { normalizeClubProgress } from "./progression.js?v=3.1.0";
+import { createInitialLifeState, normalizeLifeState } from "./life.js?v=3.1.0";
+import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=3.1.0";
+import { createInitialJobsState, normalizeJobsState } from "./jobs.js?v=3.1.0";
+import { createInitialCityGoalsState, normalizeCityGoalsState } from "./cityGoals.js?v=3.1.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },
@@ -54,6 +55,7 @@ export function createNewCareer() {
     city: { activeVenueId: null, visitedVenueIds: [] },
     businesses: createInitialBusinessState(),
     jobs: createInitialJobsState(),
+    cityGoals: createInitialCityGoalsState(),
   };
 }
 
@@ -80,6 +82,7 @@ export function normalizeCareer(career = {}) {
     city: normalizeCityState(career.city ?? base.city),
     businesses: normalizeBusinessState(career.businesses ?? base.businesses),
     jobs: normalizeJobsState(career.jobs ?? base.jobs),
+    cityGoals: normalizeCityGoalsState(career.cityGoals ?? base.cityGoals),
   };
 }
 

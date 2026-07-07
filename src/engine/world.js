@@ -1,4 +1,4 @@
-import { getClubNpcs, getClubTables } from "./selectors.js?v=2.9.0";
+import { getClubNpcs, getClubTables } from "./selectors.js?v=3.2.0";
 
 export function getClubContext(content, clubId) {
   const club = content.byId.clubs[clubId];
@@ -17,7 +17,7 @@ export function canEnterClub(player, career = {}, club) {
   const req = club.unlockRequirement ?? null;
 
   if (req?.storyCompleted && !isStoryCompleted(career, req.storyCompleted)) {
-    return { ok: false, reason: "Заверши все сцены River Room." };
+    return { ok: false, reason: req.reason ?? "Заверши нужный клубный маршрут." };
   }
 
   const unlocked = new Set(career?.unlockedClubs ?? []);

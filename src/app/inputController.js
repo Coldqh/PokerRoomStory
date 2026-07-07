@@ -1,11 +1,12 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=3.0.0";
-import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.0.0";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.0.0";
-import { normalizePlayer } from "../engine/career.js?v=3.0.0";
-import { getClubTables } from "../engine/selectors.js?v=3.0.0";
-import { canEnterClub } from "../engine/world.js?v=3.0.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.0.0";
-import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.0.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=3.1.0";
+import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.1.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.1.0";
+import { normalizePlayer } from "../engine/career.js?v=3.1.0";
+import { getClubTables } from "../engine/selectors.js?v=3.1.0";
+import { canEnterClub } from "../engine/world.js?v=3.1.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.1.0";
+import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.1.0";
+import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.1.0";
 
 export const inputController = {
   handleClick(event) {
@@ -132,14 +133,16 @@ export const inputController = {
         this.setSystem({ notice: result.message });
         return;
       }
+      const goalResult = applyCityGoalProgress({ content: this.content, career: result.career, player: normalizePlayer(result.player) });
       this.setState({
-        career: result.career,
-        player: normalizePlayer(result.player),
+        career: goalResult.career,
+        player: normalizePlayer(goalResult.player),
         currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : "location",
-        log: [...(this.state.log ?? []), result.message].slice(-100),
+        log: [...(this.state.log ?? []), result.message, ...goalResult.messages].slice(-100),
         system: {
           ...this.state.system,
-          notice: result.message,
+          notice: goalResult.messages.at(-1) ?? result.message,
+          rewardToast: goalResult.rewardToast ?? this.state.system?.rewardToast ?? null,
           tablePickerOpen: false,
           clubPickerOpen: false,
         },
@@ -153,14 +156,16 @@ export const inputController = {
         this.setSystem({ notice: result.message });
         return;
       }
+      const goalResult = applyCityGoalProgress({ content: this.content, career: result.career, player: normalizePlayer(result.player) });
       this.setState({
-        career: result.career,
-        player: normalizePlayer(result.player),
+        career: goalResult.career,
+        player: normalizePlayer(goalResult.player),
         currentScreen: result.nextScreen ? this.resolveScreen(result.nextScreen) : "location",
-        log: [...(this.state.log ?? []), result.message].slice(-100),
+        log: [...(this.state.log ?? []), result.message, ...goalResult.messages].slice(-100),
         system: {
           ...this.state.system,
-          notice: result.message,
+          notice: goalResult.messages.at(-1) ?? result.message,
+          rewardToast: goalResult.rewardToast ?? this.state.system?.rewardToast ?? null,
           tablePickerOpen: false,
           clubPickerOpen: false,
         },

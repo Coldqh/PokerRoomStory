@@ -244,4 +244,6 @@ export const venues = [
     ], unlockRequirement: null },
   { id: "VENUE_RU_MOS_RIVER_ROOM_001", countryId: "COUNTRY_RUSSIA", cityId: "CITY_RU_NORTH_DISTRICT", type: "poker_club", name: "River Room", category: "poker", clubId: "CLUB_RU_BASEMENT_RIVER_001", unlockRequirement: null },
   { id: "VENUE_RU_MOS_UNDERGROUND_001", countryId: "COUNTRY_RUSSIA", cityId: "CITY_RU_NORTH_DISTRICT", type: "poker_club", name: "Moscow Underground Club", category: "poker", clubId: "CLUB_RU_MOSCOW_UNDERGROUND_001", unlockRequirement: { storyCompleted: "STORY_RU_BRR_FIRST_NIGHT" } },
+  { id: "VENUE_RU_MOS_RED_LINE_001", countryId: "COUNTRY_RUSSIA", cityId: "CITY_RU_NORTH_DISTRICT", type: "poker_club", name: "Red Line Club", category: "poker", district: "Даниловский", address: "Дербеневская набережная, 7", clubId: "CLUB_RU_MOS_RED_LINE_001", unlockRequirement: { storyCompleted: "STORY_RU_MUC_UNDERGROUND_ROUTE" } },
+
 ];

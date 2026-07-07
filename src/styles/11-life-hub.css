@@ -337,3 +337,48 @@
   background: rgba(220, 38, 38, 0.07);
   color: rgba(255, 255, 255, 0.74);
 }
+
+.city-goal-board {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0 22px;
+}
+
+.city-main-goal .challenge-item,
+.city-goal-item.featured {
+  border-color: rgba(216, 38, 57, 0.42);
+  background: linear-gradient(135deg, rgba(216, 38, 57, 0.12), rgba(12, 12, 15, 0.88));
+}
+
+.city-chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.city-chapter {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(10, 10, 13, 0.72);
+}
+
+.city-chapter strong {
+  color: #f6f2ef;
+  font-size: 0.9rem;
+}
+
+.city-chapter span {
+  color: rgba(246, 242, 239, 0.62);
+  font-size: 0.78rem;
+}
+
+.city-chapter.active {
+  border-color: rgba(216, 38, 57, 0.55);
+}
+
+.city-chapter.completed {
+  border-color: rgba(116, 180, 120, 0.38);
+}

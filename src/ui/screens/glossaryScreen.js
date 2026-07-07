@@ -1,4 +1,4 @@
-import { badges, escapeHtml } from "../components.js?v=3.4.1";
+import { badges, escapeHtml } from "../components.js?v=3.5.0";
 
 export function renderGlossaryScreen(state) {
   const unlocked = new Set(state.career.unlockedGlossary);

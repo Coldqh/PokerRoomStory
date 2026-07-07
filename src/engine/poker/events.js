@@ -1,6 +1,6 @@
-import { describeCards } from "../cards.js?v=3.4.1";
-import { createAnimationState, getRevealCountForPhase } from "./state.js?v=3.4.1";
-import { applyContribution, findBlindSeat, getAllSeats, getSeatById, setSeat, syncTableState } from "./seats.js?v=3.4.1";
+import { describeCards } from "../cards.js?v=3.5.0";
+import { createAnimationState, getRevealCountForPhase } from "./state.js?v=3.5.0";
+import { applyContribution, findBlindSeat, getAllSeats, getSeatById, setSeat, syncTableState } from "./seats.js?v=3.5.0";
 
 export function eventWithSnapshot(tableState, actionEvent) {
   if (!actionEvent) return actionEvent;

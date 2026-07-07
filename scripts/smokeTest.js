@@ -1,10 +1,10 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative } from "node:path";
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.4.1";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.4.1";
-import { createClubRoomState } from "../src/engine/club.js?v=3.4.1";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.4.1";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.4.1";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.5.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.5.0";
+import { createClubRoomState } from "../src/engine/club.js?v=3.5.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.5.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.5.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -14,16 +14,16 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=3.4.1";
-import { decideNpcAction } from "../src/engine/npc.js?v=3.4.1";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.4.1";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.4.1";
-import { handFlow } from "../src/app/handFlow.js?v=3.4.1";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.4.1";
-import { inputController } from "../src/app/inputController.js?v=3.4.1";
-import { canEnterTable } from "../src/engine/world.js?v=3.4.1";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.4.1";
-import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.4.1";
+} from "../src/engine/poker.js?v=3.5.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=3.5.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.5.0";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.5.0";
+import { handFlow } from "../src/app/handFlow.js?v=3.5.0";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.5.0";
+import { inputController } from "../src/app/inputController.js?v=3.5.0";
+import { canEnterTable } from "../src/engine/world.js?v=3.5.0";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.5.0";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.5.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -786,6 +786,51 @@ function assertRiverRoomStoryline(content, club, table) {
   assert(clubHtml.includes("Table select"), "club screen must render separate table select dialog markup");
 }
 
+function assertGeneratedCityCoverage(content) {
+  for (const city of content.cities ?? []) {
+    const venues = (content.venues ?? []).filter((venue) => venue.cityId === city.id);
+    const clubs = (content.clubs ?? []).filter((club) => club.cityId === city.id);
+    const cityTables = (content.tables ?? []).filter((table) => clubs.some((club) => club.id === table.clubId));
+
+    assert(clubs.length >= 3, `${city.name} must have at least 3 clubs, got ${clubs.length}`);
+    assert(cityTables.length >= 12, `${city.name} must have at least 12 tables, got ${cityTables.length}`);
+    assert(venues.filter((venue) => venue.type === "home").length >= 1, `${city.name} must have home venue`);
+    assert(venues.filter((venue) => venue.type === "store").length >= 6, `${city.name} must have 6 stores`);
+    assert(venues.filter((venue) => venue.type === "cafe").length >= 5, `${city.name} must have 5 cafes`);
+    assert(venues.filter((venue) => venue.type === "restaurant").length >= 7, `${city.name} must have 7 restaurants`);
+    assert(venues.filter((venue) => venue.type === "job_site").length >= 6, `${city.name} must have 6 job sites`);
+    assert(venues.filter((venue) => venue.type === "real_estate_agency").length >= 1, `${city.name} must have real estate agency`);
+    assert(venues.filter((venue) => venue.type === "car_dealer").length >= 5, `${city.name} must have 5 car dealers`);
+    assert(venues.filter((venue) => venue.type === "asset_store").length >= 1, `${city.name} must have asset store`);
+    assert(venues.filter((venue) => venue.type === "business_broker").length >= 1, `${city.name} must have business broker`);
+    assert(venues.filter((venue) => venue.type === "poker_club").length >= 3, `${city.name} must have 3 poker club venues`);
+
+    for (const club of clubs) {
+      assert((club.npcPool ?? []).length >= 9, `${club.name} must have at least 9 NPCs`);
+    }
+  }
+}
+
+function assertTravelPickerUi(content, table, club) {
+  const closedState = makeBaseState(content, createInitialTableState(), {
+    currentScreen: "location",
+    playerLocation: { type: "city", cityId: club.cityId },
+    system: { ...makeBaseState(content).system, travelPickerOpen: false },
+  });
+  const closedHtml = renderScreen(closedState);
+  assert(closedHtml.includes('data-action="open-travel-picker"'), "city screen must render compact travel button");
+  assertNotIncludes(closedHtml, "travel-route-grid", "city screen must hide travel route grid before modal opens");
+
+  const openState = {
+    ...closedState,
+    system: { ...closedState.system, travelPickerOpen: true },
+  };
+  const openHtml = renderScreen(openState);
+  assert(openHtml.includes("travel-picker-modal"), "travel picker modal must render when opened");
+  assert(openHtml.includes('data-action="travel-route"'), "travel picker modal must contain travel route actions");
+  assert(openHtml.includes("Выбор страны"), "travel picker modal must show country selector title");
+}
+
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -828,7 +873,7 @@ function assertUiSmoke(content, table, club) {
 }
 
 
-const EXPECTED_VERSION_QUERY = "?v=3.4.1";
+const EXPECTED_VERSION_QUERY = "?v=3.5.0";
 const LEGACY_VERSION_QUERIES = ["1.4.0", "1.7.3", "3.0.0"].map((version) => `?v=${version}`);
 const VERSION_SCAN_EXTENSIONS = new Set([".js", ".html", ".json", ".webmanifest"]);
 
@@ -878,6 +923,7 @@ function main() {
   assert(content.tables.length >= 5, "River Room expansion expected multiple tables");
   assert((content.storylines ?? []).length >= 1, "at least one storyline expected");
   assert(content.npcs.length >= 6, "at least six NPCs expected for table smoke tests");
+  assertGeneratedCityCoverage(content);
 
   const career = createNewCareer();
   const start = getDefaultStartLocation(content, career);
@@ -901,6 +947,7 @@ function main() {
   assertPersistentTableEconomy(content, table, club);
   assertBustedNpcReplacement(content, table, club);
   assertUiSmoke(content, table, club);
+  assertTravelPickerUi(content, table, club);
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);
   assertNpcPreflopDecisionTuning(content, table);

@@ -694,3 +694,61 @@
   color: #fca5a5;
   font-size: 0.86rem;
 }
+
+
+.travel-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0;
+}
+
+.travel-compact span,
+.travel-country-group span {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.68;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.travel-compact strong,
+.travel-country-group strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.travel-compact p {
+  margin: 4px 0 0;
+  opacity: 0.75;
+}
+
+.travel-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 72px 16px 24px;
+  background: rgba(0, 0, 0, 0.72);
+  overflow-y: auto;
+}
+
+.travel-picker-modal {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+}
+
+.travel-country-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.travel-country-group {
+  display: grid;
+  gap: 10px;
+}

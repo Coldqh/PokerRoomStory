@@ -1,13 +1,13 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=3.4.1";
-import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.4.1";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.4.1";
-import { normalizePlayer } from "../engine/career.js?v=3.4.1";
-import { getClubTables } from "../engine/selectors.js?v=3.4.1";
-import { canEnterClub } from "../engine/world.js?v=3.4.1";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.4.1";
-import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.4.1";
-import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.4.1";
-import { applyTravelRoute } from "../engine/travel.js?v=3.4.1";
+import { clearSave, importSaveText } from "../engine/save.js?v=3.5.0";
+import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.5.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.5.0";
+import { normalizePlayer } from "../engine/career.js?v=3.5.0";
+import { getClubTables } from "../engine/selectors.js?v=3.5.0";
+import { canEnterClub } from "../engine/world.js?v=3.5.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.5.0";
+import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.5.0";
+import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.5.0";
+import { applyTravelRoute } from "../engine/travel.js?v=3.5.0";
 
 export const inputController = {
   handleClick(event) {
@@ -46,6 +46,7 @@ export const inputController = {
           ...this.state.system,
           tablePickerOpen: false,
           clubPickerOpen: false,
+          travelPickerOpen: false,
         },
       });
       return;
@@ -76,6 +77,8 @@ export const inputController = {
       "venue-action",
       "go-home",
       "go-city",
+      "open-travel-picker",
+      "close-travel-picker",
       "travel-route",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
@@ -85,6 +88,16 @@ export const inputController = {
       return;
     }
 
+
+    if (action === "open-travel-picker") {
+      this.setSystem({ travelPickerOpen: true, tablePickerOpen: false, clubPickerOpen: false });
+      return;
+    }
+
+    if (action === "close-travel-picker") {
+      this.setSystem({ travelPickerOpen: false });
+      return;
+    }
 
     if (action === "travel-route") {
       const result = applyTravelRoute({ content: this.content, career: this.state.career, player: this.state.player, routeId: id });
@@ -107,6 +120,7 @@ export const inputController = {
           tablePickerOpen: false,
           clubPickerOpen: false,
           buyInModal: null,
+          travelPickerOpen: false,
         },
       });
       return;
@@ -215,6 +229,7 @@ export const inputController = {
     if (action === "close-modal") {
       if (target.classList?.contains("table-picker-backdrop") && event.target.closest(".table-picker-dialog")) return;
       if (target.classList?.contains("club-picker-backdrop") && event.target.closest(".club-picker-dialog")) return;
+      if (target.classList?.contains("travel-picker-backdrop") && event.target.closest(".travel-picker-modal")) return;
       this.closeOpenWindows();
       return;
     }
@@ -448,6 +463,7 @@ export const inputController = {
     this.setSystem({
       tablePickerOpen: false,
       clubPickerOpen: false,
+      travelPickerOpen: false,
       buyInModal: null,
       betAmountModal: null,
       opponentReadSeatId: null,
@@ -524,7 +540,7 @@ function isLocationLockedAtTable(state = {}, action = "", id = "") {
   const seated = Boolean(state.tableSession?.tableId);
   if (!seated) return false;
 
-  if (["select-venue", "venue-action", "life-action", "select-club", "go-home", "go-city", "travel-route"].includes(action)) return true;
+  if (["select-venue", "venue-action", "life-action", "select-club", "go-home", "go-city", "open-travel-picker", "travel-route"].includes(action)) return true;
 
   if (action === "select-table") {
     const currentTableId = state.tableSession?.tableId ?? null;
@@ -540,7 +556,8 @@ function isModalBackdrop(target) {
     || target?.classList?.contains("buyin-modal-layer")
     || target?.classList?.contains("bet-modal-layer")
     || target?.classList?.contains("opponent-read-layer")
-    || target?.classList?.contains("result-modal-layer"));
+    || target?.classList?.contains("result-modal-layer")
+    || target?.classList?.contains("travel-picker-backdrop"));
 }
 
 function getHomeVenueIdForCity(content = null, cityId = null) {

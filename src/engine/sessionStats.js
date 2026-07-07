@@ -1,4 +1,4 @@
-import { getLifeActionsLeft, normalizeLifeState, spendLifeActionCost } from "./life.js?v=3.4.1";
+import { getLifeActionsLeft, normalizeLifeState, spendLifeActionCost } from "./life.js?v=3.5.0";
 
 const MAX_NEED = 100;
 const HAND_ACTION_COST = 0.1;

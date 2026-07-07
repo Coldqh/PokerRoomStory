@@ -1,12 +1,27 @@
-import { spendLifeActionCost } from "./life.js?v=3.4.1";
+import { spendLifeActionCost } from "./life.js?v=3.5.0";
 
 const HUBS = [
   { id: "CITY_RU_NORTH_DISTRICT", name: "Москва", base: 0 },
-  { id: "CITY_MO_MACAU_001", name: "Macau", base: 1800 },
-  { id: "CITY_HK_HONG_KONG_001", name: "Hong Kong", base: 1600 },
-  { id: "CITY_US_LA_001", name: "Los Angeles", base: 2200 },
-  { id: "CITY_US_LAS_VEGAS_001", name: "Las Vegas", base: 2400 },
-  { id: "CITY_JP_TOKYO_001", name: "Tokyo", base: 1900 },
+  { id: "CITY_RU_SAINT_PETERSBURG_001", name: "Санкт-Петербург", base: 1440 },
+  { id: "CITY_RU_SOCHI_001", name: "Сочи", base: 1440 },
+  { id: "CITY_RU_VLADIVOSTOK_001", name: "Владивосток", base: 1910 },
+  { id: "CITY_US_LA_001", name: "Los Angeles", base: 2970 },
+  { id: "CITY_US_LAS_VEGAS_001", name: "Las Vegas", base: 3440 },
+  { id: "CITY_US_NEW_YORK_001", name: "New York", base: 2970 },
+  { id: "CITY_US_MIAMI_001", name: "Miami", base: 2500 },
+  { id: "CITY_MO_MACAU_001", name: "Macau", base: 3910 },
+  { id: "CITY_HK_HONG_KONG_001", name: "Hong Kong", base: 3440 },
+  { id: "CITY_CN_SHANGHAI_001", name: "Shanghai", base: 2970 },
+  { id: "CITY_CN_SHENZHEN_001", name: "Shenzhen", base: 2500 },
+  { id: "CITY_JP_TOKYO_001", name: "Tokyo", base: 2970 },
+  { id: "CITY_JP_OSAKA_001", name: "Osaka", base: 2500 },
+  { id: "CITY_KR_SEOUL_001", name: "Seoul", base: 2500 },
+  { id: "CITY_UK_LONDON_001", name: "London", base: 2970 },
+  { id: "CITY_UK_MANCHESTER_001", name: "Manchester", base: 2030 },
+  { id: "CITY_FR_PARIS_001", name: "Paris", base: 2500 },
+  { id: "CITY_MC_MONACO_001", name: "Monaco", base: 3910 },
+  { id: "CITY_DE_BERLIN_001", name: "Berlin", base: 2030 },
+  { id: "CITY_ES_BARCELONA_001", name: "Barcelona", base: 2030 },
 ];
 
 export const TRAVEL_ROUTES = buildTravelRoutes();

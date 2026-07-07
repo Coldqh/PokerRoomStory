@@ -1,4 +1,5 @@
-export const INTERNATIONAL_BUSINESS_TEMPLATES = [
+import { generatedBusinessTemplates } from "../data/packs/russia/riverRoom/generatedCityFill.js?v=3.5.0";
+const BASE_INTERNATIONAL_BUSINESS_TEMPLATES = [
   { id: "BUS_MO_MACAU_001", countryId: "COUNTRY_GREATER_CHINA", cityId: "CITY_MO_MACAU_001", district: "Cotai", address: "Local block 1", type: "international_asset", scale: "micro", name: "Taipa Snack Bar", brand: "Macau Commerce", buyPrice: 8000, dailyRevenue: 360, dailyExpenses: 180, condition: 58, staffSlots: 3, risk: 9 },
   { id: "BUS_MO_MACAU_002", countryId: "COUNTRY_GREATER_CHINA", cityId: "CITY_MO_MACAU_001", district: "Old Macau", address: "Local block 2", type: "international_asset", scale: "small", name: "Cotai Shuttle Service", brand: "Macau Commerce", buyPrice: 14000, dailyRevenue: 620, dailyExpenses: 310, condition: 61, staffSlots: 5, risk: 10 },
   { id: "BUS_MO_MACAU_003", countryId: "COUNTRY_GREATER_CHINA", cityId: "CITY_MO_MACAU_001", district: "NAPE", address: "Local block 3", type: "international_asset", scale: "small", name: "Casino Staff Canteen", brand: "Macau Commerce", buyPrice: 26000, dailyRevenue: 980, dailyExpenses: 520, condition: 64, staffSlots: 7, risk: 11 },
@@ -40,3 +41,6 @@ export const INTERNATIONAL_BUSINESS_TEMPLATES = [
   { id: "BUS_JP_TOKYO_007", countryId: "COUNTRY_JAPAN", cityId: "CITY_JP_TOKYO_001", district: "Shibuya", address: "Local block 7", type: "international_asset", scale: "upper_medium", name: "Corporate Lounge", brand: "Tokyo Commerce", buyPrice: 220000, dailyRevenue: 6900, dailyExpenses: 4500, condition: 76, staffSlots: 15, risk: 15 },
   { id: "BUS_JP_TOKYO_008", countryId: "COUNTRY_JAPAN", cityId: "CITY_JP_TOKYO_001", district: "Shinjuku", address: "Local block 8", type: "international_asset", scale: "large", name: "High Limit Quiet Room Stake", brand: "Tokyo Commerce", buyPrice: 380000, dailyRevenue: 11800, dailyExpenses: 7900, condition: 79, staffSlots: 17, risk: 16 }
 ];
+
+
+export const INTERNATIONAL_BUSINESS_TEMPLATES = [...BASE_INTERNATIONAL_BUSINESS_TEMPLATES, ...generatedBusinessTemplates];

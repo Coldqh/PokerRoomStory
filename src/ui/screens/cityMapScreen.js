@@ -1,6 +1,6 @@
-import { getCityMapView } from "../../engine/locations.js?v=3.4.1";
-import { getTravelView } from "../../engine/travel.js?v=3.4.1";
-import { escapeHtml } from "../components.js?v=3.4.1";
+import { getCityMapView } from "../../engine/locations.js?v=3.5.0";
+import { getTravelView } from "../../engine/travel.js?v=3.5.0";
+import { escapeHtml } from "../components.js?v=3.5.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
@@ -39,7 +39,8 @@ export function renderCityMapScreen(state) {
         </div>
       </article>
 
-      ${renderTravelPanel(travel, Boolean(state.tableSession?.tableId))}
+      ${renderTravelButton(Boolean(state.tableSession?.tableId))}
+      ${state.system?.travelPickerOpen ? renderTravelModal(travel, Boolean(state.tableSession?.tableId)) : ""}
 
       <section class="city-venue-map" aria-label="Объекты города">
         ${VENUE_GROUPS.map((group) => renderVenueGroup(group, view.venues, Boolean(state.tableSession?.tableId))).join("")}
@@ -48,21 +49,57 @@ export function renderCityMapScreen(state) {
   `;
 }
 
-function renderTravelPanel(travel, lockedAtTable = false) {
+function renderTravelButton(lockedAtTable = false) {
   return `
-    <section class="travel-panel panel-soft">
-      <header class="travel-head">
-        <div>
-          <span>Airport</span>
-          <strong>Перелёт в другую страну</strong>
-          <p>Билет тратит деньги и дневные действия. После перелёта город реально меняется: магазины, кафе, бизнесы, машины и клубы будут местными.</p>
-        </div>
-      </header>
-      <div class="travel-route-grid">
-        ${travel.routes.map((route) => renderTravelRoute(route, lockedAtTable)).join("")}
+    <section class="travel-compact panel-soft">
+      <div>
+        <span>Airport</span>
+        <strong>Перелёт</strong>
+        <p>Выбор страны и города.</p>
       </div>
+      <button class="primary" data-action="open-travel-picker" ${lockedAtTable ? "disabled" : ""}>Открыть перелёты</button>
     </section>
   `;
+}
+
+function renderTravelModal(travel, lockedAtTable = false) {
+  const groups = groupTravelRoutesByCountry(travel.routes);
+  return `
+    <div class="travel-picker-backdrop" data-action="close-modal">
+      <section class="travel-picker-modal panel-soft" role="dialog" aria-modal="true" aria-label="Выбор перелёта">
+        <header class="travel-head">
+          <div>
+            <span>Airport</span>
+            <strong>Выбор страны</strong>
+            <p>Билет тратит деньги и дневные действия. После перелёта город меняется полностью.</p>
+          </div>
+          <button class="small-button ghost" data-action="close-modal">×</button>
+        </header>
+        <div class="travel-country-list">
+          ${groups.map((group) => `
+            <section class="travel-country-group">
+              <header><span>Country</span><strong>${escapeHtml(group.countryName)}</strong></header>
+              <div class="travel-route-grid">
+                ${group.routes.map((route) => renderTravelRoute(route, lockedAtTable)).join("")}
+              </div>
+            </section>
+          `).join("")}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function groupTravelRoutesByCountry(routes = []) {
+  const map = new Map();
+  for (const route of routes) {
+    const countryName = route.country?.name ?? "World";
+    if (!map.has(countryName)) map.set(countryName, []);
+    map.get(countryName).push(route);
+  }
+  return [...map.entries()]
+    .map(([countryName, groupRoutes]) => ({ countryName, routes: groupRoutes }))
+    .sort((left, right) => left.countryName.localeCompare(right.countryName));
 }
 
 function renderTravelRoute(route, lockedAtTable = false) {

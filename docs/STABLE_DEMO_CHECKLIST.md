@@ -1,4 +1,4 @@
-# Poker Room Story v1.1.0 — Stable Demo Checklist
+# Poker Room Story v3.5.0 — Stable Demo Checklist
 
 ## Automated smoke test
 

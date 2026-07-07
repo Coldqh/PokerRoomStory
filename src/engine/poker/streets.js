@@ -1,8 +1,8 @@
-import { describeCards, draw } from "../cards.js?v=3.4.1";
-import { STREET_LABELS } from "./constants.js?v=3.4.1";
-import { appendHandEvent, buildStreetHandEvent, event } from "./events.js?v=3.4.1";
-import { getAllSeats, setAllSeats, syncTableState } from "./seats.js?v=3.4.1";
-import { getNextPhase } from "./rounds.js?v=3.4.1";
+import { describeCards, draw } from "../cards.js?v=3.5.0";
+import { STREET_LABELS } from "./constants.js?v=3.5.0";
+import { appendHandEvent, buildStreetHandEvent, event } from "./events.js?v=3.5.0";
+import { getAllSeats, setAllSeats, syncTableState } from "./seats.js?v=3.5.0";
+import { getNextPhase } from "./rounds.js?v=3.5.0";
 
 export function advanceStreet(tableState) {
   let state = syncTableState(tableState);

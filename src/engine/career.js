@@ -1,9 +1,9 @@
-import { FALLBACK_START_LOCATION } from "./selectors.js?v=3.4.1";
-import { normalizeClubProgress } from "./progression.js?v=3.4.1";
-import { createInitialLifeState, normalizeLifeState } from "./life.js?v=3.4.1";
-import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=3.4.1";
-import { createInitialJobsState, normalizeJobsState } from "./jobs.js?v=3.4.1";
-import { createInitialCityGoalsState, normalizeCityGoalsState } from "./cityGoals.js?v=3.4.1";
+import { FALLBACK_START_LOCATION } from "./selectors.js?v=3.5.0";
+import { normalizeClubProgress } from "./progression.js?v=3.5.0";
+import { createInitialLifeState, normalizeLifeState } from "./life.js?v=3.5.0";
+import { createInitialBusinessState, normalizeBusinessState } from "./businesses.js?v=3.5.0";
+import { createInitialJobsState, normalizeJobsState } from "./jobs.js?v=3.5.0";
+import { createInitialCityGoalsState, normalizeCityGoalsState } from "./cityGoals.js?v=3.5.0";
 
 const RANKS = [
   { id: "newcomer", label: "Новичок", minRep: 0, minBankroll: 0, color: "common" },

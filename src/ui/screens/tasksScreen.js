@@ -1,6 +1,6 @@
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=3.4.1";
-import { getCityGoalRoadmap } from "../../engine/cityGoals.js?v=3.4.1";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.4.1";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=3.5.0";
+import { getCityGoalRoadmap } from "../../engine/cityGoals.js?v=3.5.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.5.0";
 
 export function renderTasksScreen(state) {
   const player = state.player;

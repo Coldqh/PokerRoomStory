@@ -1,0 +1,131 @@
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/smokeTest.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/bettingModalFlow.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/handFlow.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/inputController.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/renderShell.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/state.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/systemFlow.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/tableSessionFlow.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/config/appMeta.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/contentRegistry.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/namePools.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/namePools/index.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/packs/coreV01.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/packs/index.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/packs/russia/riverRoom/index.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/packs/russia/riverRoom/npcs.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/data/packs/russia/riverRoomPack.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/businesses.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/career.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/club.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/daySimulation.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/jobs.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/life.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/locations.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/npc.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/betting.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/events.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/handInfo.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/npcDecision.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/results.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/rounds.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/setup.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/streets.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/poker/tableNpcs.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/save.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/sessionStats.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/tablePresence.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/travel.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/update.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/venues.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/engine/world.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/styles.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/components.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/careerScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/cityMapScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/clubScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/collectionsScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/glossaryScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/index.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/lifeScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/locationScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/modals.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/npcScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/settingsScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/tableScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/tasksScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/ui/screens/venueScreen.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sw.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'version.json', LF will be replaced by CRLF the next time Git touches it
+ index.html                               |   8 [32m+[m[31m-[m
+ package.json                             |   2 [32m+[m[31m-[m
+ scripts/smokeTest.js                     |  75 [32m++++++++[m[31m---[m
+ src/app.js                               |  20 [32m+[m[31m--[m
+ src/app/bettingModalFlow.js              |   2 [32m+[m[31m-[m
+ src/app/handFlow.js                      |  22 [32m++[m[31m--[m
+ src/app/inputController.js               |  20 [32m+[m[31m--[m
+ src/app/renderShell.js                   |   6 [32m+[m[31m-[m
+ src/app/state.js                         |  18 [32m+[m[31m--[m
+ src/app/systemFlow.js                    |   4 [32m+[m[31m-[m
+ src/app/tableSessionFlow.js              |  18 [32m+[m[31m--[m
+ src/config/appMeta.js                    |   6 [32m+[m[31m-[m
+ src/data/contentRegistry.js              |   4 [32m+[m[31m-[m
+ src/data/namePools.js                    |   2 [32m+[m[31m-[m
+ src/data/namePools/index.js              |   2 [32m+[m[31m-[m
+ src/data/packs/coreV01.js                |   2 [32m+[m[31m-[m
+ src/data/packs/index.js                  |   2 [32m+[m[31m-[m
+ src/data/packs/russia/riverRoom/index.js |  24 [32m++[m[31m--[m
+ src/data/packs/russia/riverRoom/npcs.js  |   2 [32m+[m[31m-[m
+ src/data/packs/russia/riverRoomPack.js   |   2 [32m+[m[31m-[m
+ src/engine/businesses.js                 |   4 [32m+[m[31m-[m
+ src/engine/career.js                     |  12 [32m+[m[31m-[m
+ src/engine/club.js                       |   2 [32m+[m[31m-[m
+ src/engine/daySimulation.js              |   8 [32m+[m[31m-[m
+ src/engine/jobs.js                       |   4 [32m+[m[31m-[m
+ src/engine/life.js                       |   4 [32m+[m[31m-[m
+ src/engine/locations.js                  |   8 [32m+[m[31m-[m
+ src/engine/npc.js                        |   2 [32m+[m[31m-[m
+ src/engine/poker.js                      |  28 [32m++[m[31m---[m
+ src/engine/poker/betting.js              |   2 [32m+[m[31m-[m
+ src/engine/poker/events.js               |   6 [32m+[m[31m-[m
+ src/engine/poker/handInfo.js             |   8 [32m+[m[31m-[m
+ src/engine/poker/npcDecision.js          |   4 [32m+[m[31m-[m
+ src/engine/poker/results.js              |   4 [32m+[m[31m-[m
+ src/engine/poker/rounds.js               |   6 [32m+[m[31m-[m
+ src/engine/poker/setup.js                |   6 [32m+[m[31m-[m
+ src/engine/poker/streets.js              |  10 [32m+[m[31m-[m
+ src/engine/poker/tableNpcs.js            |   2 [32m+[m[31m-[m
+ src/engine/save.js                       |   6 [32m+[m[31m-[m
+ src/engine/sessionStats.js               |   2 [32m+[m[31m-[m
+ src/engine/tablePresence.js              |   2 [32m+[m[31m-[m
+ src/engine/travel.js                     |   6 [32m+[m[31m-[m
+ src/engine/update.js                     |   2 [32m+[m[31m-[m
+ src/engine/venues.js                     |  12 [32m+[m[31m-[m
+ src/engine/world.js                      |   2 [32m+[m[31m-[m
+ src/main.js                              |   2 [32m+[m[31m-[m
+ src/styles.css                           |  24 [32m++[m[31m--[m
+ src/ui/components.js                     |   2 [32m+[m[31m-[m
+ src/ui/screens.js                        |   2 [32m+[m[31m-[m
+ src/ui/screens/careerScreen.js           |   6 [32m+[m[31m-[m
+ src/ui/screens/cityMapScreen.js          |   6 [32m+[m[31m-[m
+ src/ui/screens/clubScreen.js             |  14 [32m+[m[31m--[m
+ src/ui/screens/collectionsScreen.js      |   2 [32m+[m[31m-[m
+ src/ui/screens/glossaryScreen.js         |   2 [32m+[m[31m-[m
+ src/ui/screens/index.js                  |  26 [32m++[m[31m--[m
+ src/ui/screens/lifeScreen.js             |  10 [32m+[m[31m-[m
+ src/ui/screens/locationScreen.js         |  10 [32m+[m[31m-[m
+ src/ui/screens/modals.js                 |   6 [32m+[m[31m-[m
+ src/ui/screens/npcScreen.js              |   6 [32m+[m[31m-[m
+ src/ui/screens/settingsScreen.js         |   4 [32m+[m[31m-[m
+ src/ui/screens/tableScreen.js            |  10 [32m+[m[31m-[m
+ src/ui/screens/tasksScreen.js            |   6 [32m+[m[31m-[m
+ src/ui/screens/venueScreen.js            |   4 [32m+[m[31m-[m
+ sw.js                                    | 208 [32m+++++++++++++++[m[31m----------------[m
+ version.json                             |   6 [32m+[m[31m-[m
+ 65 files changed, 397 insertions(+), 352 deletions(-)

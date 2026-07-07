@@ -1,1 +1,1 @@
-export { russiaRiverRoomPack } from "./riverRoom/index.js?v=1.1.0";
+export { russiaRiverRoomPack } from "./riverRoom/index.js?v=3.4.1";

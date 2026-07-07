@@ -1,7 +1,7 @@
-import { describeCards, detectStartingHandUnlocks, estimatePreflopStrength, evaluateBestHand } from "../cards.js?v=1.1.0";
-import { getArchetypeUnlockConditions } from "../npc.js?v=1.1.0";
-import { PHASE_LABELS } from "./constants.js?v=1.1.0";
-import { getToCall } from "./betting.js?v=1.1.0";
+import { describeCards, detectStartingHandUnlocks, estimatePreflopStrength, evaluateBestHand } from "../cards.js?v=3.4.1";
+import { getArchetypeUnlockConditions } from "../npc.js?v=3.4.1";
+import { PHASE_LABELS } from "./constants.js?v=3.4.1";
+import { getToCall } from "./betting.js?v=3.4.1";
 
 export function getPhaseLabel(phase) {
   return PHASE_LABELS[phase] ?? phase;

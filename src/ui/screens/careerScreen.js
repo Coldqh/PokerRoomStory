@@ -1,6 +1,6 @@
-import { getRankInfo, getRankLabel, getRankProgress } from "../../engine/career.js?v=1.1.0";
-import { escapeHtml, metric, progressBar } from "../components.js?v=1.1.0";
-import { winRate } from "./common.js?v=1.1.0";
+import { getRankInfo, getRankLabel, getRankProgress } from "../../engine/career.js?v=3.4.1";
+import { escapeHtml, metric, progressBar } from "../components.js?v=3.4.1";
+import { winRate } from "./common.js?v=3.4.1";
 
 export function renderCareerScreen(state) {
   const player = state.player;

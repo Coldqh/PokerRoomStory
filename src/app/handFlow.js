@@ -1,6 +1,6 @@
-import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=3.2.1";
-import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=3.2.1";
-import { applyUnlocks } from "../engine/collections.js?v=3.2.1";
+import { buildClubHandPatch, getClubSnapshotForTable } from "../engine/club.js?v=3.4.1";
+import { applyHandResult, addPlayerRewards, applyChallenges, normalizeCareer, normalizePlayer, updateCareerUnlocks } from "../engine/career.js?v=3.4.1";
+import { applyUnlocks } from "../engine/collections.js?v=3.4.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -9,14 +9,14 @@ import {
   getUnlockConditionsFromHand,
   settleTableStacks,
   startNewHand,
-} from "../engine/poker.js?v=3.2.1";
-import { getClubContext } from "../engine/world.js?v=3.2.1";
-import { applyClubProgression } from "../engine/progression.js?v=3.2.1";
-import { applyClubGoals } from "../engine/clubGoals.js?v=3.2.1";
-import { applyStorylineProgress } from "../engine/storylines.js?v=3.2.1";
-import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.2.1";
-import { createTableLocation } from "../engine/locationState.js?v=3.2.1";
-import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=3.2.1";
+} from "../engine/poker.js?v=3.4.1";
+import { getClubContext } from "../engine/world.js?v=3.4.1";
+import { applyClubProgression } from "../engine/progression.js?v=3.4.1";
+import { applyClubGoals } from "../engine/clubGoals.js?v=3.4.1";
+import { applyStorylineProgress } from "../engine/storylines.js?v=3.4.1";
+import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.4.1";
+import { createTableLocation } from "../engine/locationState.js?v=3.4.1";
+import { applySessionHandResult, getPokerStartConditionWarning } from "../engine/sessionStats.js?v=3.4.1";
 
 export const handFlow = {
   startHand() {

@@ -1,8 +1,10 @@
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=1.7.3";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=1.7.3";
-import { createClubRoomState } from "../src/engine/club.js?v=1.7.3";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=1.7.3";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=1.7.3";
+import { readFileSync, readdirSync } from "node:fs";
+import { extname, join, relative } from "node:path";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.4.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.4.1";
+import { createClubRoomState } from "../src/engine/club.js?v=3.4.1";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.4.1";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.4.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -12,16 +14,16 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=1.7.3";
-import { decideNpcAction } from "../src/engine/npc.js?v=1.7.3";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=1.7.3";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=1.7.3";
-import { handFlow } from "../src/app/handFlow.js?v=1.7.3";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=1.7.3";
-import { inputController } from "../src/app/inputController.js?v=1.7.3";
-import { canEnterTable } from "../src/engine/world.js?v=1.7.3";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=1.7.3";
-import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=1.7.3";
+} from "../src/engine/poker.js?v=3.4.1";
+import { decideNpcAction } from "../src/engine/npc.js?v=3.4.1";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.4.1";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.4.1";
+import { handFlow } from "../src/app/handFlow.js?v=3.4.1";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.4.1";
+import { inputController } from "../src/app/inputController.js?v=3.4.1";
+import { canEnterTable } from "../src/engine/world.js?v=3.4.1";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.4.1";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.4.1";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -825,7 +827,50 @@ function assertUiSmoke(content, table, club) {
   assert(readHtml.includes("План"), "opponent read modal must render advice block");
 }
 
+
+const EXPECTED_VERSION_QUERY = "?v=3.4.1";
+const LEGACY_VERSION_QUERIES = ["1.4.0", "1.7.3", "3.0.0"].map((version) => `?v=${version}`);
+const VERSION_SCAN_EXTENSIONS = new Set([".js", ".html", ".json", ".webmanifest"]);
+
+function assertVersionCacheKeys() {
+  const files = collectVersionScanFiles(".");
+  const offenders = [];
+
+  for (const file of files) {
+    const text = readFileSync(file, "utf8");
+    const queryMatches = text.match(/\?v=\d+\.\d+\.\d+/g) ?? [];
+    const mismatchedQueries = queryMatches.filter((query) => query !== EXPECTED_VERSION_QUERY);
+    const legacyQueries = LEGACY_VERSION_QUERIES.filter((query) => text.includes(query));
+    const badQueries = [...new Set([...mismatchedQueries, ...legacyQueries])];
+
+    if (badQueries.length > 0) {
+      offenders.push(`${relative(".", file)}: ${badQueries.join(", ")}`);
+    }
+  }
+
+  assert(offenders.length === 0, `legacy or mismatched version cache keys found: ${offenders.join("; ")}`);
+}
+
+function collectVersionScanFiles(dir, out = []) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if ([".git", "node_modules", "dist", "assets"].includes(entry.name)) continue;
+
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      collectVersionScanFiles(path, out);
+      continue;
+    }
+
+    if (VERSION_SCAN_EXTENSIONS.has(extname(entry.name))) {
+      out.push(path);
+    }
+  }
+
+  return out;
+}
+
 function main() {
+  assertVersionCacheKeys();
   const content = buildContentRegistry();
   assert(content.validation?.ok, `content validation failed: ${(content.validation?.warnings ?? []).join("; ")}`);
   assert(content.countries.length >= 1, "at least one country expected");

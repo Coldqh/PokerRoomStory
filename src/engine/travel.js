@@ -1,6 +1,4 @@
-import { spendLifeActionCost } from "./life.js?v=3.4.0";
-
-export const TRAVEL_ROUTES = buildTravelRoutes();
+import { spendLifeActionCost } from "./life.js?v=3.4.1";
 
 const HUBS = [
   { id: "CITY_RU_NORTH_DISTRICT", name: "Москва", base: 0 },
@@ -10,6 +8,8 @@ const HUBS = [
   { id: "CITY_US_LAS_VEGAS_001", name: "Las Vegas", base: 2400 },
   { id: "CITY_JP_TOKYO_001", name: "Tokyo", base: 1900 },
 ];
+
+export const TRAVEL_ROUTES = buildTravelRoutes();
 
 function buildTravelRoutes() {
   const routes = [];

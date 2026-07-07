@@ -1,5 +1,5 @@
-import { BUSINESS_LIMITS, BUSINESS_TEMPLATES as BASE_BUSINESS_TEMPLATES } from "./businessContent.js?v=3.4.0";
-import { INTERNATIONAL_BUSINESS_TEMPLATES } from "./internationalBusinessContent.js?v=3.4.0";
+import { BUSINESS_LIMITS, BUSINESS_TEMPLATES as BASE_BUSINESS_TEMPLATES } from "./businessContent.js?v=3.4.1";
+import { INTERNATIONAL_BUSINESS_TEMPLATES } from "./internationalBusinessContent.js?v=3.4.1";
 
 const BUSINESS_TEMPLATES = [...BASE_BUSINESS_TEMPLATES, ...INTERNATIONAL_BUSINESS_TEMPLATES];
 

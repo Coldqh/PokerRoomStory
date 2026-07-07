@@ -441,3 +441,167 @@
   color: #ef4444;
   margin-bottom: 4px;
 }
+
+.global-atlas {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(220, 38, 38, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(15, 16, 22, 0.98), rgba(7, 8, 12, 0.96));
+}
+
+.global-atlas-head {
+  display: grid;
+  gap: 14px;
+  align-items: end;
+}
+
+.global-atlas-head span,
+.global-country-title span,
+.global-country-meta span,
+.global-city-row span,
+.global-city-row small {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.global-atlas-head strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: clamp(1.25rem, 2.3vw, 1.85rem);
+}
+
+.global-atlas-head p {
+  max-width: 860px;
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+}
+
+.global-atlas-summary,
+.global-country-meta,
+.global-city-clubs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.global-atlas-summary span,
+.global-country-meta span,
+.global-city-clubs span {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(255, 255, 255, 0.045);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.global-country-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.global-country-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 14px;
+  background: linear-gradient(145deg, rgba(16, 18, 24, 0.98), rgba(8, 9, 13, 0.95));
+}
+
+.global-country-card.status-locked {
+  opacity: 0.78;
+}
+
+.global-country-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.global-country-title strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 1.02rem;
+}
+
+.global-country-title em,
+.global-city-row em {
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #ef4444;
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.global-atlas-lock {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.global-city-list {
+  display: grid;
+  gap: 9px;
+}
+
+.global-city-row {
+  display: grid;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+  padding: 11px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.global-city-row.status-open {
+  border-color: rgba(220, 38, 38, 0.22);
+}
+
+.global-city-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.global-city-main strong {
+  color: #fff;
+}
+
+.global-city-main span,
+.global-city-row small {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+@media (min-width: 760px) {
+  .global-atlas-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .global-country-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1180px) {
+  .global-country-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

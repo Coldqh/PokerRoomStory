@@ -1,5 +1,6 @@
-import { getCityMapView } from "../../engine/locations.js?v=2.9.0";
-import { escapeHtml } from "../components.js?v=2.9.0";
+import { getCityMapView } from "../../engine/locations.js?v=3.3.0";
+import { getGlobalPokerAtlasView } from "../../engine/globalPokerAtlas.js?v=3.3.0";
+import { escapeHtml } from "../components.js?v=3.3.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
@@ -19,6 +20,7 @@ export function renderCityMapScreen(state) {
   const view = getCityMapView(state.content, state.career, state.player, activeClub?.cityId, state.activeClubId, activeVenueId);
   const cityName = view.city?.name ?? "Город";
   const countryName = view.country?.name ?? "Россия";
+  const atlas = getGlobalPokerAtlasView(state.content, state.career, state.player);
 
   return `
     <section class="city-map-screen">
@@ -33,14 +35,95 @@ export function renderCityMapScreen(state) {
           <div><span>Объекты</span><strong>${escapeHtml(String(view.summary.total))}</strong></div>
           <div><span>Открыто</span><strong>${escapeHtml(String(view.summary.unlocked))}</strong></div>
           <div><span>Клубы</span><strong>${escapeHtml(String(view.summary.clubs))}</strong></div>
+          <div><span>Мир</span><strong>${escapeHtml(String(atlas.summary.countries))}/${escapeHtml(String(atlas.summary.cities))}</strong></div>
+          <div><span>План клубов</span><strong>${escapeHtml(String(atlas.summary.plannedClubs))}</strong></div>
         </div>
       </article>
 
       <section class="city-venue-map" aria-label="Объекты города">
         ${VENUE_GROUPS.map((group) => renderVenueGroup(group, view.venues, Boolean(state.tableSession?.tableId))).join("")}
       </section>
+
+      ${renderGlobalAtlas(atlas)}
     </section>
   `;
+}
+
+function renderGlobalAtlas(atlas) {
+  return `
+    <section class="global-atlas panel-soft">
+      <header class="global-atlas-head">
+        <div>
+          <span>World route foundation</span>
+          <strong>Глобальный покерный атлас</strong>
+          <p>Долгий маршрут: Москва → Россия → Азия → США → Европа → Macau endgame. Большинство городов пока закрыты и работают как roadmap будущих клубов.</p>
+        </div>
+        <div class="global-atlas-summary">
+          <span>${escapeHtml(String(atlas.summary.countries))} стран / зон</span>
+          <span>${escapeHtml(String(atlas.summary.cities))} город</span>
+          <span>${escapeHtml(String(atlas.summary.plannedClubs))} клубов в плане</span>
+        </div>
+      </header>
+      <div class="global-country-grid">
+        ${atlas.countries.map(renderCountryAtlasCard).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderCountryAtlasCard(row) {
+  return `
+    <article class="global-country-card status-${escapeHtml(row.status)}">
+      <div class="global-country-title">
+        <div>
+          <span>${escapeHtml(row.country.region ?? "World")}</span>
+          <strong>${escapeHtml(row.country.name)}</strong>
+        </div>
+        <em>${escapeHtml(row.statusLabel)}</em>
+      </div>
+      <div class="global-country-meta">
+        <span>${escapeHtml(String(row.cityCount))} город</span>
+        <span>${escapeHtml(String(row.plannedClubCount))} клубов</span>
+        <span>${escapeHtml(routeRoleLabel(row.country.routeRole))}</span>
+      </div>
+      ${row.reason ? `<p class="global-atlas-lock">${escapeHtml(row.reason)}</p>` : ""}
+      <div class="global-city-list">
+        ${row.cities.map(renderCityAtlasRow).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderCityAtlasRow(row) {
+  const city = row.city;
+  const clubNames = [...row.anchorClubNames, ...row.futureClubNames].slice(0, 4);
+  return `
+    <div class="global-city-row status-${escapeHtml(row.status)}">
+      <div class="global-city-main">
+        <strong>${escapeHtml(city.name)}</strong>
+        <span>${escapeHtml(city.averageLimit ?? "future route")} · ${escapeHtml(String(row.plannedClubCount))} клубов</span>
+      </div>
+      <em>${escapeHtml(row.statusLabel)}</em>
+      ${row.reason ? `<small>${escapeHtml(row.reason)}</small>` : ""}
+      ${clubNames.length ? `<div class="global-city-clubs">${clubNames.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</div>` : ""}
+    </div>
+  `;
+}
+
+function routeRoleLabel(role) {
+  const labels = {
+    starter_campaign: "старт",
+    high_stakes_campaign: "high stakes",
+    asian_endgame: "Asia endgame",
+    technical_campaign: "техника",
+    connector_campaign: "connector",
+    europe_private_campaign: "private",
+    europe_style_campaign: "style",
+    europe_luxury_endgame: "luxury",
+    europe_grinder_campaign: "grind",
+    tourist_campaign: "tourist",
+  };
+  return labels[role] ?? role ?? "route";
 }
 
 function renderVenueGroup(group, venues, lockedAtTable = false) {

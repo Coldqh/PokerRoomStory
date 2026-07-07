@@ -696,32 +696,56 @@
 }
 
 
-.travel-compact {
-  display: flex;
-  justify-content: space-between;
+.travel-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  margin: 14px 0;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: linear-gradient(135deg, rgba(28, 12, 16, 0.96), rgba(10, 10, 14, 0.96));
 }
 
-.travel-compact span,
-.travel-country-group span {
+.travel-strip-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  border: 1px solid rgba(239, 68, 68, 0.32);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-size: 1.25rem;
+}
+
+.travel-strip-main span,
+.travel-picker-head span,
+.travel-country-group > header span {
   display: block;
+  color: rgba(255, 255, 255, 0.55);
   font-size: 0.72rem;
-  opacity: 0.68;
+  font-weight: 850;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
-.travel-compact strong,
-.travel-country-group strong {
+.travel-strip-main strong,
+.travel-picker-head strong,
+.travel-country-group > header strong {
   display: block;
-  font-size: 1.05rem;
+  margin-top: 4px;
+  color: #fff;
 }
 
-.travel-compact p {
+.travel-strip-main p,
+.travel-picker-head p {
   margin: 4px 0 0;
-  opacity: 0.75;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.travel-strip-button {
+  min-width: 170px;
 }
 
 .travel-picker-backdrop {
@@ -729,17 +753,26 @@
   inset: 0;
   z-index: 80;
   display: flex;
-  justify-content: center;
   align-items: flex-start;
-  padding: 72px 16px 24px;
+  justify-content: center;
+  padding: 70px 16px 24px;
   background: rgba(0, 0, 0, 0.72);
   overflow-y: auto;
 }
 
 .travel-picker-modal {
-  width: min(980px, 100%);
-  max-height: calc(100vh - 96px);
+  width: min(1040px, 100%);
+  max-height: calc(100vh - 94px);
   overflow-y: auto;
+}
+
+.travel-picker-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .travel-country-list {
@@ -751,4 +784,28 @@
 .travel-country-group {
   display: grid;
   gap: 10px;
+}
+
+.travel-country-group > header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.travel-country-group > header em {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.78rem;
+  font-style: normal;
+}
+
+@media (max-width: 720px) {
+  .travel-strip {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .travel-strip-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }

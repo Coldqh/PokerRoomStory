@@ -68,8 +68,6 @@ export function renderLifeScreen(state) {
       ` : ""}
 
       ${life.lastMessage ? `<section class="life-last-message panel-soft"><span>Result</span><p>${escapeHtml(life.lastMessage)}</p></section>` : ""}
-      ${renderDaySummary(life.daySummary)}
-
       <section class="life-overview-grid">
         <article class="life-section panel-soft">
           <header><span>Inventory</span><strong>Инвентарь</strong></header>
@@ -116,18 +114,6 @@ export function renderLifeScreen(state) {
           </div>
         </article>
       </section>
-    </section>
-  `;
-}
-
-function renderDaySummary(summary) {
-  if (!summary?.lines?.length) return "";
-  return `
-    <section class="life-day-summary panel-soft">
-      <header><span>Daily simulation</span><strong>Итог дня ${escapeHtml(String(summary.day ?? ""))}</strong></header>
-      <div class="life-summary-list day-summary-list">
-        ${summary.lines.slice(0, 10).map((line) => `<div><span>•</span><strong>${escapeHtml(line)}</strong></div>`).join("")}
-      </div>
     </section>
   `;
 }

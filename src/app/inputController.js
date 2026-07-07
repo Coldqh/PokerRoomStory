@@ -46,7 +46,6 @@ export const inputController = {
           ...this.state.system,
           tablePickerOpen: false,
           clubPickerOpen: false,
-          travelPickerOpen: false,
         },
       });
       return;
@@ -229,7 +228,6 @@ export const inputController = {
     if (action === "close-modal") {
       if (target.classList?.contains("table-picker-backdrop") && event.target.closest(".table-picker-dialog")) return;
       if (target.classList?.contains("club-picker-backdrop") && event.target.closest(".club-picker-dialog")) return;
-      if (target.classList?.contains("travel-picker-backdrop") && event.target.closest(".travel-picker-modal")) return;
       this.closeOpenWindows();
       return;
     }
@@ -463,11 +461,11 @@ export const inputController = {
     this.setSystem({
       tablePickerOpen: false,
       clubPickerOpen: false,
-      travelPickerOpen: false,
       buyInModal: null,
       betAmountModal: null,
       opponentReadSeatId: null,
       resultModalOpen: false,
+      travelPickerOpen: false,
     });
   },
 
@@ -540,7 +538,7 @@ function isLocationLockedAtTable(state = {}, action = "", id = "") {
   const seated = Boolean(state.tableSession?.tableId);
   if (!seated) return false;
 
-  if (["select-venue", "venue-action", "life-action", "select-club", "go-home", "go-city", "open-travel-picker", "travel-route"].includes(action)) return true;
+  if (["select-venue", "venue-action", "life-action", "select-club", "go-home", "go-city", "travel-route"].includes(action)) return true;
 
   if (action === "select-table") {
     const currentTableId = state.tableSession?.tableId ?? null;

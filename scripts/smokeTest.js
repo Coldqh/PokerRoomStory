@@ -786,51 +786,6 @@ function assertRiverRoomStoryline(content, club, table) {
   assert(clubHtml.includes("Table select"), "club screen must render separate table select dialog markup");
 }
 
-function assertGeneratedCityCoverage(content) {
-  for (const city of content.cities ?? []) {
-    const venues = (content.venues ?? []).filter((venue) => venue.cityId === city.id);
-    const clubs = (content.clubs ?? []).filter((club) => club.cityId === city.id);
-    const cityTables = (content.tables ?? []).filter((table) => clubs.some((club) => club.id === table.clubId));
-
-    assert(clubs.length >= 3, `${city.name} must have at least 3 clubs, got ${clubs.length}`);
-    assert(cityTables.length >= 12, `${city.name} must have at least 12 tables, got ${cityTables.length}`);
-    assert(venues.filter((venue) => venue.type === "home").length >= 1, `${city.name} must have home venue`);
-    assert(venues.filter((venue) => venue.type === "store").length >= 6, `${city.name} must have 6 stores`);
-    assert(venues.filter((venue) => venue.type === "cafe").length >= 5, `${city.name} must have 5 cafes`);
-    assert(venues.filter((venue) => venue.type === "restaurant").length >= 7, `${city.name} must have 7 restaurants`);
-    assert(venues.filter((venue) => venue.type === "job_site").length >= 6, `${city.name} must have 6 job sites`);
-    assert(venues.filter((venue) => venue.type === "real_estate_agency").length >= 1, `${city.name} must have real estate agency`);
-    assert(venues.filter((venue) => venue.type === "car_dealer").length >= 5, `${city.name} must have 5 car dealers`);
-    assert(venues.filter((venue) => venue.type === "asset_store").length >= 1, `${city.name} must have asset store`);
-    assert(venues.filter((venue) => venue.type === "business_broker").length >= 1, `${city.name} must have business broker`);
-    assert(venues.filter((venue) => venue.type === "poker_club").length >= 3, `${city.name} must have 3 poker club venues`);
-
-    for (const club of clubs) {
-      assert((club.npcPool ?? []).length >= 9, `${club.name} must have at least 9 NPCs`);
-    }
-  }
-}
-
-function assertTravelPickerUi(content, table, club) {
-  const closedState = makeBaseState(content, createInitialTableState(), {
-    currentScreen: "location",
-    playerLocation: { type: "city", cityId: club.cityId },
-    system: { ...makeBaseState(content).system, travelPickerOpen: false },
-  });
-  const closedHtml = renderScreen(closedState);
-  assert(closedHtml.includes('data-action="open-travel-picker"'), "city screen must render compact travel button");
-  assertNotIncludes(closedHtml, "travel-route-grid", "city screen must hide travel route grid before modal opens");
-
-  const openState = {
-    ...closedState,
-    system: { ...closedState.system, travelPickerOpen: true },
-  };
-  const openHtml = renderScreen(openState);
-  assert(openHtml.includes("travel-picker-modal"), "travel picker modal must render when opened");
-  assert(openHtml.includes('data-action="travel-route"'), "travel picker modal must contain travel route actions");
-  assert(openHtml.includes("Выбор страны"), "travel picker modal must show country selector title");
-}
-
 function assertUiSmoke(content, table, club) {
   const emptyState = makeBaseState(content, createInitialTableState(), {
     currentScreen: "table",
@@ -872,6 +827,52 @@ function assertUiSmoke(content, table, club) {
   assert(readHtml.includes("План"), "opponent read modal must render advice block");
 }
 
+
+function assertCityFillCoverage(content) {
+  for (const city of content.cities ?? []) {
+    const clubs = (content.clubs ?? []).filter((club) => club.cityId === city.id);
+    const tables = (content.tables ?? []).filter((table) => clubs.some((club) => club.id === table.clubId));
+    const venues = (content.venues ?? []).filter((venue) => venue.cityId === city.id);
+
+    assert(clubs.length >= 3, `${city.name} must have at least 3 clubs, got ${clubs.length}`);
+    assert(tables.length >= 12, `${city.name} must have at least 12 tables, got ${tables.length}`);
+    assert(venues.length >= 36, `${city.name} must have at least 36 venues, got ${venues.length}`);
+    assert(venues.filter((venue) => venue.type === "home").length >= 1, `${city.name} must have home venue`);
+    assert(venues.filter((venue) => venue.type === "store").length >= 6, `${city.name} must have 6 stores`);
+    assert(venues.filter((venue) => venue.type === "cafe").length >= 5, `${city.name} must have 5 cafes`);
+    assert(venues.filter((venue) => venue.type === "restaurant").length >= 7, `${city.name} must have 7 restaurants`);
+    assert(venues.filter((venue) => venue.type === "job_site").length >= 6, `${city.name} must have 6 job sites`);
+    assert(venues.filter((venue) => venue.type === "real_estate_agency").length >= 1, `${city.name} must have real estate agency`);
+    assert(venues.filter((venue) => venue.type === "car_dealer").length >= 5, `${city.name} must have 5 car dealers`);
+    assert(venues.filter((venue) => venue.type === "asset_store").length >= 1, `${city.name} must have asset store`);
+    assert(venues.filter((venue) => venue.type === "business_broker").length >= 1, `${city.name} must have business broker`);
+
+    for (const club of clubs) assert((club.npcPool ?? []).length >= 9, `${club.name} must have at least 9 NPCs`);
+  }
+}
+
+function assertTravelPickerUi(content, club) {
+  const cityState = makeBaseState(content, createInitialTableState(), {
+    currentScreen: "location",
+    playerLocation: { type: "city", cityId: club.cityId },
+  });
+  cityState.system = { ...cityState.system, travelPickerOpen: false };
+  const closedHtml = renderScreen(cityState);
+  assert(closedHtml.includes('data-action="open-travel-picker"'), "city screen must render compact travel picker button");
+  assertNotIncludes(closedHtml, "travel-picker-modal", "travel modal must be hidden before opening");
+  assertNotIncludes(closedHtml, "travel-route-grid", "route grid must be hidden before opening travel modal");
+
+  const openState = { ...cityState, system: { ...cityState.system, travelPickerOpen: true } };
+  const openHtml = renderScreen(openState);
+  assert(openHtml.includes("travel-picker-modal"), "travel modal must render when open");
+  assert(openHtml.includes('data-action="travel-route"'), "travel modal must contain route buttons");
+  assert(openHtml.includes("travel-country-group"), "travel modal must group routes by country");
+}
+
+function assertLifeProfileClean(content) {
+  const html = renderScreen(makeBaseState(content, createInitialTableState(), { currentScreen: "life" }));
+  assertNotIncludes(html, "Daily simulation", "life profile must not render Daily simulation block");
+}
 
 const EXPECTED_VERSION_QUERY = "?v=3.5.0";
 const LEGACY_VERSION_QUERIES = ["1.4.0", "1.7.3", "3.0.0"].map((version) => `?v=${version}`);
@@ -923,7 +924,7 @@ function main() {
   assert(content.tables.length >= 5, "River Room expansion expected multiple tables");
   assert((content.storylines ?? []).length >= 1, "at least one storyline expected");
   assert(content.npcs.length >= 6, "at least six NPCs expected for table smoke tests");
-  assertGeneratedCityCoverage(content);
+  assertCityFillCoverage(content);
 
   const career = createNewCareer();
   const start = getDefaultStartLocation(content, career);
@@ -947,7 +948,8 @@ function main() {
   assertPersistentTableEconomy(content, table, club);
   assertBustedNpcReplacement(content, table, club);
   assertUiSmoke(content, table, club);
-  assertTravelPickerUi(content, table, club);
+  assertTravelPickerUi(content, club);
+  assertLifeProfileClean(content);
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);
   assertNpcPreflopDecisionTuning(content, table);

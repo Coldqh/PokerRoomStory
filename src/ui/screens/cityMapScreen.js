@@ -28,7 +28,7 @@ export function renderCityMapScreen(state) {
         <div>
           <span>Местонахождение</span>
           <h2>${escapeHtml(cityName)}</h2>
-          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Ты в городе. Выбери, куда идти дальше: дом, клуб, магазин, кафе, работа, жильё, машины или аэропорт.</p>
+          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Выбери точку города: дом, клуб, магазин, кафе, работа, жильё, машины или бизнес.</p>
           ${state.tableSession?.tableId ? `<p class="venue-warning">Ты сейчас за столом. Сначала встань из-за стола.</p>` : ""}
         </div>
         <div class="city-map-summary">
@@ -39,7 +39,7 @@ export function renderCityMapScreen(state) {
         </div>
       </article>
 
-      ${renderTravelButton(Boolean(state.tableSession?.tableId))}
+      ${renderTravelStrip(travel, Boolean(state.tableSession?.tableId))}
       ${state.system?.travelPickerOpen ? renderTravelModal(travel, Boolean(state.tableSession?.tableId)) : ""}
 
       <section class="city-venue-map" aria-label="Объекты города">
@@ -49,45 +49,51 @@ export function renderCityMapScreen(state) {
   `;
 }
 
-function renderTravelButton(lockedAtTable = false) {
+function renderTravelStrip(travel, lockedAtTable = false) {
+  const routeCount = travel.routes?.length ?? 0;
   return `
-    <section class="travel-compact panel-soft">
-      <div>
+    <section class="travel-strip panel-soft">
+      <div class="travel-strip-icon">✈</div>
+      <div class="travel-strip-main">
         <span>Airport</span>
         <strong>Перелёт</strong>
-        <p>Выбор страны и города.</p>
+        <p>${escapeHtml(String(routeCount))} маршрутов из текущего города. Выбор страны и города открывается отдельным окном.</p>
       </div>
-      <button class="primary" data-action="open-travel-picker" ${lockedAtTable ? "disabled" : ""}>Открыть перелёты</button>
+      <button class="primary travel-strip-button" data-action="open-travel-picker" ${lockedAtTable ? "disabled" : ""}>Открыть маршруты</button>
     </section>
   `;
 }
 
 function renderTravelModal(travel, lockedAtTable = false) {
-  const groups = groupTravelRoutesByCountry(travel.routes);
+  const groups = groupTravelRoutesByCountry(travel.routes ?? []);
   return `
     <div class="travel-picker-backdrop" data-action="close-modal">
       <section class="travel-picker-modal panel-soft" role="dialog" aria-modal="true" aria-label="Выбор перелёта">
-        <header class="travel-head">
+        <header class="travel-picker-head">
           <div>
             <span>Airport</span>
-            <strong>Выбор страны</strong>
-            <p>Билет тратит деньги и дневные действия. После перелёта город меняется полностью.</p>
+            <strong>Куда летим?</strong>
+            <p>Выбери страну и город. Перелёт тратит деньги и дневные действия.</p>
           </div>
-          <button class="small-button ghost" data-action="close-modal">×</button>
+          <button class="small-button ghost" data-action="close-modal">Закрыть</button>
         </header>
         <div class="travel-country-list">
-          ${groups.map((group) => `
-            <section class="travel-country-group">
-              <header><span>Country</span><strong>${escapeHtml(group.countryName)}</strong></header>
-              <div class="travel-route-grid">
-                ${group.routes.map((route) => renderTravelRoute(route, lockedAtTable)).join("")}
-              </div>
-            </section>
-          `).join("")}
+          ${groups.map(renderTravelCountryGroup).join("")}
         </div>
       </section>
     </div>
   `;
+
+  function renderTravelCountryGroup(group) {
+    return `
+      <section class="travel-country-group">
+        <header><span>Country</span><strong>${escapeHtml(group.countryName)}</strong><em>${escapeHtml(String(group.routes.length))} городов</em></header>
+        <div class="travel-route-grid">
+          ${group.routes.map((route) => renderTravelRoute(route, lockedAtTable)).join("")}
+        </div>
+      </section>
+    `;
+  }
 }
 
 function groupTravelRoutesByCountry(routes = []) {
@@ -98,8 +104,8 @@ function groupTravelRoutesByCountry(routes = []) {
     map.get(countryName).push(route);
   }
   return [...map.entries()]
-    .map(([countryName, groupRoutes]) => ({ countryName, routes: groupRoutes }))
-    .sort((left, right) => left.countryName.localeCompare(right.countryName));
+    .map(([countryName, groupRoutes]) => ({ countryName, routes: groupRoutes.sort((a, b) => String(a.city?.name ?? a.toCityId).localeCompare(String(b.city?.name ?? b.toCityId))) }))
+    .sort((a, b) => a.countryName.localeCompare(b.countryName));
 }
 
 function renderTravelRoute(route, lockedAtTable = false) {
@@ -118,6 +124,7 @@ function renderTravelRoute(route, lockedAtTable = false) {
       <div class="travel-route-meta">
         <span>${escapeHtml(String(route.actionCost))} actions</span>
         <span>${escapeHtml(city?.averageLimit ?? "international")}</span>
+        <span>Tier ${escapeHtml(String(city?.tier ?? "?"))}</span>
       </div>
       ${lockedAtTable ? `<p class="travel-lock">Сначала встань из-за стола.</p>` : route.access.reason ? `<p class="travel-lock">${escapeHtml(route.access.reason)}</p>` : ""}
       <button class="primary" data-action="travel-route" data-id="${escapeHtml(route.id)}" ${locked ? "disabled" : ""}>Перелететь</button>
@@ -178,18 +185,7 @@ function getVenueMeta(entry) {
 }
 
 function typeLabel(type) {
-  const labels = {
-    home: "Home",
-    poker_club: "Poker",
-    store: "Store",
-    cafe: "Cafe",
-    restaurant: "Restaurant",
-    job_site: "Work",
-    real_estate_agency: "Housing",
-    car_dealer: "Cars",
-    asset_store: "Assets",
-    business_broker: "Business",
-  };
+  const labels = { home: "Home", poker_club: "Poker", store: "Store", cafe: "Cafe", restaurant: "Restaurant", job_site: "Work", real_estate_agency: "Housing", car_dealer: "Cars", asset_store: "Assets", business_broker: "Business" };
   return labels[type] ?? "Venue";
 }
 

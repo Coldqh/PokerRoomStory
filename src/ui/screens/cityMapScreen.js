@@ -1,6 +1,6 @@
-import { getCityMapView } from "../../engine/locations.js?v=3.3.0";
-import { getGlobalPokerAtlasView } from "../../engine/globalPokerAtlas.js?v=3.3.0";
-import { escapeHtml } from "../components.js?v=3.3.0";
+import { getCityMapView } from "../../engine/locations.js?v=3.4.0";
+import { getTravelView } from "../../engine/travel.js?v=3.4.0";
+import { escapeHtml } from "../components.js?v=3.4.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
@@ -15,115 +15,77 @@ const VENUE_GROUPS = [
 ];
 
 export function renderCityMapScreen(state) {
-  const activeClub = state.content?.byId?.clubs?.[state.activeClubId] ?? null;
+  const cityId = state.playerLocation?.cityId ?? state.career?.travel?.currentCityId ?? state.content?.byId?.clubs?.[state.activeClubId]?.cityId ?? "CITY_RU_NORTH_DISTRICT";
   const activeVenueId = state.activeVenueId ?? state.career?.city?.activeVenueId ?? null;
-  const view = getCityMapView(state.content, state.career, state.player, activeClub?.cityId, state.activeClubId, activeVenueId);
+  const view = getCityMapView(state.content, state.career, state.player, cityId, state.activeClubId, activeVenueId);
+  const travel = getTravelView(state.content, state.career, state.player, cityId);
   const cityName = view.city?.name ?? "Город";
   const countryName = view.country?.name ?? "Россия";
-  const atlas = getGlobalPokerAtlasView(state.content, state.career, state.player);
 
   return `
     <section class="city-map-screen">
       <article class="panel-soft city-map-hero">
         <div>
           <span>Местонахождение</span>
-          <h2>Город</h2>
-          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Ты в городе. Выбери, куда идти дальше: дом, клуб, магазин, кафе, работа, жильё или машины.</p>
+          <h2>${escapeHtml(cityName)}</h2>
+          <p>${escapeHtml(countryName)} · ${escapeHtml(cityName)}. Ты в городе. Выбери, куда идти дальше: дом, клуб, магазин, кафе, работа, жильё, машины или аэропорт.</p>
           ${state.tableSession?.tableId ? `<p class="venue-warning">Ты сейчас за столом. Сначала встань из-за стола.</p>` : ""}
         </div>
         <div class="city-map-summary">
           <div><span>Объекты</span><strong>${escapeHtml(String(view.summary.total))}</strong></div>
           <div><span>Открыто</span><strong>${escapeHtml(String(view.summary.unlocked))}</strong></div>
           <div><span>Клубы</span><strong>${escapeHtml(String(view.summary.clubs))}</strong></div>
-          <div><span>Мир</span><strong>${escapeHtml(String(atlas.summary.countries))}/${escapeHtml(String(atlas.summary.cities))}</strong></div>
-          <div><span>План клубов</span><strong>${escapeHtml(String(atlas.summary.plannedClubs))}</strong></div>
+          <div><span>Действия</span><strong>${escapeHtml(formatActions(state.career?.life))}</strong></div>
         </div>
       </article>
+
+      ${renderTravelPanel(travel, Boolean(state.tableSession?.tableId))}
 
       <section class="city-venue-map" aria-label="Объекты города">
         ${VENUE_GROUPS.map((group) => renderVenueGroup(group, view.venues, Boolean(state.tableSession?.tableId))).join("")}
       </section>
-
-      ${renderGlobalAtlas(atlas)}
     </section>
   `;
 }
 
-function renderGlobalAtlas(atlas) {
+function renderTravelPanel(travel, lockedAtTable = false) {
   return `
-    <section class="global-atlas panel-soft">
-      <header class="global-atlas-head">
+    <section class="travel-panel panel-soft">
+      <header class="travel-head">
         <div>
-          <span>World route foundation</span>
-          <strong>Глобальный покерный атлас</strong>
-          <p>Долгий маршрут: Москва → Россия → Азия → США → Европа → Macau endgame. Большинство городов пока закрыты и работают как roadmap будущих клубов.</p>
-        </div>
-        <div class="global-atlas-summary">
-          <span>${escapeHtml(String(atlas.summary.countries))} стран / зон</span>
-          <span>${escapeHtml(String(atlas.summary.cities))} город</span>
-          <span>${escapeHtml(String(atlas.summary.plannedClubs))} клубов в плане</span>
+          <span>Airport</span>
+          <strong>Перелёт в другую страну</strong>
+          <p>Билет тратит деньги и дневные действия. После перелёта город реально меняется: магазины, кафе, бизнесы, машины и клубы будут местными.</p>
         </div>
       </header>
-      <div class="global-country-grid">
-        ${atlas.countries.map(renderCountryAtlasCard).join("")}
+      <div class="travel-route-grid">
+        ${travel.routes.map((route) => renderTravelRoute(route, lockedAtTable)).join("")}
       </div>
     </section>
   `;
 }
 
-function renderCountryAtlasCard(row) {
+function renderTravelRoute(route, lockedAtTable = false) {
+  const city = route.city;
+  const country = route.country;
+  const locked = lockedAtTable || !route.access.ok;
   return `
-    <article class="global-country-card status-${escapeHtml(row.status)}">
-      <div class="global-country-title">
+    <article class="travel-route-card ${locked ? "is-locked" : ""}">
+      <div class="travel-route-title">
         <div>
-          <span>${escapeHtml(row.country.region ?? "World")}</span>
-          <strong>${escapeHtml(row.country.name)}</strong>
+          <span>${escapeHtml(country?.name ?? "World")}</span>
+          <strong>${escapeHtml(city?.name ?? route.toCityId)}</strong>
         </div>
-        <em>${escapeHtml(row.statusLabel)}</em>
+        <em>$${escapeHtml(String(route.price))}</em>
       </div>
-      <div class="global-country-meta">
-        <span>${escapeHtml(String(row.cityCount))} город</span>
-        <span>${escapeHtml(String(row.plannedClubCount))} клубов</span>
-        <span>${escapeHtml(routeRoleLabel(row.country.routeRole))}</span>
+      <div class="travel-route-meta">
+        <span>${escapeHtml(String(route.actionCost))} actions</span>
+        <span>${escapeHtml(city?.averageLimit ?? "international")}</span>
       </div>
-      ${row.reason ? `<p class="global-atlas-lock">${escapeHtml(row.reason)}</p>` : ""}
-      <div class="global-city-list">
-        ${row.cities.map(renderCityAtlasRow).join("")}
-      </div>
+      ${lockedAtTable ? `<p class="travel-lock">Сначала встань из-за стола.</p>` : route.access.reason ? `<p class="travel-lock">${escapeHtml(route.access.reason)}</p>` : ""}
+      <button class="primary" data-action="travel-route" data-id="${escapeHtml(route.id)}" ${locked ? "disabled" : ""}>Перелететь</button>
     </article>
   `;
-}
-
-function renderCityAtlasRow(row) {
-  const city = row.city;
-  const clubNames = [...row.anchorClubNames, ...row.futureClubNames].slice(0, 4);
-  return `
-    <div class="global-city-row status-${escapeHtml(row.status)}">
-      <div class="global-city-main">
-        <strong>${escapeHtml(city.name)}</strong>
-        <span>${escapeHtml(city.averageLimit ?? "future route")} · ${escapeHtml(String(row.plannedClubCount))} клубов</span>
-      </div>
-      <em>${escapeHtml(row.statusLabel)}</em>
-      ${row.reason ? `<small>${escapeHtml(row.reason)}</small>` : ""}
-      ${clubNames.length ? `<div class="global-city-clubs">${clubNames.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</div>` : ""}
-    </div>
-  `;
-}
-
-function routeRoleLabel(role) {
-  const labels = {
-    starter_campaign: "старт",
-    high_stakes_campaign: "high stakes",
-    asian_endgame: "Asia endgame",
-    technical_campaign: "техника",
-    connector_campaign: "connector",
-    europe_private_campaign: "private",
-    europe_style_campaign: "style",
-    europe_luxury_endgame: "luxury",
-    europe_grinder_campaign: "grind",
-    tourist_campaign: "tourist",
-  };
-  return labels[role] ?? role ?? "route";
 }
 
 function renderVenueGroup(group, venues, lockedAtTable = false) {
@@ -174,7 +136,7 @@ function getVenueMeta(entry) {
   if (venue.type === "car_dealer") return [`${venue.vehicleIds?.length ?? 0} машин`];
   if (venue.type === "asset_store") return [`${venue.assetIds?.length ?? 0} вещи`];
   if (venue.type === "business_broker") return [`${venue.businessIds?.length ?? 0} бизнесов`];
-  if (venue.type === "home") return ["отдых", "инвентарь"];
+  if (venue.type === "home") return [venue.district ?? "отдых", "инвентарь"];
   return [];
 }
 
@@ -192,4 +154,10 @@ function typeLabel(type) {
     business_broker: "Business",
   };
   return labels[type] ?? "Venue";
+}
+
+function formatActions(life = {}) {
+  const used = Number(life?.actionsUsed ?? life?.actionsToday ?? 0) || 0;
+  const total = Number(life?.actionsPerDay ?? 6) || 6;
+  return `${Math.max(0, total - used).toFixed(1)}/${total}`;
 }

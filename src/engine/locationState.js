@@ -1,7 +1,7 @@
 export const HOME_VENUE_ID = "VENUE_RU_MOS_HOME_CHEAP_ROOM";
 
-export function createHomeLocation(content = null) {
-  const venue = getVenue(content, HOME_VENUE_ID);
+export function createHomeLocation(content = null, venueId = null, cityId = null) {
+  const venue = getVenue(content, venueId) ?? getHomeVenueForCity(content, cityId) ?? getVenue(content, HOME_VENUE_ID);
   return {
     type: "home",
     countryId: venue?.countryId ?? "COUNTRY_RUSSIA",
@@ -26,7 +26,8 @@ export function createCityLocation(content = null, cityId = null) {
 
 export function createVenueLocation(content = null, venueId = null) {
   const venue = getVenue(content, venueId) ?? getVenue(content, HOME_VENUE_ID);
-  if (!venue || venue.type === "home") return createHomeLocation(content);
+  if (!venue) return createHomeLocation(content);
+  if (venue.type === "home") return createHomeLocation(content, venue.id, venue.cityId);
   return {
     type: "venue",
     countryId: venue.countryId ?? "COUNTRY_RUSSIA",
@@ -72,17 +73,17 @@ export function normalizePlayerLocation(content = null, location = null, fallbac
   if (raw.type === "table" && raw.tableId) return createTableLocation(content, raw.clubId ?? fallback.activeClubId, raw.tableId);
   if (raw.type === "club" && raw.clubId) return createClubLocation(content, raw.clubId);
   if (raw.type === "venue" && raw.venueId) return createVenueLocation(content, raw.venueId);
-  if (raw.type === "home") return createHomeLocation(content);
+  if (raw.type === "home") return createHomeLocation(content, raw.venueId, raw.cityId ?? fallback.cityId);
   if (raw.type === "city") return createCityLocation(content, raw.cityId ?? fallback.cityId);
 
   if (fallback.activeVenueId) {
     const venue = getVenue(content, fallback.activeVenueId);
-    if (venue?.type === "home") return createHomeLocation(content);
+    if (venue?.type === "home") return createHomeLocation(content, venue.id, venue.cityId);
     if (venue) return createVenueLocation(content, venue.id);
   }
 
   if (fallback.activeClubId) return createClubLocation(content, fallback.activeClubId);
-  return createHomeLocation(content);
+  return createHomeLocation(content, null, fallback.cityId);
 }
 
 export function getLocationLabel(content = null, location = null) {
@@ -121,4 +122,9 @@ function getDefaultCity(content) {
 
 function getClubVenue(content, clubId) {
   return (content?.venues ?? []).find((venue) => venue.type === "poker_club" && venue.clubId === clubId) ?? null;
+}
+
+function getHomeVenueForCity(content, cityId) {
+  if (!cityId) return null;
+  return (content?.venues ?? []).find((venue) => venue.type === "home" && venue.cityId === cityId) ?? null;
 }

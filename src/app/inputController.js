@@ -1,12 +1,13 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=3.1.0";
-import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.1.0";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.1.0";
-import { normalizePlayer } from "../engine/career.js?v=3.1.0";
-import { getClubTables } from "../engine/selectors.js?v=3.1.0";
-import { canEnterClub } from "../engine/world.js?v=3.1.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.1.0";
-import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.1.0";
-import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.1.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=3.4.0";
+import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.4.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.4.0";
+import { normalizePlayer } from "../engine/career.js?v=3.4.0";
+import { getClubTables } from "../engine/selectors.js?v=3.4.0";
+import { canEnterClub } from "../engine/world.js?v=3.4.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.4.0";
+import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.4.0";
+import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.4.0";
+import { applyTravelRoute } from "../engine/travel.js?v=3.4.0";
 
 export const inputController = {
   handleClick(event) {
@@ -75,11 +76,39 @@ export const inputController = {
       "venue-action",
       "go-home",
       "go-city",
+      "travel-route",
     ];
     if (this.state.tableState?.animation?.isPlaying && !animationSafeActions.includes(action)) return;
 
     if (isLocationLockedAtTable(this.state, action, id)) {
       this.setSystem({ notice: "Сначала встань из-за стола." });
+      return;
+    }
+
+
+    if (action === "travel-route") {
+      const result = applyTravelRoute({ content: this.content, career: this.state.career, player: this.state.player, routeId: id });
+      if (!result.ok) {
+        this.setSystem({ notice: result.message });
+        return;
+      }
+      this.setState({
+        activeClubId: null,
+        activeVenueId: null,
+        activeTableId: null,
+        player: normalizePlayer(result.player),
+        career: result.career,
+        playerLocation: createCityLocation(this.content, result.destinationCityId),
+        currentScreen: "location",
+        log: [...(this.state.log ?? []), result.message].slice(-100),
+        system: {
+          ...this.state.system,
+          notice: result.message,
+          tablePickerOpen: false,
+          clubPickerOpen: false,
+          buyInModal: null,
+        },
+      });
       return;
     }
 
@@ -101,7 +130,7 @@ export const inputController = {
       this.setState({
         activeVenueId: venue.id,
         player: normalizePlayer(travel.player),
-        playerLocation: venue.type === "home" ? createHomeLocation(this.content) : createVenueLocation(this.content, venue.id),
+        playerLocation: venue.type === "home" ? createHomeLocation(this.content, venue.id, venue.cityId) : createVenueLocation(this.content, venue.id),
         currentScreen: "location",
         career: {
           ...travel.career,
@@ -315,10 +344,10 @@ export const inputController = {
         return;
       }
       this.setState({
-        activeVenueId: "VENUE_RU_MOS_HOME_CHEAP_ROOM",
+        activeVenueId: getHomeVenueIdForCity(this.content, this.state.playerLocation?.cityId ?? this.state.career?.travel?.currentCityId),
         player: normalizePlayer(travel.player),
         career: travel.career,
-        playerLocation: createHomeLocation(this.content),
+        playerLocation: createHomeLocation(this.content, null, this.state.playerLocation?.cityId ?? this.state.career?.travel?.currentCityId),
         currentScreen: "location",
         system: {
           ...this.state.system,
@@ -340,7 +369,7 @@ export const inputController = {
       this.setState({
         player: normalizePlayer(travel.player),
         career: travel.career,
-        playerLocation: createCityLocation(this.content, this.state.playerLocation?.cityId ?? this.content?.byId?.clubs?.[this.state.activeClubId]?.cityId),
+        playerLocation: createCityLocation(this.content, this.state.playerLocation?.cityId ?? this.state.career?.travel?.currentCityId ?? this.content?.byId?.clubs?.[this.state.activeClubId]?.cityId),
         currentScreen: "location",
         system: {
           ...this.state.system,
@@ -495,7 +524,7 @@ function isLocationLockedAtTable(state = {}, action = "", id = "") {
   const seated = Boolean(state.tableSession?.tableId);
   if (!seated) return false;
 
-  if (["select-venue", "venue-action", "life-action", "select-club", "go-home", "go-city"].includes(action)) return true;
+  if (["select-venue", "venue-action", "life-action", "select-club", "go-home", "go-city", "travel-route"].includes(action)) return true;
 
   if (action === "select-table") {
     const currentTableId = state.tableSession?.tableId ?? null;
@@ -512,4 +541,8 @@ function isModalBackdrop(target) {
     || target?.classList?.contains("bet-modal-layer")
     || target?.classList?.contains("opponent-read-layer")
     || target?.classList?.contains("result-modal-layer"));
+}
+
+function getHomeVenueIdForCity(content = null, cityId = null) {
+  return (content?.venues ?? []).find((venue) => venue.type === "home" && venue.cityId === cityId)?.id ?? "VENUE_RU_MOS_HOME_CHEAP_ROOM";
 }

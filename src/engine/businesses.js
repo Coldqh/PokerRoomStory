@@ -1,6 +1,18 @@
-import { BUSINESS_LIMITS, BUSINESS_TEMPLATES, getBusinessTemplate, getBusinessTemplates } from "./businessContent.js?v=3.0.0";
+import { BUSINESS_LIMITS, BUSINESS_TEMPLATES as BASE_BUSINESS_TEMPLATES } from "./businessContent.js?v=3.4.0";
+import { INTERNATIONAL_BUSINESS_TEMPLATES } from "./internationalBusinessContent.js?v=3.4.0";
+
+const BUSINESS_TEMPLATES = [...BASE_BUSINESS_TEMPLATES, ...INTERNATIONAL_BUSINESS_TEMPLATES];
 
 const MAX_LEVEL = BUSINESS_LIMITS.maxLevel;
+
+function getBusinessTemplate(id) {
+  return BUSINESS_TEMPLATES.find((template) => template.id === id) ?? null;
+}
+
+function getBusinessTemplates(ids = []) {
+  const set = new Set(ids);
+  return BUSINESS_TEMPLATES.filter((template) => set.has(template.id));
+}
 
 export function createInitialBusinessState() {
   return {

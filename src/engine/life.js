@@ -12,8 +12,8 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=3.7.0";
-import { simulateDayRollover } from "./daySimulation.js?v=3.7.0";
+} from "./lifeContent.js?v=3.7.1";
+import { simulateDayRollover } from "./daySimulation.js?v=3.7.1";
 
 const MAX_NEED = LIFE_LIMITS.maxNeed;
 const MAX_FOCUS = LIFE_LIMITS.maxFocus;
@@ -386,6 +386,31 @@ export function spendLifeActionCost({ career = {}, player = {}, cost = 0, slept 
     };
   }
   const result = spendActionsAndAdvance(life, nextPlayer, cleanCost, { slept, career });
+  const messages = [message, ...result.messages].filter(Boolean);
+  const nextLife = {
+    ...result.life,
+    lastMessage: messages.join(" ") || result.life.lastMessage,
+  };
+
+  return {
+    ok: true,
+    career: { ...(result.career ?? career), life: normalizeLifeState(nextLife) },
+    player: result.player,
+    messages,
+    message: messages.join(" "),
+  };
+}
+
+
+export function advanceLifeToNextDay({ career = {}, player = {}, slept = true, message = "Начался следующий день." } = {}) {
+  const life = normalizeLifeState(career.life);
+  const nextPlayer = { ...player, bankroll: money(player.bankroll), xp: money(player.xp) };
+  const forcedLife = {
+    ...life,
+    actionsToday: life.actionsPerDay,
+    actionsUsed: life.actionsPerDay,
+  };
+  const result = spendActionsAndAdvance(forcedLife, nextPlayer, 0, { slept, career });
   const messages = [message, ...result.messages].filter(Boolean);
   const nextLife = {
     ...result.life,

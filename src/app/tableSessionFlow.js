@@ -1,12 +1,12 @@
-import { createInitialTableState } from "../engine/poker.js?v=3.7.0";
-import { getClubSnapshotForTable } from "../engine/club.js?v=3.7.0";
-import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=3.7.0";
-import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=3.7.0";
-import { clearPendingCityGoalBankrollReward, getPendingCityGoalBankrollReward } from "../engine/cityGoals.js?v=3.7.0";
-import { spendLifeActionCost } from "../engine/life.js?v=3.7.0";
-import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=3.7.0";
-import { canEnterTable } from "../engine/world.js?v=3.7.0";
-import { getClubContext } from "../engine/world.js?v=3.7.0";
+import { createInitialTableState } from "../engine/poker.js?v=3.7.1";
+import { getClubSnapshotForTable } from "../engine/club.js?v=3.7.1";
+import { createObservedTableState, isObservedWaitingTable } from "../engine/tablePresence.js?v=3.7.1";
+import { buildSessionSummary, createSessionStats } from "../engine/sessionStats.js?v=3.7.1";
+import { clearPendingCityGoalBankrollReward, getPendingCityGoalBankrollReward } from "../engine/cityGoals.js?v=3.7.1";
+import { advanceLifeToNextDay, getLifeActionsLeft, getLifeView, spendLifeActionCost } from "../engine/life.js?v=3.7.1";
+import { createClubLocation, createTableLocation } from "../engine/locationState.js?v=3.7.1";
+import { canEnterTable } from "../engine/world.js?v=3.7.1";
+import { getClubContext } from "../engine/world.js?v=3.7.1";
 
 export const tableSessionFlow = {
   openBuyInModal(tableId) {
@@ -200,16 +200,22 @@ export const tableSessionFlow = {
       bankroll: bankroll + returnedStack + pendingGoalReward,
     };
     const careerAfterPendingReward = pendingGoalReward > 0 ? clearPendingCityGoalBankrollReward(this.state.career) : this.state.career;
-    const travel = spendLifeActionCost({
-      career: careerAfterPendingReward,
-      player: playerAfterReturn,
-      cost: 1,
-      message: ["Переход: клуб.", pendingGoalReward > 0 ? `Цели Москвы: +$${pendingGoalReward} после выхода из-за стола.` : null].filter(Boolean).join(" "),
-    });
-    if (!travel.ok) {
-      this.setSystem({ notice: travel.message });
-      return;
-    }
+    const exitMessage = ["Переход: клуб.", pendingGoalReward > 0 ? `Цели Москвы: +$${pendingGoalReward} после выхода из-за стола.` : null].filter(Boolean).join(" ");
+    const lifeView = getLifeView(careerAfterPendingReward, playerAfterReturn, this.content?.byId?.clubs?.[this.state.activeClubId]?.cityId);
+    const shouldStartNextDay = getLifeActionsLeft(careerAfterPendingReward) < 1 || Number(lifeView.life?.needs?.energy ?? 0) <= 0;
+    const travel = shouldStartNextDay
+      ? advanceLifeToNextDay({
+        career: careerAfterPendingReward,
+        player: playerAfterReturn,
+        slept: true,
+        message: ["Сессия затянулась. Начался следующий день.", exitMessage].filter(Boolean).join(" "),
+      })
+      : spendLifeActionCost({
+        career: careerAfterPendingReward,
+        player: playerAfterReturn,
+        cost: 1,
+        message: exitMessage,
+      });
 
     this.setState({
       player: travel.player,

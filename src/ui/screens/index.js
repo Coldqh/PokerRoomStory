@@ -1,16 +1,16 @@
-import { renderLifeScreen } from "./lifeScreen.js?v=3.7.0";
-import { renderLocationScreen } from "./locationScreen.js?v=3.7.0";
-import { renderCityMapScreen } from "./cityMapScreen.js?v=3.7.0";
-import { renderVenueScreen } from "./venueScreen.js?v=3.7.0";
-import { renderClubScreen } from "./clubScreen.js?v=3.7.0";
-import { renderTableScreen } from "./tableScreen.js?v=3.7.0";
-import { renderCareerScreen } from "./careerScreen.js?v=3.7.0";
-import { renderTasksScreen } from "./tasksScreen.js?v=3.7.0";
-import { renderNpcScreen } from "./npcScreen.js?v=3.7.0";
-import { renderGlossaryScreen } from "./glossaryScreen.js?v=3.7.0";
-import { renderCollectionsScreen } from "./collectionsScreen.js?v=3.7.0";
-import { renderSettingsScreen } from "./settingsScreen.js?v=3.7.0";
-import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=3.7.0";
+import { renderLifeScreen } from "./lifeScreen.js?v=3.7.1";
+import { renderLocationScreen } from "./locationScreen.js?v=3.7.1";
+import { renderCityMapScreen } from "./cityMapScreen.js?v=3.7.1";
+import { renderVenueScreen } from "./venueScreen.js?v=3.7.1";
+import { renderClubScreen } from "./clubScreen.js?v=3.7.1";
+import { renderTableScreen } from "./tableScreen.js?v=3.7.1";
+import { renderCareerScreen } from "./careerScreen.js?v=3.7.1";
+import { renderTasksScreen } from "./tasksScreen.js?v=3.7.1";
+import { renderNpcScreen } from "./npcScreen.js?v=3.7.1";
+import { renderGlossaryScreen } from "./glossaryScreen.js?v=3.7.1";
+import { renderCollectionsScreen } from "./collectionsScreen.js?v=3.7.1";
+import { renderSettingsScreen } from "./settingsScreen.js?v=3.7.1";
+import { renderBuyInModal, renderBetAmountModal } from "./modals.js?v=3.7.1";
 
 export const SCREENS = [
   { id: "life", label: "Жизнь" },

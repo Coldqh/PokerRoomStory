@@ -1,13 +1,13 @@
-import { buildContentRegistry } from "./data/contentRegistry.js?v=3.7.0";
-import { getRuntimeStatus, onUpdateReady, registerAppServiceWorker, checkForRemoteVersion } from "./engine/update.js?v=3.7.0";
-import { stateController } from "./app/state.js?v=3.7.0";
-import { navigationController } from "./app/navigation.js?v=3.7.0";
-import { inputController } from "./app/inputController.js?v=3.7.0";
-import { tableSessionFlow } from "./app/tableSessionFlow.js?v=3.7.0";
-import { bettingModalFlow } from "./app/bettingModalFlow.js?v=3.7.0";
-import { handFlow } from "./app/handFlow.js?v=3.7.0";
-import { systemFlow } from "./app/systemFlow.js?v=3.7.0";
-import { renderShell } from "./app/renderShell.js?v=3.7.0";
+import { buildContentRegistry } from "./data/contentRegistry.js?v=3.7.1";
+import { getRuntimeStatus, onUpdateReady, registerAppServiceWorker, checkForRemoteVersion } from "./engine/update.js?v=3.7.1";
+import { stateController } from "./app/state.js?v=3.7.1";
+import { navigationController } from "./app/navigation.js?v=3.7.1";
+import { inputController } from "./app/inputController.js?v=3.7.1";
+import { tableSessionFlow } from "./app/tableSessionFlow.js?v=3.7.1";
+import { bettingModalFlow } from "./app/bettingModalFlow.js?v=3.7.1";
+import { handFlow } from "./app/handFlow.js?v=3.7.1";
+import { systemFlow } from "./app/systemFlow.js?v=3.7.1";
+import { renderShell } from "./app/renderShell.js?v=3.7.1";
 
 export class PokerRoomStoryApp {
   constructor(root) {

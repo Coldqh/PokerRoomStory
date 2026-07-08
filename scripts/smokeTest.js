@@ -1,10 +1,10 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative } from "node:path";
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.7.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.7.0";
-import { createClubRoomState } from "../src/engine/club.js?v=3.7.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.7.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.7.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.7.1";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.7.1";
+import { createClubRoomState } from "../src/engine/club.js?v=3.7.1";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.7.1";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.7.1";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -14,20 +14,20 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=3.7.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=3.7.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.7.0";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.7.0";
-import { handFlow } from "../src/app/handFlow.js?v=3.7.0";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.7.0";
-import { inputController } from "../src/app/inputController.js?v=3.7.0";
-import { canEnterTable } from "../src/engine/world.js?v=3.7.0";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.7.0";
-import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.7.0";
-import { CITY_PROGRESSION } from "../src/data/cityProgression.js?v=3.7.0";
-import { getTravelView } from "../src/engine/travel.js?v=3.7.0";
-import { applyLifeAction, getLifeView } from "../src/engine/life.js?v=3.7.0";
-import { applyBusinessAction, getBusinessView } from "../src/engine/businesses.js?v=3.7.0";
+} from "../src/engine/poker.js?v=3.7.1";
+import { decideNpcAction } from "../src/engine/npc.js?v=3.7.1";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.7.1";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.7.1";
+import { handFlow } from "../src/app/handFlow.js?v=3.7.1";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.7.1";
+import { inputController } from "../src/app/inputController.js?v=3.7.1";
+import { canEnterTable } from "../src/engine/world.js?v=3.7.1";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.7.1";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.7.1";
+import { CITY_PROGRESSION } from "../src/data/cityProgression.js?v=3.7.1";
+import { getTravelView } from "../src/engine/travel.js?v=3.7.1";
+import { applyLifeAction, getLifeView } from "../src/engine/life.js?v=3.7.1";
+import { applyBusinessAction, getBusinessView } from "../src/engine/businesses.js?v=3.7.1";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -597,6 +597,37 @@ function assertStackSafetyAndTopUp(content, table) {
 }
 
 
+
+function assertExhaustedTableExitStartsNextDay(content, table) {
+  const app = makeFlowHarness(content, table, {
+    player: { ...createNewPlayer(), bankroll: 800 },
+    career: {
+      ...createNewCareer(),
+      life: {
+        ...createNewCareer().life,
+        day: 3,
+        actionsToday: 10,
+        actionsUsed: 10,
+        actionsPerDay: 10,
+        needs: { hunger: 55, thirst: 55, energy: 0, stress: 45 },
+      },
+    },
+    tableSession: { tableId: table.id, buyIn: 200, stack: 175, handsPlayed: 7, sessionStats: { handsPlayed: 7 } },
+    tableState: createInitialTableState(),
+  });
+
+  tableSessionFlow.leaveTable.call(app);
+
+  assert(app.state.tableSession === null, "exhausted table exit must clear table session");
+  assert(app.state.player.bankroll === 975, "exhausted table exit must return stack to bankroll");
+  assert(Number(app.state.career.life.day) === 4, "exhausted table exit must advance exactly one day");
+  assert(Number(app.state.career.life.actionsToday ?? app.state.career.life.actionsUsed ?? 0) === 0, "next day must reset used actions");
+  assert(app.state.currentScreen === "location", "exhausted table exit must return to location screen");
+  assert(app.state.playerLocation?.type === "club", "exhausted table exit must return player to club location");
+  assert(Boolean(app.state.system.sessionSummary), "exhausted table exit must preserve session summary");
+  assert(String(app.state.system.notice ?? "").includes("следующий день") || String(app.state.system.notice ?? "").includes("День 4"), "exhausted table exit must explain next day rollover");
+}
+
 function assertBankrollAccounting(content, table, club) {
   const buyInAmount = table.minBuyIn;
   const buyInApp = makeFlowHarness(content, table, {
@@ -847,13 +878,14 @@ function assertWorldStoryFinale(content) {
   const storylines = (content.storylines ?? []).filter(Boolean);
   const clubs = (content.clubs ?? []).filter(Boolean);
   assert(storylines.length === clubs.length, `every club must have one storyline, got ${storylines.length}/${clubs.length}`);
+  assert(storylines.reduce((sum, story) => sum + (story.steps?.length ?? 0), 0) === clubs.length * 12, "world story must have exactly 12 quest steps per club");
 
   const storiesByClub = new Map();
   for (const story of storylines) {
     assert(!storiesByClub.has(story.clubId), `duplicate storyline for club ${story.clubId}`);
     storiesByClub.set(story.clubId, story);
     assert(content.byId.clubs[story.clubId], `storyline ${story.id} must reference existing club`);
-    assert((story.steps ?? []).length >= 5, `storyline ${story.id} must have at least 5 steps`);
+    assert((story.steps ?? []).length === 12, `storyline ${story.id} must have exactly 12 steps`);
     const localCharacters = new Set((story.characters ?? []).map((character) => character.id));
     assert(localCharacters.size >= 2, `storyline ${story.id} must have characters`);
     for (const step of story.steps ?? []) {
@@ -1006,7 +1038,7 @@ function assertLifeProfileClean(content) {
   assertNotIncludes(html, "Daily simulation", "life profile must not render Daily simulation block");
 }
 
-const EXPECTED_VERSION_QUERY = "?v=3.7.0";
+const EXPECTED_VERSION_QUERY = "?v=3.7.1";
 const LEGACY_VERSION_QUERIES = ["1.4.0", "1.7.3", "3.0.0"].map((version) => `?v=${version}`);
 const VERSION_SCAN_EXTENSIONS = new Set([".js", ".html", ".json", ".webmanifest"]);
 
@@ -1082,6 +1114,7 @@ function main() {
   assertSidePots(content, table, club);
   assertStackSafetyAndTopUp(content, table);
   assertBankrollAccounting(content, table, club);
+  assertExhaustedTableExitStartsNextDay(content, table);
   assertPersistentTableEconomy(content, table, club);
   assertBustedNpcReplacement(content, table, club);
   assertUiSmoke(content, table, club);

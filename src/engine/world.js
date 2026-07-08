@@ -1,4 +1,4 @@
-import { getClubNpcs, getClubTables } from "./selectors.js?v=3.7.0";
+import { getClubNpcs, getClubTables } from "./selectors.js?v=3.7.1";
 
 export function getClubContext(content, clubId) {
   const club = content.byId.clubs[clubId];

@@ -1,4 +1,4 @@
-import { CITY_PROGRESSION } from "../../../cityProgression.js?v=3.7.0";
+import { CITY_PROGRESSION } from "../../../cityProgression.js?v=3.7.1";
 
 const SUPPORTED_STEP_TYPES = new Set([
   "club_hands",
@@ -128,7 +128,7 @@ export function buildWorldStoryCampaign({ cities = [], clubs = [], tables = [], 
   const generated = chain
     .filter((club) => !manualClubIds.has(club.id))
     .map((club) => createStoryline({ club, chain, nextByClubId, tables }));
-  const patchedManual = cleanManualStorylines.map((story) => applyChainUnlockToManualStory(story, nextByClubId.get(story.clubId)));
+  const patchedManual = cleanManualStorylines.map((story) => expandManualStoryToTwelve(applyChainUnlockToManualStory(story, nextByClubId.get(story.clubId)), nextByClubId.get(story.clubId)));
   return [...patchedManual, ...generated];
 }
 
@@ -181,13 +181,18 @@ function createStoryline({ club, chain, nextByClubId, tables }) {
 function createStandardSteps(ctx) {
   const repBase = 1 + Math.floor((ctx.city?.order ?? 1) / 5) + ctx.clubIndex;
   const xpBase = 40 + (ctx.city?.order ?? 1) * 12 + ctx.clubIndex * 25;
+  const clubHandsBase = 3 + ctx.clubIndex;
+  const tableHandsBase = 2 + ctx.clubIndex;
   const bigPot = Math.max(60, ctx.topBlind * (16 + ctx.clubIndex * 8));
+  const biggerPot = Math.max(bigPot + ctx.topBlind * 10, ctx.topBlind * (30 + ctx.clubIndex * 10));
+  const repTarget = Math.max(8 + (ctx.city?.order ?? 1) * 2 + ctx.clubIndex * 3, 12);
+  const bankrollTarget = Math.max((ctx.city?.bankrollGate ?? 0) + ctx.topBlind * 120, ctx.topBlind * 350);
   const host = getCharacterId(ctx.club.cityId, "HOST");
   const rival = getCharacterId(ctx.club.cityId, "RIVAL");
   const connector = getCharacterId(ctx.club.cityId, "CONNECTOR");
 
   return [
-    step("first_seat", "First Seat", `Сыграй ${3 + ctx.clubIndex} руки в ${ctx.club.name}.`, "club_hands", 3 + ctx.clubIndex, reward(xpBase, repBase, 25 + ctx.city.order * 4), [host, connector], [
+    step("first_seat", "First Seat", `Сыграй ${clubHandsBase} руки в ${ctx.club.name}.`, "club_hands", clubHandsBase, reward(xpBase, repBase, 25 + ctx.city.order * 4), [host, connector], [
       `${ctx.meta.name}: ${ctx.club.name}. У входа уже знают, из какого города ты приехал.`,
       `${characterName(ctx.characters, host)} смотрит на стек, не на лицо.`,
       "Первое место за столом здесь не доверие. Это проверка.",
@@ -202,13 +207,48 @@ function createStandardSteps(ctx) {
       `${characterName(ctx.characters, connector)} смотрит на банк и делает короткую пометку.`,
       "Нужна победа. Не красивая, а настоящая.",
     ], `${ctx.club.name}: первая победа в маршруте закрыта.`),
+    step("table_pace", "Table Pace", `Сыграй ${tableHandsBase + 2} рук за рабочим столом клуба.`, "table_hands", tableHandsBase + 2, reward(xpBase + 42, repBase + 1, 40 + ctx.city.order * 5), [host, rival], [
+      `${characterName(ctx.characters, host)} переводит тебя к столу, где темп выше.`,
+      "Там меньше разговоров и быстрее видно, кто платит за слабое решение.",
+      "Нужно выдержать темп, а не одну удачную раздачу.",
+    ], `${ctx.club.name}: темп комнаты стал понятнее.`),
     step("pressure_pot", "Pressure Pot", `Выиграй банк $${bigPot}+ в ${ctx.club.name}.`, "club_big_pot", bigPot, reward(xpBase + 55, repBase + 1, 45 + ctx.city.order * 6), [host, rival], [
       "Маленькие банки забывают. Большие банки меняют тон комнаты.",
       `${characterName(ctx.characters, host)} подходит ближе, когда фишки становятся слышны.`,
       "Этот банк должен открыть следующую дверь.",
     ], `${ctx.club.name}: крупный банк принят комнатой.`),
-    step("route_mark", "Route Mark", `Закрепись в ${ctx.club.name}: сыграй ${4 + ctx.clubIndex} рук после давления.`, "club_hands", 4 + ctx.clubIndex, reward(xpBase + 80, repBase + 2, 60 + ctx.city.order * 7), [host, connector], [
-      `${characterName(ctx.characters, connector)} получает короткое сообщение и убирает телефон.`,
+    step("rival_read", "Rival Read", `Дойди до ${2 + ctx.clubIndex} шоудаунов и пойми местного соперника.`, "club_showdowns", 2 + ctx.clubIndex, reward(xpBase + 70, repBase + 1, 52 + ctx.city.order * 6), [rival, connector], [
+      `${characterName(ctx.characters, rival)} меняет линию и ждёт, заметишь ли ты это.`,
+      "Один шоудаун показывает карты. Несколько показывают привычки.",
+      "В этом клубе уже смотрят, умеешь ли ты учиться за столом.",
+    ], `${ctx.club.name}: соперник больше не выглядит случайным шумом.`),
+    step("second_win", "Second Mark", `Выиграй ${2 + Math.min(1, ctx.clubIndex)} руки в ${ctx.club.name}.`, "club_wins", 2 + Math.min(1, ctx.clubIndex), reward(xpBase + 86, repBase + 2, 60 + ctx.city.order * 6), [rival, host], [
+      "Первая победа могла быть удачей. Вторая уже раздражает регулярных.",
+      `${characterName(ctx.characters, host)} перестаёт проверять список и начинает смотреть на ход раздачи.`,
+      "Комнате нужен повторяемый результат.",
+    ], `${ctx.club.name}: вторая отметка поставлена.`),
+    step("long_session", "Long Session", `Сыграй ${clubHandsBase + 7} рук и не потеряй маршрут.`, "club_hands", clubHandsBase + 7, reward(xpBase + 102, repBase + 2, 68 + ctx.city.order * 7), [host, connector], [
+      "Короткая вспышка здесь никого не интересует.",
+      `${characterName(ctx.characters, connector)} ждёт не банк, а дистанцию.`,
+      "Длинная сессия показывает, кто привёз игру, а кто привёз настроение.",
+    ], `${ctx.club.name}: длинная сессия выдержана.`),
+    step("main_table_test", "Main Table Test", `Сыграй ${tableHandsBase + 5} рук на главном столе клуба.`, "table_hands", tableHandsBase + 5, reward(xpBase + 118, repBase + 2, 76 + ctx.city.order * 7), [rival, connector], [
+      "Главный стол не выглядит иначе. Просто там дороже молчат.",
+      `${characterName(ctx.characters, rival)} уже знает, зачем ты сел.`,
+      "Нужно пройти через темп главного стола без лишних объяснений.",
+    ], `${ctx.club.name}: главный стол больше не чужой.`),
+    step("bigger_pot", "Bigger Pot", `Выиграй банк $${biggerPot}+ и заставь комнату замолчать.`, "club_big_pot", biggerPot, reward(xpBase + 136, repBase + 2, 86 + ctx.city.order * 8), [host, rival, connector], [
+      "Крупный банк здесь уже не событие. Нужен банк, после которого меняется посадка за столом.",
+      `${characterName(ctx.characters, connector)} наконец откладывает телефон.`,
+      "Деньги должны сказать то, что не скажет хост.",
+    ], `${ctx.club.name}: большой банк стал аргументом.`),
+    step("reputation_mark", "Reputation Mark", `Набери ${repTarget} репутации для следующей рекомендации.`, "player_reputation", repTarget, reward(xpBase + 154, repBase + 3, 96 + ctx.city.order * 8), [host, connector], [
+      "Репутация не лежит в кассе. Её пересылают между комнатами короткими фразами.",
+      `${characterName(ctx.characters, host)} спрашивает не про руку, а про то, кто уже видел твою игру.`,
+      "Перед выходом нужно оставить имя, которое не придётся объяснять.",
+    ], `${ctx.meta.name}: рекомендация стала ближе.`),
+    step("exit_door", "Exit Door", `Закрой ${ctx.club.name}: сыграй ${clubHandsBase + 10} рук и удержи банкролл $${bankrollTarget}+.`, "club_hands", clubHandsBase + 10, reward(xpBase + 180, repBase + 4, 115 + ctx.city.order * 9), [host, rival, connector], [
+      `${characterName(ctx.characters, connector)} получает последнее подтверждение.`,
       `В ${ctx.meta.name} теперь знают не только твой стек, но и твой маршрут.`,
       "Следующая дверь не обещана. Её открывают результатом.",
     ], ctx.final ? "Маршрут закрыт." : `Открыт следующий шаг: ${ctx.unlock?.clubLabel ?? "новый клуб"}.`, ctx.unlock),
@@ -220,13 +260,24 @@ function createFinalSteps(ctx) {
   const rival = getCharacterId(ctx.club.cityId, "RIVAL");
   const connector = getCharacterId(ctx.club.cityId, "CONNECTOR");
   const bigPot = Math.max(120000, ctx.topBlind * 30);
+  const biggerPot = Math.max(bigPot * 2, ctx.topBlind * 55);
   return [
     step("macau_arrival", "The Last Door", "Сыграй 5 рук в финальном клубе Macau.", "club_hands", 5, reward(520, 12, 260), [host, connector], [
       "Macau не встречает громко. Дверь открывается тихо, и от этого тяжелее.",
       `${characterName(ctx.characters, host)} больше не предупреждает. Он просто показывает место.`,
       `${characterName(ctx.characters, connector)} смотрит на стол так, будто помнит первый московский buy-in.`,
     ], "Финальная комната приняла твою посадку."),
-    step("white_dragon_showdown", "White Dragon Showdown", "Дойди до 2 шоудаунов в Macau finale.", "club_showdowns", 2, reward(560, 12, 290), [rival, host], [
+    step("liang_terms", "Liang's Terms", "Дойди до первого шоудауна и прими правила комнаты.", "club_showdowns", 1, reward(548, 12, 275), [host, connector], [
+      "Liang не объясняет условия дважды.",
+      "Первое вскрытие здесь нужно не тебе. Его ждёт комната.",
+      "Карты должны лечь на стол без лишних слов.",
+    ], "Liang увидел достаточно, чтобы оставить тебя в игре."),
+    step("adrian_pressure", "Adrian Pressure", "Выиграй первую руку под давлением Adrian Kade.", "club_wins", 1, reward(580, 13, 295), [rival, connector], [
+      "Adrian Kade больше не улыбается широко. Деньги слишком большие.",
+      "Он ставит так, будто пытается купить весь маршрут целиком.",
+      "Первый ответ должен быть не словами.",
+    ], "Adrian перестал говорить первым."),
+    step("white_dragon_read", "White Dragon Read", "Дойди до 2 шоудаунов против финальной комнаты.", "club_showdowns", 2, reward(610, 14, 315), [rival, host], [
       `${characterName(ctx.characters, rival)} почти не двигается. В его игре нет лишнего шума.`,
       "Здесь не показывают эмоции. Здесь показывают карты.",
       "Два вскрытия должны доказать, что ты не случайный гость финального стола.",
@@ -236,12 +287,37 @@ function createFinalSteps(ctx) {
       "Adrian Kade молчит впервые за весь маршрут.",
       `${characterName(ctx.characters, rival)} ждёт твоего решения без единого жеста.`,
     ], "Финальный банк меняет воздух в комнате."),
-    step("final_wins", "Final Wins", "Выиграй 2 руки в Macau finale.", "club_wins", 2, reward(720, 18, 380), [rival, host, connector], [
-      "Первая победа закрывает прошлое. Вторая оставляет имя в комнате.",
+    step("silent_orbit", "Silent Orbit", "Сыграй 10 рук в Macau без ухода из маршрута.", "club_hands", 10, reward(680, 15, 350), [host, rival], [
+      "Вокруг стола нет лишнего шума. Только фишки и короткие взгляды.",
+      "Macau проверяет не раздачу, а выдержку.",
+      "Длинный круг стоит дороже одной вспышки.",
+    ], "Тихий круг выдержан."),
+    step("monaco_echo", "Monaco Echo", "Набери 280 репутации перед финальным нажимом.", "player_reputation", 280, reward(710, 16, 370), [connector, host], [
+      "Monaco был дверью. Macau — комната за ней.",
+      `${characterName(ctx.characters, connector)} вспоминает имя Isabelle Roche без улыбки.`,
+      "Статус должен выдержать последнюю цену.",
+    ], "Репутация маршрута дошла до финального стола."),
+    step("vegas_memory", "Vegas Memory", "Выиграй 2 руки в Macau finale.", "club_wins", 2, reward(740, 17, 395), [rival, connector], [
+      "Vegas был шумным экзаменом. Здесь никто не смотрит на вывески.",
+      "Adrian Kade пытается вернуть тот же нажим, но стол уже другой.",
+      "Две победы должны показать, что публичная сцена не была случайностью.",
+    ], "Vegas больше не висит за спиной."),
+    step("hong_kong_debt", "Hong Kong Debt", `Выиграй банк $${biggerPot}+ в финальной комнате.`, "club_big_pot", biggerPot, reward(790, 18, 430), [host, connector], [
+      "Hong Kong дал предупреждение. Macau требует оплату результатом.",
+      "Liang смотрит на банк без движения.",
+      "Такой банк не покупает финал. Он доказывает, что ты не ошибся дверью.",
+    ], "Долг маршрута закрыт большим банком."),
+    step("white_dragon_showdown", "White Dragon Showdown", "Дойди до 3 шоудаунов в Macau finale.", "club_showdowns", 3, reward(830, 20, 455), [rival, host], [
+      "Chen Rui наконец меняет темп.",
+      "Комната замечает это быстрее, чем дилер двигает фишки.",
+      "Последнее вскрытие должно оставить ответ без споров.",
+    ], "White Dragon признал, что ты читаешь не только карты."),
+    step("final_wins", "Final Wins", "Выиграй 3 руки в Macau finale.", "club_wins", 3, reward(880, 22, 480), [rival, host, connector], [
+      "Первая победа закрывает прошлое. Вторая оставляет имя. Третья убирает сомнения.",
       `${characterName(ctx.characters, connector)} больше не держит список. Он уже знает итог.`,
       "Macau не аплодирует. Macau запоминает.",
     ], "Финальный соперник признал игру без лишних слов."),
-    step("red_route_complete", "Red Route Complete", "Сыграй последние 3 руки и заверши Красный маршрут.", "club_hands", 3, reward(900, 25, 500), [host, rival, connector], [
+    step("red_route_complete", "Red Route Complete", "Сыграй последние 12 рук и заверши Красный маршрут.", "club_hands", 12, reward(950, 28, 540), [host, rival, connector], [
       "Олег, Марина, Виктор, Liang, Monaco, Vegas, Hong Kong — весь маршрут сжимается в последнем круге фишек.",
       "Chen Rui встаёт первым. Это не жест дружбы. Это признание результата.",
       "Красный маршрут заканчивается не титром, а пустым местом за столом, которое теперь принадлежит тебе.",
@@ -258,6 +334,58 @@ function applyChainUnlockToManualStory(story, nextClub) {
     steps[lastIndex] = { ...steps[lastIndex], unlocks: unlock };
   }
   return { ...story, unlocks: unlock, steps };
+}
+
+function expandManualStoryToTwelve(story, nextClub) {
+  const unlock = makeUnlock(nextClub);
+  const baseSteps = (story.steps ?? []).map((step) => ({ ...step }));
+  const cleanedSteps = baseSteps.map((step, index) => index === baseSteps.length - 1 ? { ...step } : stripStepUnlock(step));
+  const characters = story.characters ?? [];
+  const ids = new Set(cleanedSteps.map((step) => step.id));
+  const fallbackCharacterIds = characters.slice(0, 3).map((character) => character.id).filter(Boolean);
+  const addStep = (raw) => {
+    if (ids.has(raw.id)) raw = { ...raw, id: `${raw.id}_${cleanedSteps.length + 1}` };
+    ids.add(raw.id);
+    cleanedSteps.push(raw);
+  };
+
+  const templates = [
+    ["late_pressure", "Late Pressure", "Сыграй ещё 4 руки и выдержи позднее давление комнаты.", "club_hands", 4, "Комната проверяет не старт, а то, как игрок держится позже."],
+    ["second_showdown", "Second Showdown", "Дойди до ещё одного шоудауна и не прячь карты от комнаты.", "club_showdowns", 1, "Позднее вскрытие говорит больше ранней удачи."],
+    ["route_bank", "Route Bank", "Выиграй заметный банк и закрепи право идти дальше.", "club_big_pot", 120, "Большой банк закрывает разговоры у кассы."],
+    ["final_mark", "Final Mark", "Сыграй финальный круг перед следующим клубом.", "club_hands", 5, "Последний круг оставляет имя в маршруте."],
+  ];
+
+  while (cleanedSteps.length < 12) {
+    const index = cleanedSteps.length;
+    const template = templates[(index - baseSteps.length) % templates.length];
+    addStep({
+      id: template[0],
+      title: template[1],
+      objective: template[2],
+      type: template[3],
+      target: template[4],
+      reward: { xp: 120 + index * 10, reputation: 2 + Math.floor(index / 4), clubXp: 80 + index * 8 },
+      characterIds: fallbackCharacterIds,
+      cutscene: [
+        template[5],
+        "Никто не подгоняет. Просто ждут результата.",
+        "Следующая дверь открывается только после последней отметки.",
+      ],
+      completeMessage: `${story.title}: дополнительная отметка закрыта.`,
+    });
+  }
+
+  const finalSteps = cleanedSteps.slice(0, 12).map((step, index) => index === 11
+    ? { ...step, ...(unlock ? { unlocks: unlock } : {}) }
+    : stripStepUnlock(step));
+
+  return { ...story, ...(unlock ? { unlocks: unlock } : {}), steps: finalSteps };
+}
+
+function stripStepUnlock(step) {
+  const { unlocks, ...rest } = step;
+  return rest;
 }
 
 function buildClubChain(cities, clubs) {

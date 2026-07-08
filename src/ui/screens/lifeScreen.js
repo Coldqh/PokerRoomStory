@@ -1,8 +1,8 @@
-import { getLifeView } from "../../engine/life.js?v=3.7.0";
-import { getBusinessView } from "../../engine/businesses.js?v=3.7.0";
-import { getCurrentJobView } from "../../engine/jobs.js?v=3.7.0";
-import { getVenueById } from "../../engine/venues.js?v=3.7.0";
-import { escapeHtml, progressBar } from "../components.js?v=3.7.0";
+import { getLifeView } from "../../engine/life.js?v=3.7.1";
+import { getBusinessView } from "../../engine/businesses.js?v=3.7.1";
+import { getCurrentJobView } from "../../engine/jobs.js?v=3.7.1";
+import { getVenueById } from "../../engine/venues.js?v=3.7.1";
+import { escapeHtml, progressBar } from "../components.js?v=3.7.1";
 
 export function renderLifeScreen(state) {
   const cityId = getCurrentCityId(state);

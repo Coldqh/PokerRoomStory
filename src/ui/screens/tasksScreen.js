@@ -1,6 +1,6 @@
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=3.7.0";
-import { getCityGoalRoadmap } from "../../engine/cityGoals.js?v=3.7.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.7.0";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=3.7.1";
+import { getCityGoalRoadmap } from "../../engine/cityGoals.js?v=3.7.1";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.7.1";
 
 export function renderTasksScreen(state) {
   const player = state.player;
@@ -56,12 +56,12 @@ function renderWorldRoute(content, career = {}) {
   const percent = total ? Math.round((completed / total) * 100) : 0;
   return `
     <section class="panel-soft career-panel world-route-panel">
-      <div class="section-title"><h3>Красный маршрут</h3><span>${completed}/${total}</span></div>
+      <div class="section-title"><h3>Красный маршрут</h3><span>${completed}/${total} · ${total * 12} заданий</span></div>
       <div class="world-route-current">
         <div>
           <span>Текущая глава</span>
           <strong>${escapeHtml(active?.title ?? "Маршрут завершён")}</strong>
-          <p>${escapeHtml(activeCity ? `${activeCity.name} · ${activeClub?.name ?? "club"}` : "Финальная линия закрыта.")}</p>
+          <p>${escapeHtml(activeCity ? `${activeCity.name} · ${activeClub?.name ?? "club"} · 12 заданий` : "Финальная линия закрыта.")}</p>
         </div>
         <em>${escapeHtml(String(percent))}%</em>
       </div>

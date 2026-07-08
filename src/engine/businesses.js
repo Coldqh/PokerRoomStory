@@ -1,5 +1,5 @@
-import { BUSINESS_LIMITS, BUSINESS_TEMPLATES as BASE_BUSINESS_TEMPLATES } from "./businessContent.js?v=3.7.0";
-import { INTERNATIONAL_BUSINESS_TEMPLATES } from "./internationalBusinessContent.js?v=3.7.0";
+import { BUSINESS_LIMITS, BUSINESS_TEMPLATES as BASE_BUSINESS_TEMPLATES } from "./businessContent.js?v=3.7.1";
+import { INTERNATIONAL_BUSINESS_TEMPLATES } from "./internationalBusinessContent.js?v=3.7.1";
 
 const BUSINESS_TEMPLATES = [...BASE_BUSINESS_TEMPLATES, ...INTERNATIONAL_BUSINESS_TEMPLATES];
 const DEFAULT_CITY_ID = "CITY_RU_NORTH_DISTRICT";

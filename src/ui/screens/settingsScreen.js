@@ -1,5 +1,5 @@
-import { escapeHtml } from "../components.js?v=3.7.0";
-import { formatDateTime, speedLabel } from "./common.js?v=3.7.0";
+import { escapeHtml } from "../components.js?v=3.7.1";
+import { formatDateTime, speedLabel } from "./common.js?v=3.7.1";
 
 export function renderSettingsScreen(state) {
   const system = state.system ?? {};

@@ -1,7 +1,7 @@
-import { getLifeHousing, getLifeVehicle } from "./lifeContent.js?v=3.7.0";
-import { getBusinessDailyProfit, normalizeBusinessState } from "./businesses.js?v=3.7.0";
-import { getBusinessTemplate } from "./businessContent.js?v=3.7.0";
-import { getJobById } from "./jobContent.js?v=3.7.0";
+import { getLifeHousing, getLifeVehicle } from "./lifeContent.js?v=3.7.1";
+import { getBusinessDailyProfit, normalizeBusinessState } from "./businesses.js?v=3.7.1";
+import { getBusinessTemplate } from "./businessContent.js?v=3.7.1";
+import { getJobById } from "./jobContent.js?v=3.7.1";
 
 const MAX_NEED = 100;
 const RENT_INTERVAL_DAYS = 7;

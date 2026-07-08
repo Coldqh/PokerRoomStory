@@ -1,5 +1,5 @@
-import { normalizeLifeState, spendLifeActionCost } from "./life.js?v=3.6.0";
-import { JOBS, getJobById, getJobsForVenue } from "./jobContent.js?v=3.6.0";
+import { normalizeLifeState, spendLifeActionCost } from "./life.js?v=3.7.0";
+import { JOBS, getJobById, getJobsForVenue } from "./jobContent.js?v=3.7.0";
 
 export function createInitialJobsState() {
   return {

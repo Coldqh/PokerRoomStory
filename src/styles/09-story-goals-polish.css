@@ -572,3 +572,40 @@
     border-radius: 22px 22px 14px 14px;
   }
 }
+
+.world-route-panel {
+  display: grid;
+  gap: 14px;
+  margin: 14px 0;
+}
+
+.world-route-current {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.world-route-current span {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.68;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.world-route-current strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.world-route-current p {
+  margin: 4px 0 0;
+  opacity: 0.78;
+}
+
+.world-route-current em {
+  flex: 0 0 auto;
+  font-style: normal;
+  font-weight: 800;
+}

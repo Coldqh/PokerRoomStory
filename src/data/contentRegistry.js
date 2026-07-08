@@ -1,6 +1,6 @@
-import { DATA_PACKS } from "./packs/index.js?v=3.6.0";
-import { validateContentRegistry } from "./validateContent.js?v=3.6.0";
-import { applyCityProgressionBalance } from "./cityProgression.js?v=3.6.0";
+import { DATA_PACKS } from "./packs/index.js?v=3.7.0";
+import { validateContentRegistry } from "./validateContent.js?v=3.7.0";
+import { applyCityProgressionBalance } from "./cityProgression.js?v=3.7.0";
 
 const packs = DATA_PACKS;
 

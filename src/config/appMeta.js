@@ -1,6 +1,6 @@
-export const APP_VERSION = "3.6.0";
+export const APP_VERSION = "3.7.0";
 export const SAVE_SCHEMA_VERSION = 3;
-export const CONTENT_VERSION = "content-v3.6.0";
+export const CONTENT_VERSION = "content-v3.7.0";
 export const BUILD_DATE = "2026-07-08";
-export const BUILD_ID = "prs-3.6.0-20260708-city-progression-local-ownership";
+export const BUILD_ID = "prs-3.7.0-20260708-world-story-finale";
 export const APP_NAME = "Poker Room Story";

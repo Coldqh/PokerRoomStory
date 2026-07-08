@@ -1,4 +1,4 @@
-import { PokerRoomStoryApp } from "./app.js?v=3.6.0";
+import { PokerRoomStoryApp } from "./app.js?v=3.7.0";
 
 const root = document.querySelector("#app");
 

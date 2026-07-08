@@ -1,10 +1,10 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative } from "node:path";
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.6.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.6.0";
-import { createClubRoomState } from "../src/engine/club.js?v=3.6.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.6.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.6.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.7.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.7.0";
+import { createClubRoomState } from "../src/engine/club.js?v=3.7.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.7.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.7.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -14,20 +14,20 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=3.6.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=3.6.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.6.0";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.6.0";
-import { handFlow } from "../src/app/handFlow.js?v=3.6.0";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.6.0";
-import { inputController } from "../src/app/inputController.js?v=3.6.0";
-import { canEnterTable } from "../src/engine/world.js?v=3.6.0";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.6.0";
-import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.6.0";
-import { CITY_PROGRESSION } from "../src/data/cityProgression.js?v=3.6.0";
-import { getTravelView } from "../src/engine/travel.js?v=3.6.0";
-import { applyLifeAction, getLifeView } from "../src/engine/life.js?v=3.6.0";
-import { applyBusinessAction, getBusinessView } from "../src/engine/businesses.js?v=3.6.0";
+} from "../src/engine/poker.js?v=3.7.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=3.7.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.7.0";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.7.0";
+import { handFlow } from "../src/app/handFlow.js?v=3.7.0";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.7.0";
+import { inputController } from "../src/app/inputController.js?v=3.7.0";
+import { canEnterTable } from "../src/engine/world.js?v=3.7.0";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.7.0";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.7.0";
+import { CITY_PROGRESSION } from "../src/data/cityProgression.js?v=3.7.0";
+import { getTravelView } from "../src/engine/travel.js?v=3.7.0";
+import { applyLifeAction, getLifeView } from "../src/engine/life.js?v=3.7.0";
+import { applyBusinessAction, getBusinessView } from "../src/engine/businesses.js?v=3.7.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -832,6 +832,65 @@ function assertUiSmoke(content, table, club) {
 }
 
 
+function assertWorldStoryFinale(content) {
+  const supportedStepTypes = new Set([
+    "club_hands",
+    "table_hands",
+    "club_wins",
+    "table_wins",
+    "club_showdowns",
+    "club_big_pot",
+    "player_reputation",
+    "player_bankroll",
+    "room_mastery_level",
+  ]);
+  const storylines = (content.storylines ?? []).filter(Boolean);
+  const clubs = (content.clubs ?? []).filter(Boolean);
+  assert(storylines.length === clubs.length, `every club must have one storyline, got ${storylines.length}/${clubs.length}`);
+
+  const storiesByClub = new Map();
+  for (const story of storylines) {
+    assert(!storiesByClub.has(story.clubId), `duplicate storyline for club ${story.clubId}`);
+    storiesByClub.set(story.clubId, story);
+    assert(content.byId.clubs[story.clubId], `storyline ${story.id} must reference existing club`);
+    assert((story.steps ?? []).length >= 5, `storyline ${story.id} must have at least 5 steps`);
+    const localCharacters = new Set((story.characters ?? []).map((character) => character.id));
+    assert(localCharacters.size >= 2, `storyline ${story.id} must have characters`);
+    for (const step of story.steps ?? []) {
+      assert(supportedStepTypes.has(step.type), `storyline ${story.id}.${step.id} has unsupported step type ${step.type}`);
+      assert(Number(step.target ?? 0) > 0, `storyline ${story.id}.${step.id} must have positive target`);
+      if (step.tableId) assert(content.byId.tables[step.tableId], `storyline ${story.id}.${step.id} tableId must exist`);
+      for (const characterId of step.characterIds ?? []) {
+        assert(localCharacters.has(characterId), `storyline ${story.id}.${step.id} missing local character ${characterId}`);
+      }
+    }
+  }
+
+  const clubPosition = new Map(clubs.map((club, index) => [club.id, index]));
+  const cityOrder = new Map(CITY_PROGRESSION.map((city) => [city.cityId, city.order]));
+  const chain = [...clubs].sort((left, right) => {
+    const cityDelta = (cityOrder.get(left.cityId) ?? 999) - (cityOrder.get(right.cityId) ?? 999);
+    if (cityDelta) return cityDelta;
+    return (clubPosition.get(left.id) ?? 9999) - (clubPosition.get(right.id) ?? 9999);
+  });
+
+  for (let index = 0; index < chain.length; index += 1) {
+    const club = chain[index];
+    const story = storiesByClub.get(club.id);
+    assert(story, `club ${club.id} must have storyline`);
+    const nextClub = chain[index + 1] ?? null;
+    if (nextClub) {
+      assert(story.unlocks?.clubId === nextClub.id, `storyline ${story.id} must unlock next club ${nextClub.id}`);
+      const lastStep = story.steps.at(-1);
+      assert(lastStep?.unlocks?.clubId === nextClub.id, `final step of ${story.id} must unlock next club ${nextClub.id}`);
+    } else {
+      assert(story.unlocks?.finalCampaignComplete, "final Macau storyline must mark campaign complete");
+      assert(String(story.title).includes("Macau"), "final storyline must be Macau finale");
+      assert((story.characters ?? []).some((character) => String(character.name).includes("Chen")), "Macau finale must include Chen Rui");
+    }
+  }
+}
+
 function assertCityProgressionBalance(content) {
   assert(CITY_PROGRESSION.length === 21, "city progression must define exactly 21 route stages");
   for (let index = 0; index < CITY_PROGRESSION.length; index += 1) {
@@ -947,7 +1006,7 @@ function assertLifeProfileClean(content) {
   assertNotIncludes(html, "Daily simulation", "life profile must not render Daily simulation block");
 }
 
-const EXPECTED_VERSION_QUERY = "?v=3.6.0";
+const EXPECTED_VERSION_QUERY = "?v=3.7.0";
 const LEGACY_VERSION_QUERIES = ["1.4.0", "1.7.3", "3.0.0"].map((version) => `?v=${version}`);
 const VERSION_SCAN_EXTENSIONS = new Set([".js", ".html", ".json", ".webmanifest"]);
 
@@ -1017,6 +1076,7 @@ function main() {
   assertRiverRoomExpansion(content, club);
   assertUniversalClubGoals(content, club, table);
   assertRiverRoomStoryline(content, club, table);
+  assertWorldStoryFinale(content);
   assertDynamicTableSeats(content, table, club);
   assertHeadsUpBlinds(content, table, club);
   assertSidePots(content, table, club);
@@ -1027,6 +1087,7 @@ function main() {
   assertUiSmoke(content, table, club);
   assertTravelPickerUi(content, club);
   assertLifeProfileClean(content);
+  assert(renderScreen(makeBaseState(content, createInitialTableState(), { currentScreen: "tasks" })).includes("Красный маршрут"), "tasks screen must show world story route");
   assertFoldInvariant(content, table, club);
   assertCustomRaise(content, table, club);
   assertNpcPreflopDecisionTuning(content, table);

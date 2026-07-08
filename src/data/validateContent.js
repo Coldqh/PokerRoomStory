@@ -10,6 +10,7 @@ const COLLECTIONS = [
   "learningObjects",
   "eventTemplates",
   "challenges",
+  "storylines",
 ];
 
 export function validateContentRegistry(registry) {
@@ -40,6 +41,26 @@ export function validateContentRegistry(registry) {
     if (npc.countryId) requireRef(byId.countries, npc.countryId, `npc ${npc.id}.countryId`, warnings);
     if (npc.cityId) requireRef(byId.cities, npc.cityId, `npc ${npc.id}.cityId`, warnings);
     if (npc.clubId) requireRef(byId.clubs, npc.clubId, `npc ${npc.id}.clubId`, warnings);
+  }
+
+
+  for (const storyline of registry?.storylines ?? []) {
+    requireRef(byId.clubs, storyline.clubId, `storyline ${storyline.id}.clubId`, warnings);
+    const characterIds = new Set((storyline.characters ?? []).map((character) => character.id));
+    for (const character of storyline.characters ?? []) {
+      if (!character?.id) warnings.push(`storyline ${storyline.id}.characters: character without id`);
+    }
+    for (const step of storyline.steps ?? []) {
+      if (!step?.id) warnings.push(`storyline ${storyline.id}: step without id`);
+      if (step.tableId) requireRef(byId.tables, step.tableId, `storyline ${storyline.id}.${step.id}.tableId`, warnings);
+      for (const characterId of step.characterIds ?? []) {
+        if (!characterIds.has(characterId)) warnings.push(`storyline ${storyline.id}.${step.id}.characterIds: missing local character ${characterId}`);
+      }
+      if (step.unlocks?.clubId) requireRef(byId.clubs, step.unlocks.clubId, `storyline ${storyline.id}.${step.id}.unlocks.clubId`, warnings);
+      if (step.unlocks?.cityId) requireRef(byId.cities, step.unlocks.cityId, `storyline ${storyline.id}.${step.id}.unlocks.cityId`, warnings);
+    }
+    if (storyline.unlocks?.clubId) requireRef(byId.clubs, storyline.unlocks.clubId, `storyline ${storyline.id}.unlocks.clubId`, warnings);
+    if (storyline.unlocks?.cityId) requireRef(byId.cities, storyline.unlocks.cityId, `storyline ${storyline.id}.unlocks.cityId`, warnings);
   }
 
   if (warnings.length) {

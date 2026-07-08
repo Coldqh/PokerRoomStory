@@ -1,6 +1,6 @@
-import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=3.6.0";
-import { getCityGoalRoadmap } from "../../engine/cityGoals.js?v=3.6.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.6.0";
+import { getActiveChallenges, getChallengeDifficultyLabel, getChallengeProgress, getCompletedChallenges } from "../../engine/career.js?v=3.7.0";
+import { getCityGoalRoadmap } from "../../engine/cityGoals.js?v=3.7.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.7.0";
 
 export function renderTasksScreen(state) {
   const player = state.player;
@@ -18,6 +18,7 @@ export function renderTasksScreen(state) {
     </section>
 
     ${renderRoadmap(roadmap)}
+    ${renderWorldRoute(state.content, state.career)}
 
     <section class="tasks-board">
       <input class="task-tab-input" type="radio" name="task-tab" id="task-tab-active" checked />
@@ -41,6 +42,30 @@ export function renderTasksScreen(state) {
           ${completedChallenges.length ? completedChallenges.slice().reverse().map((challenge) => renderChallengeItem(challenge, true, challengeContext, completedLog.get(challenge.id))).join("") : emptyState("Пока пусто.")}
         </div>
       </article>
+    </section>
+  `;
+}
+
+function renderWorldRoute(content, career = {}) {
+  const storylines = content?.storylines ?? [];
+  const total = storylines.length;
+  const completed = storylines.filter((story) => career?.storyProgress?.[story.id]?.completed).length;
+  const active = storylines.find((story) => !career?.storyProgress?.[story.id]?.completed) ?? storylines.at(-1) ?? null;
+  const activeClub = active ? content?.byId?.clubs?.[active.clubId] ?? null : null;
+  const activeCity = activeClub ? content?.byId?.cities?.[activeClub.cityId] ?? null : null;
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  return `
+    <section class="panel-soft career-panel world-route-panel">
+      <div class="section-title"><h3>Красный маршрут</h3><span>${completed}/${total}</span></div>
+      <div class="world-route-current">
+        <div>
+          <span>Текущая глава</span>
+          <strong>${escapeHtml(active?.title ?? "Маршрут завершён")}</strong>
+          <p>${escapeHtml(activeCity ? `${activeCity.name} · ${activeClub?.name ?? "club"}` : "Финальная линия закрыта.")}</p>
+        </div>
+        <em>${escapeHtml(String(percent))}%</em>
+      </div>
+      ${progressBar(percent)}
     </section>
   `;
 }

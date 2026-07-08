@@ -1,10 +1,10 @@
-import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=3.6.0";
-import { getClubRoomState } from "../../engine/club.js?v=3.6.0";
-import { getClubGoals } from "../../engine/clubGoals.js?v=3.6.0";
-import { getClubStorylines } from "../../engine/storylines.js?v=3.6.0";
-import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=3.6.0";
-import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.6.0";
-import { stableIndex } from "./common.js?v=3.6.0";
+import { canEnterClub, canEnterTable, getClubContext } from "../../engine/world.js?v=3.7.0";
+import { getClubRoomState } from "../../engine/club.js?v=3.7.0";
+import { getClubGoals } from "../../engine/clubGoals.js?v=3.7.0";
+import { getClubStorylines } from "../../engine/storylines.js?v=3.7.0";
+import { getClubLevelInfo, formatClubReward } from "../../engine/progression.js?v=3.7.0";
+import { emptyState, escapeHtml, progressBar } from "../components.js?v=3.7.0";
+import { stableIndex } from "./common.js?v=3.7.0";
 
 export function renderClubScreen(state) {
   const context = getClubContext(state.content, state.activeClubId);

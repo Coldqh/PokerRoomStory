@@ -1,6 +1,6 @@
-import { getCityMapView } from "../../engine/locations.js?v=3.6.0";
-import { getTravelView } from "../../engine/travel.js?v=3.6.0";
-import { escapeHtml } from "../components.js?v=3.6.0";
+import { getCityMapView } from "../../engine/locations.js?v=3.7.0";
+import { getTravelView } from "../../engine/travel.js?v=3.7.0";
+import { escapeHtml } from "../components.js?v=3.7.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },

@@ -1,5 +1,5 @@
-import { getCityProgressionStatus, getNextCityProgression } from "../data/cityProgression.js?v=3.6.0";
-import { spendLifeActionCost } from "./life.js?v=3.6.0";
+import { getCityProgressionStatus, getNextCityProgression } from "../data/cityProgression.js?v=3.7.0";
+import { spendLifeActionCost } from "./life.js?v=3.7.0";
 
 export function getTravelView(content, career = {}, player = {}, currentCityId = null) {
   const cityId = currentCityId ?? career?.travel?.currentCityId ?? "CITY_RU_NORTH_DISTRICT";

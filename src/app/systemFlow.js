@@ -1,5 +1,5 @@
-import { APP_VERSION } from "../config/appMeta.js?v=3.6.0";
-import { exportCurrentSave } from "../engine/save.js?v=3.6.0";
+import { APP_VERSION } from "../config/appMeta.js?v=3.7.0";
+import { exportCurrentSave } from "../engine/save.js?v=3.7.0";
 
 export const systemFlow = {
   exportSave() {

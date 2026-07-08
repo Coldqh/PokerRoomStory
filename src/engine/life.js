@@ -12,8 +12,8 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=3.6.0";
-import { simulateDayRollover } from "./daySimulation.js?v=3.6.0";
+} from "./lifeContent.js?v=3.7.0";
+import { simulateDayRollover } from "./daySimulation.js?v=3.7.0";
 
 const MAX_NEED = LIFE_LIMITS.maxNeed;
 const MAX_FOCUS = LIFE_LIMITS.maxFocus;

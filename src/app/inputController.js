@@ -1,13 +1,13 @@
-import { clearSave, importSaveText } from "../engine/save.js?v=3.5.0";
-import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.5.0";
-import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.5.0";
-import { normalizePlayer } from "../engine/career.js?v=3.5.0";
-import { getClubTables } from "../engine/selectors.js?v=3.5.0";
-import { canEnterClub } from "../engine/world.js?v=3.5.0";
-import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.5.0";
-import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.5.0";
-import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.5.0";
-import { applyTravelRoute } from "../engine/travel.js?v=3.5.0";
+import { clearSave, importSaveText } from "../engine/save.js?v=3.6.0";
+import { applyLifeAction, spendLifeActionCost } from "../engine/life.js?v=3.6.0";
+import { applyVenueAction, canEnterVenue, getVenueById } from "../engine/venues.js?v=3.6.0";
+import { normalizePlayer } from "../engine/career.js?v=3.6.0";
+import { getClubTables } from "../engine/selectors.js?v=3.6.0";
+import { canEnterClub } from "../engine/world.js?v=3.6.0";
+import { applyPendingUpdate, checkForRemoteVersion, forceAppUpdate } from "../engine/update.js?v=3.6.0";
+import { createCityLocation, createClubLocation, createHomeLocation, createTableLocation, createVenueLocation } from "../engine/locationState.js?v=3.6.0";
+import { applyCityGoalProgress } from "../engine/cityGoals.js?v=3.6.0";
+import { applyTravelRoute } from "../engine/travel.js?v=3.6.0";
 
 export const inputController = {
   handleClick(event) {

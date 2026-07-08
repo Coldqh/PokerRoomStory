@@ -1,13 +1,13 @@
 /* Ordered CSS entrypoint. */
-@import "./styles/00-base-layout.css?v=3.5.0";
-@import "./styles/01-table-cards.css?v=3.5.0";
-@import "./styles/02-career-tasks.css?v=3.5.0";
-@import "./styles/03-mobile-responsive.css?v=3.5.0";
-@import "./styles/04-club-drawer-settings.css?v=3.5.0";
-@import "./styles/05-result-modals.css?v=3.5.0";
-@import "./styles/06-table-lobby-polish.css?v=3.5.0";
-@import "./styles/07-readability-hotfix.css?v=3.5.0";
-@import "./styles/08-opponent-reads.css?v=3.5.0";
-@import "./styles/09-story-goals-polish.css?v=3.5.0";
-@import "./styles/10-city-map.css?v=3.5.0";
-@import "./styles/11-life-hub.css?v=3.5.0";
+@import "./styles/00-base-layout.css?v=3.6.0";
+@import "./styles/01-table-cards.css?v=3.6.0";
+@import "./styles/02-career-tasks.css?v=3.6.0";
+@import "./styles/03-mobile-responsive.css?v=3.6.0";
+@import "./styles/04-club-drawer-settings.css?v=3.6.0";
+@import "./styles/05-result-modals.css?v=3.6.0";
+@import "./styles/06-table-lobby-polish.css?v=3.6.0";
+@import "./styles/07-readability-hotfix.css?v=3.6.0";
+@import "./styles/08-opponent-reads.css?v=3.6.0";
+@import "./styles/09-story-goals-polish.css?v=3.6.0";
+@import "./styles/10-city-map.css?v=3.6.0";
+@import "./styles/11-life-hub.css?v=3.6.0";

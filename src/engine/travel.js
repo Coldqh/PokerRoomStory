@@ -1,12 +1,16 @@
-import { spendLifeActionCost } from "./life.js?v=3.5.0";
+import { getCityProgressionStatus, getNextCityProgression } from "../data/cityProgression.js?v=3.6.0";
+import { spendLifeActionCost } from "./life.js?v=3.6.0";
 
 export function getTravelView(content, career = {}, player = {}, currentCityId = null) {
   const cityId = currentCityId ?? career?.travel?.currentCityId ?? "CITY_RU_NORTH_DISTRICT";
   const routes = buildTravelRoutes(content)
     .filter((route) => route.fromCityId === cityId)
     .map((route) => buildRouteView(content, career, player, route));
+  const nextProgression = getNextCityProgression(cityId);
   return {
     currentCity: content?.byId?.cities?.[cityId] ?? null,
+    nextCity: nextProgression ? content?.byId?.cities?.[nextProgression.cityId] ?? null : null,
+    nextProgression,
     routes,
   };
 }
@@ -15,16 +19,17 @@ export function applyTravelRoute({ content, career = {}, player = {}, routeId = 
   const route = buildTravelRoutes(content).find((entry) => entry.id === routeId);
   if (!route) return fail(career, player, "Маршрут не найден.");
 
-  const bankroll = Math.max(0, Math.round(Number(player.bankroll ?? 0) || 0));
-  if (bankroll < route.price) return fail(career, player, "Недостаточно денег на перелёт.");
+  const view = buildRouteView(content, career, player, route);
+  if (!view.access.ok) return fail(career, player, view.access.reason ?? "Маршрут закрыт.");
 
+  const bankroll = Math.max(0, Math.round(Number(player.bankroll ?? 0) || 0));
   const time = spendLifeActionCost({ career, player: { ...player, bankroll: bankroll - route.price }, cost: route.actionCost, message: `Перелёт: -$${route.price}, -${route.actionCost} actions.` });
   if (!time.ok) return fail(career, player, "Недостаточно времени сегодня.");
 
   const destination = content?.byId?.cities?.[route.toCityId] ?? null;
   const countryId = destination?.countryId ?? null;
-  const visitedCities = new Set(time.career?.travel?.visitedCityIds ?? []);
-  const visitedCountries = new Set(time.career?.travel?.visitedCountryIds ?? []);
+  const visitedCities = new Set(time.career?.travel?.visitedCityIds ?? time.career?.unlockedCities ?? []);
+  const visitedCountries = new Set(time.career?.travel?.visitedCountryIds ?? time.career?.unlockedCountries ?? []);
   visitedCities.add(route.toCityId);
   if (countryId) visitedCountries.add(countryId);
 
@@ -60,7 +65,7 @@ function buildTravelRoutes(content) {
     for (const to of cities) {
       if (from.id === to.id) continue;
       const sameCountry = from.countryId === to.countryId;
-      const price = getTravelPrice(from, to, sameCountry);
+      const price = Number(to.travelPrice ?? getTravelPrice(from, to, sameCountry));
       const actionCost = sameCountry ? 3 : isLongHaul(from, to) ? 6 : 5;
       routes.push({ id: `TRAVEL_${from.id}_TO_${to.id}`, fromCityId: from.id, toCityId: to.id, price, actionCost });
     }
@@ -94,14 +99,16 @@ function buildRouteView(content, career, player, route) {
   const actionsLeft = Number(career?.life?.actionsPerDay ?? 6) - Number(career?.life?.actionsUsed ?? 0);
   const moneyOk = bankroll >= route.price;
   const timeOk = actionsLeft >= route.actionCost;
+  const progression = getCityProgressionStatus({ career, player, cityId: route.toCityId });
+  const ok = moneyOk && timeOk && progression.ok;
+  const reason = !progression.ok ? progression.reason : !moneyOk ? "Недостаточно денег на перелёт." : !timeOk ? "Недостаточно времени сегодня." : null;
   return {
     ...route,
     city,
     country,
-    access: {
-      ok: moneyOk && timeOk,
-      reason: !moneyOk ? "Недостаточно денег на перелёт." : !timeOk ? "Недостаточно времени сегодня." : null,
-    },
+    progression: progression.progression,
+    routeStatus: progression.status,
+    access: { ok, reason },
   };
 }
 

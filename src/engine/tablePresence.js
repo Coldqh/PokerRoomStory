@@ -1,4 +1,4 @@
-import { createInitialTableState, startNewHand } from "./poker.js?v=3.5.0";
+import { createInitialTableState, startNewHand } from "./poker.js?v=3.6.0";
 
 export function createObservedTableState({ content, table, club, player, previousTableState = null, clubSnapshot = null } = {}) {
   if (!content || !table || !club) {

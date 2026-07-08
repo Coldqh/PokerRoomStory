@@ -1,10 +1,10 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { extname, join, relative } from "node:path";
-import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.5.0";
-import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.5.0";
-import { createClubRoomState } from "../src/engine/club.js?v=3.5.0";
-import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.5.0";
-import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.5.0";
+import { buildContentRegistry } from "../src/data/contentRegistry.js?v=3.6.0";
+import { createNewCareer, createNewPlayer, ensureActiveChallenges, updateCareerUnlocks } from "../src/engine/career.js?v=3.6.0";
+import { createClubRoomState } from "../src/engine/club.js?v=3.6.0";
+import { applyClubProgression, getClubLevelInfo } from "../src/engine/progression.js?v=3.6.0";
+import { getDefaultStartLocation } from "../src/engine/selectors.js?v=3.6.0";
 import {
   advanceUntilPlayerOrEnd,
   applyPlayerAction,
@@ -14,16 +14,20 @@ import {
   getAvailableActions,
   settleTableStacks,
   startNewHand,
-} from "../src/engine/poker.js?v=3.5.0";
-import { decideNpcAction } from "../src/engine/npc.js?v=3.5.0";
-import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.5.0";
-import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.5.0";
-import { handFlow } from "../src/app/handFlow.js?v=3.5.0";
-import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.5.0";
-import { inputController } from "../src/app/inputController.js?v=3.5.0";
-import { canEnterTable } from "../src/engine/world.js?v=3.5.0";
-import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.5.0";
-import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.5.0";
+} from "../src/engine/poker.js?v=3.6.0";
+import { decideNpcAction } from "../src/engine/npc.js?v=3.6.0";
+import { renderScreen, getVisibleScreens } from "../src/ui/screens.js?v=3.6.0";
+import { buildPotsFromContributions, resolveShowdown } from "../src/engine/poker/results.js?v=3.6.0";
+import { handFlow } from "../src/app/handFlow.js?v=3.6.0";
+import { tableSessionFlow } from "../src/app/tableSessionFlow.js?v=3.6.0";
+import { inputController } from "../src/app/inputController.js?v=3.6.0";
+import { canEnterTable } from "../src/engine/world.js?v=3.6.0";
+import { applyClubGoals, getClubGoals } from "../src/engine/clubGoals.js?v=3.6.0";
+import { applyStorylineProgress, getClubStorylines } from "../src/engine/storylines.js?v=3.6.0";
+import { CITY_PROGRESSION } from "../src/data/cityProgression.js?v=3.6.0";
+import { getTravelView } from "../src/engine/travel.js?v=3.6.0";
+import { applyLifeAction, getLifeView } from "../src/engine/life.js?v=3.6.0";
+import { applyBusinessAction, getBusinessView } from "../src/engine/businesses.js?v=3.6.0";
 
 const TEST_HANDS = 100;
 const MAX_PLAYER_DECISIONS_PER_HAND = 20;
@@ -828,6 +832,75 @@ function assertUiSmoke(content, table, club) {
 }
 
 
+function assertCityProgressionBalance(content) {
+  assert(CITY_PROGRESSION.length === 21, "city progression must define exactly 21 route stages");
+  for (let index = 0; index < CITY_PROGRESSION.length; index += 1) {
+    const stage = CITY_PROGRESSION[index];
+    const city = content.byId.cities[stage.cityId];
+    assert(city, `city progression references missing city ${stage.cityId}`);
+    assert(city.routeOrder === stage.order, `${city.name} routeOrder must match progression`);
+    if (index > 0) {
+      const previous = CITY_PROGRESSION[index - 1];
+      assert(stage.bankrollGate >= previous.bankrollGate, `${stage.name} bankroll gate must not go down`);
+      assert(stage.reputationGate >= previous.reputationGate, `${stage.name} reputation gate must not go down`);
+      assert(stage.topBigBlind >= previous.topBigBlind, `${stage.name} top blind must not go down`);
+    }
+
+    const clubs = (content.clubs ?? []).filter((club) => club.cityId === stage.cityId);
+    const tables = (content.tables ?? []).filter((table) => clubs.some((club) => club.id === table.clubId));
+    assert(clubs.length >= 3, `${stage.name} progression city must have 3 clubs`);
+    assert(tables.length >= 12, `${stage.name} progression city must have 12 tables`);
+    assert(Math.max(...tables.map((table) => Number(table.bigBlind ?? 0))) === stage.topBigBlind, `${stage.name} top table blind must match progression`);
+  }
+}
+
+function assertTravelProgressionLocks(content) {
+  const career = createNewCareer();
+  const player = createNewPlayer();
+  const travel = getTravelView(content, career, player, "CITY_RU_NORTH_DISTRICT");
+  const macau = travel.routes.find((route) => route.toCityId === "CITY_MO_MACAU_001");
+  const saintPetersburg = travel.routes.find((route) => route.toCityId === "CITY_RU_SAINT_PETERSBURG_001");
+  assert(macau && !macau.access.ok, "Macau must be locked for a new player");
+  assert(saintPetersburg && !saintPetersburg.access.ok, "next city must still require bankroll/rep at start");
+  assert(String(macau.access.reason ?? saintPetersburg.access.reason ?? "").length > 0, "locked travel route must explain missing gate");
+
+  const readyPlayer = { ...player, bankroll: 5000, reputation: 20 };
+  const readyTravel = getTravelView(content, career, readyPlayer, "CITY_RU_NORTH_DISTRICT");
+  const readySpb = readyTravel.routes.find((route) => route.toCityId === "CITY_RU_SAINT_PETERSBURG_001");
+  assert(readySpb?.access.ok, "Saint Petersburg must unlock after bankroll and rep gate");
+}
+
+function assertCityScopedOwnership() {
+  let career = createNewCareer();
+  let player = { ...createNewPlayer(), bankroll: 500000 };
+
+  const vehicleResult = applyLifeAction({ actionId: "buyVehicle:VEHICLE_LADA_GRANTA", career, player, cityId: "CITY_RU_NORTH_DISTRICT" });
+  assert(vehicleResult.ok, "buying a Moscow vehicle must work");
+  career = vehicleResult.career;
+  player = vehicleResult.player;
+  assert(getLifeView(career, player, "CITY_RU_NORTH_DISTRICT").vehicles.some((vehicle) => vehicle.id === "VEHICLE_LADA_GRANTA" && vehicle.owned), "Moscow vehicle must be active in Moscow");
+  assert(!getLifeView(career, player, "CITY_US_LAS_VEGAS_001").vehicles.some((vehicle) => vehicle.id === "VEHICLE_LADA_GRANTA" && vehicle.owned), "Moscow vehicle must not be active in Las Vegas");
+
+  const housingResult = applyLifeAction({ actionId: "buyHousing:HOUSING_RU_MOS_NEKRASOVKA_STUDIO_001", career, player, cityId: "CITY_US_LAS_VEGAS_001" });
+  assert(housingResult.ok, "buying housing in a different city scope must work");
+  career = housingResult.career;
+  player = housingResult.player;
+  assert(getLifeView(career, player, "CITY_US_LAS_VEGAS_001").currentHousing.id === "HOUSING_RU_MOS_NEKRASOVKA_STUDIO_001", "Vegas-scoped housing must be active in Vegas");
+  assert(getLifeView(career, player, "CITY_RU_NORTH_DISTRICT").currentHousing.id !== "HOUSING_RU_MOS_NEKRASOVKA_STUDIO_001", "Vegas housing must not replace Moscow housing");
+}
+
+function assertCityScopedBusinesses() {
+  let career = createNewCareer();
+  let player = { ...createNewPlayer(), bankroll: 1000000 };
+  const bought = applyBusinessAction({ actionId: "buyBusiness:BUS_US_LV_001", career, player, cityId: "CITY_US_LAS_VEGAS_001" });
+  assert(bought.ok, "buying a Vegas business must work");
+  const vegas = getBusinessView(bought.career, bought.player, "CITY_US_LAS_VEGAS_001");
+  const moscow = getBusinessView(bought.career, bought.player, "CITY_RU_NORTH_DISTRICT");
+  assert(vegas.ownedCurrentCity.length === 1, "Vegas business must appear in Vegas profile");
+  assert(moscow.ownedCurrentCity.length === 0, "Vegas business must not appear as Moscow-owned");
+  assert(moscow.ownedOtherCities.length === 1, "Moscow profile must summarize off-city businesses");
+}
+
 function assertCityFillCoverage(content) {
   for (const city of content.cities ?? []) {
     const clubs = (content.clubs ?? []).filter((club) => club.cityId === city.id);
@@ -874,7 +947,7 @@ function assertLifeProfileClean(content) {
   assertNotIncludes(html, "Daily simulation", "life profile must not render Daily simulation block");
 }
 
-const EXPECTED_VERSION_QUERY = "?v=3.5.0";
+const EXPECTED_VERSION_QUERY = "?v=3.6.0";
 const LEGACY_VERSION_QUERIES = ["1.4.0", "1.7.3", "3.0.0"].map((version) => `?v=${version}`);
 const VERSION_SCAN_EXTENSIONS = new Set([".js", ".html", ".json", ".webmanifest"]);
 
@@ -925,6 +998,10 @@ function main() {
   assert((content.storylines ?? []).length >= 1, "at least one storyline expected");
   assert(content.npcs.length >= 6, "at least six NPCs expected for table smoke tests");
   assertCityFillCoverage(content);
+  assertCityProgressionBalance(content);
+  assertTravelProgressionLocks(content);
+  assertCityScopedOwnership();
+  assertCityScopedBusinesses();
 
   const career = createNewCareer();
   const start = getDefaultStartLocation(content, career);

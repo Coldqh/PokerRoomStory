@@ -1,16 +1,19 @@
-import { getLifeView } from "../../engine/life.js?v=3.5.0";
-import { getBusinessView } from "../../engine/businesses.js?v=3.5.0";
-import { getCurrentJobView } from "../../engine/jobs.js?v=3.5.0";
-import { getVenueById } from "../../engine/venues.js?v=3.5.0";
-import { escapeHtml, progressBar } from "../components.js?v=3.5.0";
+import { getLifeView } from "../../engine/life.js?v=3.6.0";
+import { getBusinessView } from "../../engine/businesses.js?v=3.6.0";
+import { getCurrentJobView } from "../../engine/jobs.js?v=3.6.0";
+import { getVenueById } from "../../engine/venues.js?v=3.6.0";
+import { escapeHtml, progressBar } from "../components.js?v=3.6.0";
 
 export function renderLifeScreen(state) {
-  const view = getLifeView(state.career, state.player);
+  const cityId = getCurrentCityId(state);
+  const city = state.content?.byId?.cities?.[cityId] ?? null;
+  const view = getLifeView(state.career, state.player, cityId);
   const { life } = view;
   const homeVenue = getVenueById(state.content, state.activeVenueId) ?? getVenueById(state.content, state.career?.city?.activeVenueId) ?? getVenueById(state.content, "VENUE_RU_MOS_HOME_CHEAP_ROOM");
   const vehicle = view.vehicles.find((entry) => entry.owned);
   const assets = view.assets.filter((entry) => entry.owned);
-  const businesses = getBusinessView(state.career, state.player).owned;
+  const businessView = getBusinessView(state.career, state.player, cityId);
+  const businesses = businessView.ownedCurrentCity;
   const currentJob = getCurrentJobView(state.career, state.player);
   const dailyBusinessProfit = businesses.reduce((sum, row) => sum + Number(row.dailyProfit ?? 0), 0);
   const lockedAtTable = Boolean(state.tableSession?.tableId);
@@ -19,7 +22,7 @@ export function renderLifeScreen(state) {
       <article class="life-hero panel-soft">
         <div>
           <span>Life status</span>
-          <h2>Жизнь</h2>
+          <h2>Жизнь · ${escapeHtml(city?.name ?? "Город")}</h2>
           <p>День ${escapeHtml(String(life.day))} · Bankroll $${escapeHtml(String(Math.round(state.player?.bankroll ?? 0)))} · Debt $${escapeHtml(String(life.debt))}</p>
           <p>${life.sleptToday ? "Сон отмечен" : "Сон не отмечен"} · Недосып ${escapeHtml(String(life.sleepDebt ?? 0))}</p>
         </div>
@@ -93,7 +96,7 @@ export function renderLifeScreen(state) {
         </article>
 
         <article class="life-section panel-soft">
-          <header><span>Business</span><strong>Бизнесы</strong></header>
+          <header><span>Business</span><strong>Бизнесы этого города</strong></header>
           <div class="life-list compact">
             ${businesses.length ? businesses.slice(0, 6).map(renderBusinessItem).join("") : `<div class="life-empty">Нет бизнесов</div>`}
           </div>
@@ -101,7 +104,7 @@ export function renderLifeScreen(state) {
         </article>
 
         <article class="life-section panel-soft">
-          <header><span>Property</span><strong>Имущество</strong></header>
+          <header><span>Property</span><strong>Имущество этого города</strong></header>
           <div class="life-summary-list">
             <div><span>Жильё</span><strong>${escapeHtml(view.currentHousing.name)} · ${escapeHtml(view.currentHousing.district)}</strong></div>
             <div><span>Адрес</span><strong>${escapeHtml(view.currentHousing.address)}</strong></div>
@@ -110,12 +113,21 @@ export function renderLifeScreen(state) {
             <div><span>Транспорт</span><strong>${escapeHtml(vehicle ? `${vehicle.name} · ${vehicle.class ?? "car"} · upkeep $${vehicle.upkeepPer7Days ?? 0}/7д` : "Нет")}</strong></div>
             <div><span>Вещи</span><strong>${escapeHtml(assets.length ? assets.map((asset) => asset.name).join(", ") : "Нет")}</strong></div>
             <div><span>Бизнесы</span><strong>${escapeHtml(businesses.length ? `${businesses.length} · Profit $${dailyBusinessProfit}/день` : "Нет")}</strong></div>
+            <div><span>Другие города</span><strong>${escapeHtml(businessView.ownedOtherCities.length ? `${businessView.ownedOtherCities.length} бизнесов вне города` : "Нет")}</strong></div>
             <div><span>Текущий объект</span><strong>${escapeHtml(homeVenue?.name ?? "Город")}</strong></div>
           </div>
         </article>
       </section>
     </section>
   `;
+}
+
+function getCurrentCityId(state = {}) {
+  return state.playerLocation?.cityId
+    ?? state.career?.travel?.currentCityId
+    ?? state.content?.byId?.clubs?.[state.activeClubId]?.cityId
+    ?? state.content?.byId?.venues?.[state.activeVenueId]?.cityId
+    ?? "CITY_RU_NORTH_DISTRICT";
 }
 
 function renderLifeMeter(label, percent, value) {

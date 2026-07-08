@@ -12,13 +12,14 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=3.5.0";
-import { simulateDayRollover } from "./daySimulation.js?v=3.5.0";
+} from "./lifeContent.js?v=3.6.0";
+import { simulateDayRollover } from "./daySimulation.js?v=3.6.0";
 
 const MAX_NEED = LIFE_LIMITS.maxNeed;
 const MAX_FOCUS = LIFE_LIMITS.maxFocus;
 const ACTIONS_PER_DAY = LIFE_LIMITS.actionsPerDay;
 const DEFAULT_RENT_INTERVAL_DAYS = LIFE_LIMITS.rentIntervalDays;
+const DEFAULT_CITY_ID = "CITY_RU_NORTH_DISTRICT";
 
 export function createInitialLifeState() {
   const housing = getLifeHousing("HOUSING_CHEAP_ROOM");
@@ -39,9 +40,15 @@ export function createInitialLifeState() {
     inventory: [],
     housingId: housing.id,
     ownedHousingIds: [],
+    currentHousingByCityId: { [DEFAULT_CITY_ID]: housing.id },
+    ownedHousingIdsByCityId: { [DEFAULT_CITY_ID]: [] },
     vehicleId: null,
     vehicleUpkeepDueDay: null,
+    activeVehicleByCityId: { [DEFAULT_CITY_ID]: null },
+    vehicleIdsByCityId: { [DEFAULT_CITY_ID]: [] },
+    vehicleUpkeepDueDayByCityId: { [DEFAULT_CITY_ID]: null },
     assetIds: [],
+    assetIdsByCityId: { [DEFAULT_CITY_ID]: [] },
     rentDueDay: 7,
     rentAmount: housing.rent,
     debt: 0,
@@ -61,8 +68,16 @@ export function normalizeLifeState(life = {}) {
         energy: life.energy ?? base.needs.energy,
         stress: life.stress ?? base.needs.stress,
       };
-  const housing = getLifeHousing(life.housingId ?? base.housingId);
-  const ownedHousingIds = normalizeHousingIds(life.ownedHousingIds);
+  const legacyHousing = getLifeHousing(life.housingId ?? base.housingId);
+  const legacyOwnedHousingIds = normalizeHousingIds(life.ownedHousingIds);
+  const currentHousingByCityId = normalizeHousingByCityMap(life.currentHousingByCityId, legacyHousing.id);
+  const ownedHousingIdsByCityId = normalizeHousingIdsByCityMap(life.ownedHousingIdsByCityId, legacyOwnedHousingIds);
+  const activeVehicleByCityId = normalizeVehicleByCityMap(life.activeVehicleByCityId, life.vehicleId);
+  const vehicleIdsByCityId = normalizeVehicleIdsByCityMap(life.vehicleIdsByCityId, life.vehicleId ? [life.vehicleId] : []);
+  const vehicleUpkeepDueDayByCityId = normalizeNumberByCityMap(life.vehicleUpkeepDueDayByCityId, life.vehicleUpkeepDueDay);
+  const assetIdsByCityId = normalizeAssetIdsByCityMap(life.assetIdsByCityId, life.assetIds);
+  const housing = getLifeHousing(currentHousingByCityId[DEFAULT_CITY_ID] ?? legacyHousing.id);
+  const ownedHousingIds = normalizeHousingIds([...legacyOwnedHousingIds, ...(ownedHousingIdsByCityId[DEFAULT_CITY_ID] ?? [])]);
   const ownsCurrentHousing = ownedHousingIds.includes(housing.id);
   const rentAmount = ownsCurrentHousing ? 0 : clampInt(life.rentAmount ?? housing.rent, housing.rent, 0, 999999);
   const rawActions = Number.isFinite(Number(life.actionsUsed)) ? life.actionsUsed : life.actionsToday;
@@ -87,9 +102,15 @@ export function normalizeLifeState(life = {}) {
     inventory: normalizeInventory(life.inventory),
     housingId: housing.id,
     ownedHousingIds,
-    vehicleId: getLifeVehicle(life.vehicleId)?.id ?? null,
-    vehicleUpkeepDueDay: getLifeVehicle(life.vehicleId) ? normalizeVehicleUpkeepDueDay(life.vehicleUpkeepDueDay, life.day) : null,
-    assetIds: safeUniqueIds(life.assetIds),
+    currentHousingByCityId,
+    ownedHousingIdsByCityId,
+    vehicleId: getLifeVehicle(activeVehicleByCityId[DEFAULT_CITY_ID] ?? life.vehicleId)?.id ?? null,
+    vehicleUpkeepDueDay: getLifeVehicle(activeVehicleByCityId[DEFAULT_CITY_ID] ?? life.vehicleId) ? normalizeVehicleUpkeepDueDay(vehicleUpkeepDueDayByCityId[DEFAULT_CITY_ID] ?? life.vehicleUpkeepDueDay, life.day) : null,
+    activeVehicleByCityId,
+    vehicleIdsByCityId,
+    vehicleUpkeepDueDayByCityId,
+    assetIds: safeUniqueIds([...(life.assetIds ?? []), ...(assetIdsByCityId[DEFAULT_CITY_ID] ?? [])]),
+    assetIdsByCityId,
     rentDueDay: ownsCurrentHousing ? 9999 : clampInt(life.rentDueDay, base.rentDueDay, 1, 9999),
     rentAmount,
     debt: clampInt(life.debt, base.debt, 0, 999999),
@@ -99,10 +120,16 @@ export function normalizeLifeState(life = {}) {
   };
 }
 
-export function getLifeView(career = {}, player = {}) {
+export function getLifeView(career = {}, player = {}, cityId = DEFAULT_CITY_ID) {
   const life = normalizeLifeState(career.life);
-  const currentHousing = getLifeHousing(life.housingId);
-  const ownsCurrentHousing = life.ownedHousingIds.includes(currentHousing.id);
+  const resolvedCityId = normalizeCityId(cityId);
+  const cityHousingId = life.currentHousingByCityId[resolvedCityId] ?? life.housingId;
+  const cityOwnedHousingIds = normalizeHousingIds(life.ownedHousingIdsByCityId[resolvedCityId] ?? (resolvedCityId === DEFAULT_CITY_ID ? life.ownedHousingIds : []));
+  const cityAssetIds = safeUniqueIds(life.assetIdsByCityId[resolvedCityId] ?? (resolvedCityId === DEFAULT_CITY_ID ? life.assetIds : []));
+  const cityVehicleIds = safeUniqueIds(life.vehicleIdsByCityId[resolvedCityId] ?? []);
+  const cityVehicleId = getLifeVehicle(life.activeVehicleByCityId[resolvedCityId])?.id ?? null;
+  const currentHousing = getLifeHousing(cityHousingId);
+  const ownsCurrentHousing = cityOwnedHousingIds.includes(currentHousing.id);
   const daysUntilRent = life.rentAmount > 0 ? Math.max(0, life.rentDueDay - life.day) : null;
   const actionsUsed = Number(life.actionsUsed ?? life.actionsToday ?? 0);
   const actionsLeft = roundOne(Math.max(0, life.actionsPerDay - actionsUsed));
@@ -119,6 +146,7 @@ export function getLifeView(career = {}, player = {}) {
 
   return {
     life,
+    currentCityId: resolvedCityId,
     currentHousing,
     ownsCurrentHousing,
     items: LIFE_ITEMS.map((item) => ({ ...item, ownedQty: getInventoryQty(life, item.id), canBuy: bankroll >= item.price })),
@@ -126,8 +154,8 @@ export function getLifeView(career = {}, player = {}) {
     cafeOrders: LIFE_CAFE_ORDERS.map((order) => ({ ...order, canUse: bankroll >= order.price && actionsLeft >= order.actionCost })),
     jobs: LIFE_JOBS.map((job) => ({ ...job, canWork: actionsLeft >= job.actionCost && life.needs.energy > 0 })),
     housing: LIFE_HOUSING.map((housing) => {
-      const owned = life.ownedHousingIds.includes(housing.id);
-      const current = housing.id === life.housingId;
+      const owned = cityOwnedHousingIds.includes(housing.id);
+      const current = housing.id === currentHousing.id;
       return {
         ...housing,
         current,
@@ -138,8 +166,9 @@ export function getLifeView(career = {}, player = {}) {
         rentLabel: owned ? "owned" : `$${housing.rent} / 7 дней`,
       };
     }),
-    assets: LIFE_ASSETS.map((asset) => ({ ...asset, owned: life.assetIds.includes(asset.id), canBuy: bankroll >= asset.price && !life.assetIds.includes(asset.id) })),
-    vehicles: LIFE_VEHICLES.map((vehicle) => ({ ...vehicle, owned: life.vehicleId === vehicle.id, canBuy: bankroll >= vehicle.price && life.vehicleId !== vehicle.id })),
+    assets: LIFE_ASSETS.map((asset) => ({ ...asset, owned: cityAssetIds.includes(asset.id), canBuy: bankroll >= asset.price && !cityAssetIds.includes(asset.id) })),
+    vehicles: LIFE_VEHICLES.map((vehicle) => ({ ...vehicle, owned: cityVehicleId === vehicle.id, ownedInCity: cityVehicleIds.includes(vehicle.id), canBuy: bankroll >= vehicle.price && !cityVehicleIds.includes(vehicle.id) })),
+    cityAssetsSummary: buildCityAssetsSummary(life),
     actionsLeft,
     actionsUsed: roundOne(actionsUsed),
     daysUntilRent,
@@ -149,7 +178,8 @@ export function getLifeView(career = {}, player = {}) {
   };
 }
 
-export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
+export function applyLifeAction({ actionId, career = {}, player = {}, cityId = DEFAULT_CITY_ID } = {}) {
+  const resolvedCityId = normalizeCityId(cityId);
   const life = normalizeLifeState(career.life);
   const nextPlayer = { ...player, bankroll: money(player.bankroll), xp: money(player.xp) };
   const parsed = parseLifeAction(actionId);
@@ -162,6 +192,12 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
     inventory: [...life.inventory],
     assetIds: [...life.assetIds],
     ownedHousingIds: [...life.ownedHousingIds],
+    currentHousingByCityId: { ...life.currentHousingByCityId },
+    ownedHousingIdsByCityId: cloneIdMap(life.ownedHousingIdsByCityId),
+    activeVehicleByCityId: { ...life.activeVehicleByCityId },
+    vehicleIdsByCityId: cloneIdMap(life.vehicleIdsByCityId),
+    vehicleUpkeepDueDayByCityId: { ...life.vehicleUpkeepDueDayByCityId },
+    assetIdsByCityId: cloneIdMap(life.assetIdsByCityId),
   };
   let message = "";
   let nextScreen = null;
@@ -208,7 +244,7 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   }
 
   if (parsed.type === "rest") {
-    const housing = getLifeHousing(nextLife.housingId);
+    const housing = getLifeHousing(nextLife.currentHousingByCityId[resolvedCityId] ?? nextLife.housingId);
     if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     nextLife.needs = applyNeedEffect(nextLife.needs, housing.restEffect);
     nextLife.sleptToday = true;
@@ -220,11 +256,12 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   if (parsed.type === "moveHousing") {
     const housing = getLifeHousing(parsed.id);
     if (!housing) return failWithLife(career, player, nextLife, "Жильё не найдено.");
-    if (!nextLife.ownedHousingIds.includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё не куплено.");
-    if (nextLife.housingId === housing.id) return failWithLife(career, player, nextLife, "Это текущее жильё.");
+    if (!getCityIds(nextLife.ownedHousingIdsByCityId, resolvedCityId).includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё не куплено в этом городе.");
+    if ((nextLife.currentHousingByCityId[resolvedCityId] ?? nextLife.housingId) === housing.id) return failWithLife(career, player, nextLife, "Это текущее жильё.");
     if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     actionCost = 1;
-    nextLife.housingId = housing.id;
+    nextLife.currentHousingByCityId[resolvedCityId] = housing.id;
+    nextLife.housingId = resolvedCityId === DEFAULT_CITY_ID ? housing.id : nextLife.housingId;
     nextLife.rentAmount = 0;
     nextLife.rentDueDay = 9999;
     message = `Переезд: ${housing.name}. ${housing.district}. ${housing.rooms}к · ${housing.sqm} м².`;
@@ -233,18 +270,20 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   if (parsed.type === "rentHousing") {
     const housing = getLifeHousing(parsed.id);
     if (!housing) return failWithLife(career, player, nextLife, "Жильё не найдено.");
-    if (nextLife.housingId === housing.id) return failWithLife(career, player, nextLife, "Это жильё уже выбрано.");
+    if ((nextLife.currentHousingByCityId[resolvedCityId] ?? nextLife.housingId) === housing.id) return failWithLife(career, player, nextLife, "Это жильё уже выбрано.");
     if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     actionCost = 1;
-    if (nextLife.ownedHousingIds.includes(housing.id)) {
-      nextLife.housingId = housing.id;
+    if (getCityIds(nextLife.ownedHousingIdsByCityId, resolvedCityId).includes(housing.id)) {
+      nextLife.currentHousingByCityId[resolvedCityId] = housing.id;
+      nextLife.housingId = resolvedCityId === DEFAULT_CITY_ID ? housing.id : nextLife.housingId;
       nextLife.rentAmount = 0;
       nextLife.rentDueDay = 9999;
       message = `Переезд: ${housing.name}. ${housing.district}. ${housing.rooms}к · ${housing.sqm} м².`;
     } else {
       if (nextPlayer.bankroll < housing.rent) return failWithLife(career, player, nextLife, "Недостаточно денег.");
       nextPlayer.bankroll -= housing.rent;
-      nextLife.housingId = housing.id;
+      nextLife.currentHousingByCityId[resolvedCityId] = housing.id;
+      nextLife.housingId = resolvedCityId === DEFAULT_CITY_ID ? housing.id : nextLife.housingId;
       nextLife.rentAmount = housing.rent;
       nextLife.rentDueDay = nextLife.day + (housing.intervalDays ?? DEFAULT_RENT_INTERVAL_DAYS);
       message = `Аренда: ${housing.name}. ${housing.district}. -$${housing.rent}. ${housing.rooms}к · ${housing.sqm} м².`;
@@ -254,13 +293,15 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   if (parsed.type === "buyHousing") {
     const housing = getLifeHousing(parsed.id);
     if (!housing?.purchasePrice) return failWithLife(career, player, nextLife, "Покупка недоступна.");
-    if (nextLife.ownedHousingIds.includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё уже куплено.");
+    if (getCityIds(nextLife.ownedHousingIdsByCityId, resolvedCityId).includes(housing.id)) return failWithLife(career, player, nextLife, "Жильё уже куплено в этом городе.");
     if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextPlayer.bankroll < housing.purchasePrice) return failWithLife(career, player, nextLife, "Недостаточно денег.");
     actionCost = 1;
     nextPlayer.bankroll -= housing.purchasePrice;
-    nextLife.ownedHousingIds = normalizeHousingIds([...nextLife.ownedHousingIds, housing.id]);
-    nextLife.housingId = housing.id;
+    nextLife.ownedHousingIdsByCityId[resolvedCityId] = normalizeHousingIds([...getCityIds(nextLife.ownedHousingIdsByCityId, resolvedCityId), housing.id]);
+    if (resolvedCityId === DEFAULT_CITY_ID) nextLife.ownedHousingIds = normalizeHousingIds([...nextLife.ownedHousingIds, housing.id]);
+    nextLife.currentHousingByCityId[resolvedCityId] = housing.id;
+    nextLife.housingId = resolvedCityId === DEFAULT_CITY_ID ? housing.id : nextLife.housingId;
     nextLife.rentAmount = 0;
     nextLife.rentDueDay = 9999;
     message = `Куплено жильё: ${housing.name}. ${housing.district}. -$${housing.purchasePrice}. ${housing.rooms}к · ${housing.sqm} м².`;
@@ -269,25 +310,31 @@ export function applyLifeAction({ actionId, career = {}, player = {} } = {}) {
   if (parsed.type === "buyAsset") {
     const asset = getLifeAsset(parsed.id);
     if (!asset) return failWithLife(career, player, nextLife, "Имущество не найдено.");
-    if (nextLife.assetIds.includes(asset.id)) return failWithLife(career, player, nextLife, "Уже куплено.");
+    if (getCityIds(nextLife.assetIdsByCityId, resolvedCityId).includes(asset.id)) return failWithLife(career, player, nextLife, "Уже куплено в этом городе.");
     if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextPlayer.bankroll < asset.price) return failWithLife(career, player, nextLife, "Недостаточно денег.");
     actionCost = 1;
     nextPlayer.bankroll -= asset.price;
-    nextLife.assetIds = safeUniqueIds([...nextLife.assetIds, asset.id]);
+    nextLife.assetIdsByCityId[resolvedCityId] = safeUniqueIds([...getCityIds(nextLife.assetIdsByCityId, resolvedCityId), asset.id]);
+    if (resolvedCityId === DEFAULT_CITY_ID) nextLife.assetIds = safeUniqueIds([...nextLife.assetIds, asset.id]);
     message = `Куплено: ${asset.name}. -$${asset.price}.`;
   }
 
   if (parsed.type === "buyVehicle") {
     const vehicle = getLifeVehicle(parsed.id);
     if (!vehicle) return failWithLife(career, player, nextLife, "Транспорт не найден.");
-    if (nextLife.vehicleId === vehicle.id) return failWithLife(career, player, nextLife, "Транспорт уже выбран.");
+    if ((nextLife.activeVehicleByCityId[resolvedCityId] ?? null) === vehicle.id) return failWithLife(career, player, nextLife, "Транспорт уже выбран в этом городе.");
     if (!hasActions(nextLife, 1)) return failWithLife(career, player, nextLife, "Недостаточно действий сегодня.");
     if (nextPlayer.bankroll < vehicle.price) return failWithLife(career, player, nextLife, "Недостаточно денег.");
     actionCost = 1;
     nextPlayer.bankroll -= vehicle.price;
-    nextLife.vehicleId = vehicle.id;
-    nextLife.vehicleUpkeepDueDay = nextLife.day + 7;
+    nextLife.vehicleIdsByCityId[resolvedCityId] = safeUniqueIds([...getCityIds(nextLife.vehicleIdsByCityId, resolvedCityId), vehicle.id]);
+    nextLife.activeVehicleByCityId[resolvedCityId] = vehicle.id;
+    nextLife.vehicleUpkeepDueDayByCityId[resolvedCityId] = nextLife.day + 7;
+    if (resolvedCityId === DEFAULT_CITY_ID) {
+      nextLife.vehicleId = vehicle.id;
+      nextLife.vehicleUpkeepDueDay = nextLife.day + 7;
+    }
     message = `Куплено: ${vehicle.name}. -$${vehicle.price}.`;
   }
 
@@ -476,6 +523,80 @@ function safeUniqueIds(value = []) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.map((entry) => String(entry)).filter(Boolean))];
 }
+
+function normalizeCityId(cityId) {
+  return String(cityId || DEFAULT_CITY_ID);
+}
+
+function cloneIdMap(value = {}) {
+  return Object.fromEntries(Object.entries(value && typeof value === "object" ? value : {}).map(([cityId, ids]) => [cityId, safeUniqueIds(ids)]));
+}
+
+function getCityIds(map = {}, cityId = DEFAULT_CITY_ID) {
+  return safeUniqueIds(map?.[normalizeCityId(cityId)] ?? []);
+}
+
+function normalizeHousingByCityMap(value = {}, legacyHousingId = null) {
+  const out = {};
+  for (const [cityId, housingId] of Object.entries(value && typeof value === "object" ? value : {})) {
+    const housing = getLifeHousing(housingId);
+    if (housing?.id) out[cityId] = housing.id;
+  }
+  if (!out[DEFAULT_CITY_ID]) out[DEFAULT_CITY_ID] = getLifeHousing(legacyHousingId)?.id ?? getLifeHousing("HOUSING_CHEAP_ROOM").id;
+  return out;
+}
+
+function normalizeHousingIdsByCityMap(value = {}, legacyIds = []) {
+  const out = {};
+  for (const [cityId, ids] of Object.entries(value && typeof value === "object" ? value : {})) out[cityId] = normalizeHousingIds(ids);
+  if (!out[DEFAULT_CITY_ID]) out[DEFAULT_CITY_ID] = normalizeHousingIds(legacyIds);
+  return out;
+}
+
+function normalizeVehicleByCityMap(value = {}, legacyVehicleId = null) {
+  const out = {};
+  for (const [cityId, vehicleId] of Object.entries(value && typeof value === "object" ? value : {})) out[cityId] = getLifeVehicle(vehicleId)?.id ?? null;
+  if (!(DEFAULT_CITY_ID in out)) out[DEFAULT_CITY_ID] = getLifeVehicle(legacyVehicleId)?.id ?? null;
+  return out;
+}
+
+function normalizeVehicleIdsByCityMap(value = {}, legacyIds = []) {
+  const out = {};
+  for (const [cityId, ids] of Object.entries(value && typeof value === "object" ? value : {})) out[cityId] = safeUniqueIds(ids).map((id) => getLifeVehicle(id)?.id).filter(Boolean);
+  if (!out[DEFAULT_CITY_ID]) out[DEFAULT_CITY_ID] = safeUniqueIds(legacyIds).map((id) => getLifeVehicle(id)?.id).filter(Boolean);
+  return out;
+}
+
+function normalizeAssetIdsByCityMap(value = {}, legacyIds = []) {
+  const out = {};
+  for (const [cityId, ids] of Object.entries(value && typeof value === "object" ? value : {})) out[cityId] = safeUniqueIds(ids).filter((id) => getLifeAsset(id));
+  if (!out[DEFAULT_CITY_ID]) out[DEFAULT_CITY_ID] = safeUniqueIds(legacyIds).filter((id) => getLifeAsset(id));
+  return out;
+}
+
+function normalizeNumberByCityMap(value = {}, legacyValue = null) {
+  const out = {};
+  for (const [cityId, number] of Object.entries(value && typeof value === "object" ? value : {})) out[cityId] = Number.isFinite(Number(number)) ? Number(number) : null;
+  if (!(DEFAULT_CITY_ID in out)) out[DEFAULT_CITY_ID] = Number.isFinite(Number(legacyValue)) ? Number(legacyValue) : null;
+  return out;
+}
+
+function buildCityAssetsSummary(life = {}) {
+  const cityIds = new Set([
+    ...Object.keys(life.currentHousingByCityId ?? {}),
+    ...Object.keys(life.ownedHousingIdsByCityId ?? {}),
+    ...Object.keys(life.vehicleIdsByCityId ?? {}),
+    ...Object.keys(life.assetIdsByCityId ?? {}),
+  ]);
+  return [...cityIds].map((cityId) => ({
+    cityId,
+    housingCount: getCityIds(life.ownedHousingIdsByCityId, cityId).length,
+    hasCurrentHousing: Boolean(life.currentHousingByCityId?.[cityId]),
+    vehicleCount: getCityIds(life.vehicleIdsByCityId, cityId).length,
+    assetCount: getCityIds(life.assetIdsByCityId, cityId).length,
+  }));
+}
+
 
 function fail(career, player, message) {
   return { career, player, ok: false, message, nextScreen: null };

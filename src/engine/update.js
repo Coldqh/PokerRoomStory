@@ -1,4 +1,4 @@
-import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=3.5.0";
+import { APP_VERSION, BUILD_ID } from "../config/appMeta.js?v=3.6.0";
 
 const UPDATE_EVENT = "prs-update-ready";
 const CACHE_PREFIX = "poker-room-story-";

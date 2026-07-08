@@ -1,4 +1,4 @@
-import { hydrateNpc, selectTableNpcs } from "../npc.js?v=3.5.0";
+import { hydrateNpc, selectTableNpcs } from "../npc.js?v=3.6.0";
 
 const DEFAULT_MIN_NPCS = 1;
 const DEFAULT_MAX_NPCS = 5;

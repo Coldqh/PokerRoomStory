@@ -809,3 +809,24 @@
     width: 100%;
   }
 }
+
+.travel-strip-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.travel-strip-status em {
+  font-style: normal;
+  font-size: 0.82rem;
+  opacity: 0.78;
+  text-align: right;
+}
+
+.travel-ok {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(170, 255, 200, 0.9);
+}

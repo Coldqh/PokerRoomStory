@@ -1,4 +1,4 @@
-import { getActionMeta, getAvailableActions } from "../engine/poker.js?v=3.5.0";
+import { getActionMeta, getAvailableActions } from "../engine/poker.js?v=3.6.0";
 
 export const bettingModalFlow = {
   getBetAmountBounds() {

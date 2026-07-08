@@ -1,6 +1,6 @@
-import { getCityMapView } from "../../engine/locations.js?v=3.5.0";
-import { getTravelView } from "../../engine/travel.js?v=3.5.0";
-import { escapeHtml } from "../components.js?v=3.5.0";
+import { getCityMapView } from "../../engine/locations.js?v=3.6.0";
+import { getTravelView } from "../../engine/travel.js?v=3.6.0";
+import { escapeHtml } from "../components.js?v=3.6.0";
 
 const VENUE_GROUPS = [
   { id: "home", title: "Home" },
@@ -51,15 +51,21 @@ export function renderCityMapScreen(state) {
 
 function renderTravelStrip(travel, lockedAtTable = false) {
   const routeCount = travel.routes?.length ?? 0;
+  const next = travel.nextProgression ?? null;
+  const nextRoute = next ? travel.routes.find((route) => route.toCityId === next.cityId) : null;
+  const nextStatus = nextRoute?.access?.ok ? "Доступен" : nextRoute?.access?.reason ?? "Маршрут завершён";
   return `
     <section class="travel-strip panel-soft">
       <div class="travel-strip-icon">✈</div>
       <div class="travel-strip-main">
-        <span>Airport</span>
-        <strong>Перелёт</strong>
-        <p>${escapeHtml(String(routeCount))} маршрутов из текущего города. Выбор страны и города открывается отдельным окном.</p>
+        <span>Airport · Route ${escapeHtml(String(travel.currentCity?.routeOrder ?? "?"))}/21</span>
+        <strong>${next ? `Следующий город: ${escapeHtml(next.name)}` : "Маршрут завершён"}</strong>
+        <p>${next ? `Gate: $${escapeHtml(String(next.bankrollGate))} · Rep ${escapeHtml(String(next.reputationGate))} · Ticket $${escapeHtml(String(nextRoute?.price ?? next.travelPrice))}` : "Ты дошёл до финального города."}</p>
       </div>
-      <button class="primary travel-strip-button" data-action="open-travel-picker" ${lockedAtTable ? "disabled" : ""}>Открыть маршруты</button>
+      <div class="travel-strip-status">
+        <em>${escapeHtml(nextStatus)}</em>
+        <button class="primary travel-strip-button" data-action="open-travel-picker" ${lockedAtTable ? "disabled" : ""}>Выбрать город</button>
+      </div>
     </section>
   `;
 }
@@ -73,7 +79,7 @@ function renderTravelModal(travel, lockedAtTable = false) {
           <div>
             <span>Airport</span>
             <strong>Куда летим?</strong>
-            <p>Выбери страну и город. Перелёт тратит деньги и дневные действия.</p>
+            <p>Города идут по карьерной дороге. Закрытые карточки показывают, чего не хватает.</p>
           </div>
           <button class="small-button ghost" data-action="close-modal">Закрыть</button>
         </header>
@@ -122,11 +128,12 @@ function renderTravelRoute(route, lockedAtTable = false) {
         <em>$${escapeHtml(String(route.price))}</em>
       </div>
       <div class="travel-route-meta">
+        <span>Stage ${escapeHtml(String(route.progression?.order ?? city?.routeOrder ?? "?"))}</span>
         <span>${escapeHtml(String(route.actionCost))} actions</span>
         <span>${escapeHtml(city?.averageLimit ?? "international")}</span>
-        <span>Tier ${escapeHtml(String(city?.tier ?? "?"))}</span>
+        <span>Gate $${escapeHtml(String(route.progression?.bankrollGate ?? 0))} · Rep ${escapeHtml(String(route.progression?.reputationGate ?? 0))}</span>
       </div>
-      ${lockedAtTable ? `<p class="travel-lock">Сначала встань из-за стола.</p>` : route.access.reason ? `<p class="travel-lock">${escapeHtml(route.access.reason)}</p>` : ""}
+      ${lockedAtTable ? `<p class="travel-lock">Сначала встань из-за стола.</p>` : route.access.reason ? `<p class="travel-lock">${escapeHtml(route.access.reason)}</p>` : `<p class="travel-ok">Маршрут доступен.</p>`}
       <button class="primary" data-action="travel-route" data-id="${escapeHtml(route.id)}" ${locked ? "disabled" : ""}>Перелететь</button>
     </article>
   `;

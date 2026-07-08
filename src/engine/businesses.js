@@ -1,8 +1,8 @@
-import { BUSINESS_LIMITS, BUSINESS_TEMPLATES as BASE_BUSINESS_TEMPLATES } from "./businessContent.js?v=3.5.0";
-import { INTERNATIONAL_BUSINESS_TEMPLATES } from "./internationalBusinessContent.js?v=3.5.0";
+import { BUSINESS_LIMITS, BUSINESS_TEMPLATES as BASE_BUSINESS_TEMPLATES } from "./businessContent.js?v=3.6.0";
+import { INTERNATIONAL_BUSINESS_TEMPLATES } from "./internationalBusinessContent.js?v=3.6.0";
 
 const BUSINESS_TEMPLATES = [...BASE_BUSINESS_TEMPLATES, ...INTERNATIONAL_BUSINESS_TEMPLATES];
-
+const DEFAULT_CITY_ID = "CITY_RU_NORTH_DISTRICT";
 const MAX_LEVEL = BUSINESS_LIMITS.maxLevel;
 
 function getBusinessTemplate(id) {
@@ -17,44 +17,76 @@ function getBusinessTemplates(ids = []) {
 export function createInitialBusinessState() {
   return {
     ownedIds: [],
+    ownedIdsByCityId: {},
     byId: {},
   };
 }
 
 export function normalizeBusinessState(value = {}) {
-  const ownedIds = safeUniqueIds(value.ownedIds);
+  const legacyOwnedIds = safeUniqueIds(value.ownedIds);
+  const ownedIdsByCityId = normalizeOwnedIdsByCityMap(value.ownedIdsByCityId);
   const byId = {};
+
+  for (const id of legacyOwnedIds) {
+    const template = getBusinessTemplate(id);
+    if (!template) continue;
+    const cityId = template.cityId ?? DEFAULT_CITY_ID;
+    ownedIdsByCityId[cityId] = safeUniqueIds([...(ownedIdsByCityId[cityId] ?? []), id]);
+  }
+
+  const ownedIds = [...new Set(Object.values(ownedIdsByCityId).flat())];
   for (const id of ownedIds) {
     const template = getBusinessTemplate(id);
     if (!template) continue;
     const raw = value.byId?.[id] ?? {};
     byId[id] = normalizeOwnedBusiness(template, raw);
   }
-  return { ownedIds: Object.keys(byId), byId };
+
+  const cleanOwnedIdsByCityId = {};
+  for (const [cityId, ids] of Object.entries(ownedIdsByCityId)) {
+    const cleanIds = safeUniqueIds(ids).filter((id) => byId[id]);
+    if (cleanIds.length) cleanOwnedIdsByCityId[cityId] = cleanIds;
+  }
+
+  return { ownedIds: Object.keys(byId), ownedIdsByCityId: cleanOwnedIdsByCityId, byId };
 }
 
-export function getBusinessView(career = {}, player = {}) {
+export function getBusinessView(career = {}, player = {}, cityId = null) {
   const state = normalizeBusinessState(career.businesses);
   const day = getCareerDay(career);
   const bankroll = money(player.bankroll);
+  const ownedAll = state.ownedIds.map((id) => buildBusinessRow(getBusinessTemplate(id), state, day, bankroll)).filter(Boolean);
+  const all = BUSINESS_TEMPLATES.map((template) => buildBusinessRow(template, state, day, bankroll)).filter(Boolean);
+  const resolvedCityId = cityId ? String(cityId) : null;
+  const ownedCurrentCity = resolvedCityId ? ownedAll.filter((row) => row.template.cityId === resolvedCityId) : ownedAll;
+  const ownedOtherCities = resolvedCityId ? ownedAll.filter((row) => row.template.cityId !== resolvedCityId) : [];
   return {
     state,
-    owned: state.ownedIds.map((id) => buildBusinessRow(getBusinessTemplate(id), state, day, bankroll)).filter(Boolean),
-    all: BUSINESS_TEMPLATES.map((template) => buildBusinessRow(template, state, day, bankroll)).filter(Boolean),
+    owned: ownedCurrentCity,
+    ownedAll,
+    ownedCurrentCity,
+    ownedOtherCities,
+    all: resolvedCityId ? all.filter((row) => row.template.cityId === resolvedCityId) : all,
   };
 }
 
-export function getBusinessBrokerRows(businessIds = [], career = {}, player = {}) {
+export function getBusinessBrokerRows(businessIds = [], career = {}, player = {}, cityId = null) {
   const state = normalizeBusinessState(career.businesses);
   const day = getCareerDay(career);
   const bankroll = money(player.bankroll);
-  return getBusinessTemplates(businessIds).map((template) => buildBusinessRow(template, state, day, bankroll)).filter(Boolean);
+  return getBusinessTemplates(businessIds)
+    .filter((template) => !cityId || template.cityId === cityId || !template.cityId)
+    .map((template) => buildBusinessRow(template, state, day, bankroll))
+    .filter(Boolean);
 }
 
-export function applyBusinessAction({ actionId, career = {}, player = {} } = {}) {
+export function applyBusinessAction({ actionId, career = {}, player = {}, cityId = null } = {}) {
   const [type, id] = String(actionId ?? "").split(":");
   const template = getBusinessTemplate(id);
   if (!template) return fail(career, player, "Бизнес не найден.");
+
+  const resolvedCityId = String(cityId || template.cityId || DEFAULT_CITY_ID);
+  if (template.cityId && template.cityId !== resolvedCityId) return fail(career, player, "Этот бизнес находится в другом городе.");
 
   const state = normalizeBusinessState(career.businesses);
   const nextPlayer = { ...player, bankroll: money(player.bankroll) };
@@ -67,6 +99,10 @@ export function applyBusinessAction({ actionId, career = {}, player = {} } = {})
     nextPlayer.bankroll -= template.buyPrice;
     const nextState = normalizeBusinessState({
       ownedIds: [...state.ownedIds, id],
+      ownedIdsByCityId: {
+        ...state.ownedIdsByCityId,
+        [resolvedCityId]: [...(state.ownedIdsByCityId[resolvedCityId] ?? []), id],
+      },
       byId: {
         ...state.byId,
         [id]: createOwnedBusiness(template, day),
@@ -172,8 +208,14 @@ function getCareerDay(career = {}) {
 }
 
 function mergeBusiness(state, id, owned) {
+  const template = getBusinessTemplate(id);
+  const cityId = template?.cityId ?? DEFAULT_CITY_ID;
   return normalizeBusinessState({
     ownedIds: state.ownedIds,
+    ownedIdsByCityId: {
+      ...state.ownedIdsByCityId,
+      [cityId]: [...new Set([...(state.ownedIdsByCityId[cityId] ?? []), id])],
+    },
     byId: { ...state.byId, [id]: owned },
   });
 }
@@ -193,6 +235,15 @@ function ok(career, player, businessState, message) {
 
 function fail(career, player, message) {
   return { ok: false, career, player, message, nextScreen: null };
+}
+
+function normalizeOwnedIdsByCityMap(value = {}) {
+  const out = {};
+  for (const [cityId, ids] of Object.entries(value && typeof value === "object" ? value : {})) {
+    const cleanIds = safeUniqueIds(ids).filter((id) => getBusinessTemplate(id));
+    if (cleanIds.length) out[cityId] = cleanIds;
+  }
+  return out;
 }
 
 function safeUniqueIds(value = []) {

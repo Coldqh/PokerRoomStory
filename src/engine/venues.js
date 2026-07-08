@@ -1,4 +1,4 @@
-import { applyLifeAction, getLifeView, hasLifeActions, spendLifeActionCost } from "./life.js?v=3.5.0";
+import { applyLifeAction, getLifeView, hasLifeActions, spendLifeActionCost } from "./life.js?v=3.6.0";
 import {
   getLifeAsset,
   getLifeCafeOrder,
@@ -6,11 +6,11 @@ import {
   getLifeItem,
   getLifeJob,
   getLifeVehicle,
-} from "./lifeContent.js?v=3.5.0";
-import { getClubTables } from "./selectors.js?v=3.5.0";
-import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=3.5.0";
-import { canEnterClub } from "./world.js?v=3.5.0";
-import { applyJobAction, getJobRowsForVenue } from "./jobs.js?v=3.5.0";
+} from "./lifeContent.js?v=3.6.0";
+import { getClubTables } from "./selectors.js?v=3.6.0";
+import { applyBusinessAction, getBusinessBrokerRows } from "./businesses.js?v=3.6.0";
+import { canEnterClub } from "./world.js?v=3.6.0";
+import { applyJobAction, getJobRowsForVenue } from "./jobs.js?v=3.6.0";
 
 export function getCityVenues(content, cityId = null) {
   return (content?.venues ?? [])
@@ -65,7 +65,7 @@ export function getVenueStatus(content, career = {}, player = {}, venue = null, 
 export function getVenueView({ content, career = {}, player = {}, venueId = null, activeClubId = null } = {}) {
   const venue = getVenueById(content, venueId);
   const status = getVenueStatus(content, career, player, venue, venueId, activeClubId);
-  const lifeView = getLifeView(career, player);
+  const lifeView = getLifeView(career, player, venue?.cityId);
   const city = venue ? content?.byId?.cities?.[venue.cityId] ?? null : null;
   const country = city ? content?.byId?.countries?.[city.countryId] ?? null : null;
 
@@ -104,7 +104,7 @@ export function applyVenueAction({ content, venueId, actionId, career = {}, play
       return { career, player, ok: false, message: "Недостаточно действий сегодня.", nextScreen: null };
     }
 
-    const businessResult = applyBusinessAction({ actionId, career, player });
+    const businessResult = applyBusinessAction({ actionId, career, player, cityId: venue.cityId });
     if (!businessResult.ok) return businessResult;
 
     const timeResult = actionCost > 0
@@ -119,7 +119,7 @@ export function applyVenueAction({ content, venueId, actionId, career = {}, play
     };
   }
 
-  const result = applyLifeAction({ actionId, career, player });
+  const result = applyLifeAction({ actionId, career, player, cityId: venue.cityId });
   if (!result.ok) return result;
 
   return {
@@ -181,7 +181,7 @@ function getVenueRows(venue, lifeView, career = {}, player = {}) {
   }
 
   if (venue.type === "business_broker") {
-    return getBusinessBrokerRows(venue.businessIds ?? [], career, player).map((entry) => ({ kind: "business", ...entry, canBuy: Boolean(entry.canBuy && canSpendMajorAction), canUpgrade: Boolean(entry.canUpgrade && canSpendMajorAction) }));
+    return getBusinessBrokerRows(venue.businessIds ?? [], career, player, venue.cityId).map((entry) => ({ kind: "business", ...entry, canBuy: Boolean(entry.canBuy && canSpendMajorAction), canUpgrade: Boolean(entry.canUpgrade && canSpendMajorAction) }));
   }
 
   if (venue.type === "home") {

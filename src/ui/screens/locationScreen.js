@@ -1,8 +1,8 @@
-import { normalizePlayerLocation } from "../../engine/locationState.js?v=3.5.0";
-import { renderCityMapScreen } from "./cityMapScreen.js?v=3.5.0";
-import { renderVenueScreen } from "./venueScreen.js?v=3.5.0";
-import { renderClubScreen } from "./clubScreen.js?v=3.5.0";
-import { renderTableScreen } from "./tableScreen.js?v=3.5.0";
+import { normalizePlayerLocation } from "../../engine/locationState.js?v=3.6.0";
+import { renderCityMapScreen } from "./cityMapScreen.js?v=3.6.0";
+import { renderVenueScreen } from "./venueScreen.js?v=3.6.0";
+import { renderClubScreen } from "./clubScreen.js?v=3.6.0";
+import { renderTableScreen } from "./tableScreen.js?v=3.6.0";
 
 export function renderLocationScreen(state) {
   const location = normalizePlayerLocation(state.content, state.playerLocation, state);
